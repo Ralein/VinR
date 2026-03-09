@@ -30,14 +30,24 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
 
-    # Firebase Cloud Messaging
-    FCM_SERVER_KEY: str = ""
+    # Expo Push Notifications
+    EXPO_PUSH_URL: str = "https://exp.host/--/api/v2/push/send"
+
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
 
     # AWS S3
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_S3_BUCKET: str = "vinr-media"
     AWS_REGION: str = "us-east-1"
+
+    # YouTube Data API v3
+    YOUTUBE_API_KEY: str = ""
+
+    # Events APIs
+    EVENTBRITE_API_KEY: str = ""
+    MEETUP_API_KEY: str = ""
 
     # CORS
     CORS_ORIGINS: list[str] = ["*"]

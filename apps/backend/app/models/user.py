@@ -27,3 +27,7 @@ class User(Base):
     checkins = relationship("Checkin", back_populates="user", lazy="selectin")
     streaks = relationship("Streak", back_populates="user", lazy="selectin")
     push_tokens = relationship("PushToken", back_populates="user", lazy="selectin")
+    notification_preferences = relationship(
+        "NotificationPreferences", back_populates="user", uselist=False, lazy="selectin"
+    )
+    journal_entries = relationship("JournalEntry", back_populates="user", lazy="selectin")
