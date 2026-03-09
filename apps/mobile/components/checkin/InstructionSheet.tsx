@@ -1,0 +1,199 @@
+/**
+ * InstructionSheet — Expandable technique detail card
+ *
+ * Shows full instructions, science note, and source
+ * for an immediate relief or daily habit technique.
+ */
+
+import React from 'react';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { colors } from '../../constants/theme';
+import { haptics } from '../../services/haptics';
+
+interface ReliefItem {
+    id: string;
+    name: string;
+    emoji: string;
+    category: string;
+    duration: string;
+    instructions: string[];
+    scienceNote: string;
+    source: string;
+}
+
+interface InstructionSheetProps {
+    item: ReliefItem | null;
+    visible: boolean;
+    onClose: () => void;
+}
+
+export function InstructionSheet({ item, visible, onClose }: InstructionSheetProps) {
+    if (!item) return null;
+
+    return (
+        <Modal
+            transparent
+            visible={visible}
+            animationType="none"
+            onRequestClose={onClose}
+        >
+            <Animated.View entering={FadeIn.duration(200)} style={styles.overlay}>
+                <Pressable style={styles.overlayPress} onPress={onClose} />
+                <Animated.View entering={SlideInDown.duration(400)} style={styles.sheet}>
+                    {/* Handle */}
+                    <View style={styles.handle} />
+
+                    {/* Header */}
+                    <Text style={styles.emoji}>{item.emoji}</Text>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <View style={styles.metaRow}>
+                        <Text style={styles.duration}>⏱ {item.duration}</Text>
+                        <Text style={styles.category}>{item.category}</Text>
+                    </View>
+
+                    {/* Instructions */}
+                    <View style={styles.instructionsWrap}>
+                        {item.instructions.map((step, index) => (
+                            <View key={index} style={styles.stepRow}>
+                                <Text style={styles.stepNumber}>{index + 1}</Text>
+                                <Text style={styles.stepText}>{step}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Science Note */}
+                    <View style={styles.scienceCard}>
+                        <Text style={styles.scienceLabel}>🧬 Why this works</Text>
+                        <Text style={styles.scienceText}>{item.scienceNote}</Text>
+                        <Text style={styles.source}>Source: {item.source}</Text>
+                    </View>
+
+                    {/* Close */}
+                    <Pressable
+                        style={styles.closeButton}
+                        onPress={() => { haptics.light(); onClose(); }}
+                    >
+                        <Text style={styles.closeText}>Got it</Text>
+                    </Pressable>
+                </Animated.View>
+            </Animated.View>
+        </Modal>
+    );
+}
+
+const styles = StyleSheet.create({
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-end',
+    },
+    overlayPress: {
+        flex: 1,
+    },
+    sheet: {
+        backgroundColor: colors.elevated,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingBottom: 40,
+        maxHeight: '80%',
+    },
+    handle: {
+        width: 40,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.textGhost,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    emoji: {
+        fontSize: 40,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    name: {
+        fontFamily: 'PlayfairDisplay_700Bold',
+        fontSize: 24,
+        color: colors.textPrimary,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 16,
+        marginBottom: 24,
+    },
+    duration: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 14,
+        color: colors.textMuted,
+    },
+    category: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 14,
+        color: colors.gold,
+        textTransform: 'capitalize',
+    },
+    instructionsWrap: {
+        gap: 12,
+        marginBottom: 24,
+    },
+    stepRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+    },
+    stepNumber: {
+        fontFamily: 'DMSans_600SemiBold',
+        fontSize: 14,
+        color: colors.gold,
+        width: 20,
+        textAlign: 'center',
+    },
+    stepText: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 15,
+        color: colors.textPrimary,
+        flex: 1,
+        lineHeight: 22,
+    },
+    scienceCard: {
+        backgroundColor: colors.surface,
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: 24,
+    },
+    scienceLabel: {
+        fontFamily: 'DMSans_600SemiBold',
+        fontSize: 13,
+        color: colors.emerald,
+        marginBottom: 6,
+    },
+    scienceText: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 14,
+        color: colors.textMuted,
+        lineHeight: 20,
+        marginBottom: 8,
+    },
+    source: {
+        fontFamily: 'DMSans_300Light',
+        fontSize: 11,
+        color: colors.textGhost,
+    },
+    closeButton: {
+        backgroundColor: colors.gold,
+        borderRadius: 14,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    closeText: {
+        fontFamily: 'DMSans_600SemiBold',
+        fontSize: 16,
+        color: colors.void,
+    },
+});
