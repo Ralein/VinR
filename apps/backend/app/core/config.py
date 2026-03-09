@@ -13,18 +13,18 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://vinr:vinr_secret@localhost:5432/vinr_db"
+    # Database (Neon PostgreSQL)
+    DATABASE_URL: str = "postgresql+asyncpg://user:pass@ep-xyz.us-east-2.aws.neon.tech/vinr_db?sslmode=require"
     DATABASE_ECHO: bool = False
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # Supabase Auth
-    SUPABASE_URL: str = ""
-    SUPABASE_ANON_KEY: str = ""
-    SUPABASE_SERVICE_KEY: str = ""
-    SUPABASE_JWT_SECRET: str = ""
+    # Clerk Auth
+    CLERK_SECRET_KEY: str = ""
+    CLERK_PUBLISHABLE_KEY: str = ""
+    CLERK_JWKS_URL: str = ""  # e.g. https://your-app.clerk.accounts.dev/.well-known/jwks.json
+    CLERK_ISSUER: str = ""    # e.g. https://your-app.clerk.accounts.dev
 
     # Anthropic (Claude)
     ANTHROPIC_API_KEY: str = ""

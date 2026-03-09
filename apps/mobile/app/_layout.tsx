@@ -1,5 +1,5 @@
 /**
- * Root Layout — App entry point with providers and auth guard
+ * Root Layout — App entry point with Clerk Auth + React Query + fonts
  */
 
 import { useEffect } from 'react';
@@ -16,11 +16,35 @@ import {
     DMSans_600SemiBold,
 } from '@expo-google-fonts/dm-sans';
 import * as SplashScreen from 'expo-splash-screen';
+import { useAuth } from '@clerk/clerk-expo';
+import { AuthProvider } from '../providers/AuthProvider';
 import { QueryProvider } from '../providers/QueryProvider';
 import { colors } from '../constants/theme';
 
 // Keep splash screen visible while loading fonts
 SplashScreen.preventAutoHideAsync();
+
+function RootNavigator() {
+    const { isLoaded, isSignedIn } = useAuth();
+
+    if (!isLoaded) return null;
+
+    return (
+        <Stack
+            screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.void },
+                animation: 'slide_from_right',
+            }}
+        >
+            {!isSignedIn ? (
+                <Stack.Screen name="(auth)" />
+            ) : (
+                <Stack.Screen name="(tabs)" />
+            )}
+        </Stack>
+    );
+}
 
 export default function RootLayout() {
     const [fontsLoaded] = useFonts({
@@ -42,18 +66,11 @@ export default function RootLayout() {
     }
 
     return (
-        <QueryProvider>
-            <StatusBar style="light" />
-            <Stack
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.void },
-                    animation: 'slide_from_right',
-                }}
-            >
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-            </Stack>
-        </QueryProvider>
+        <AuthProvider>
+            <QueryProvider>
+                <StatusBar style="light" />
+                <RootNavigator />
+            </QueryProvider>
+        </AuthProvider>
     );
 }
