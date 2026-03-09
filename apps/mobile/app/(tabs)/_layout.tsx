@@ -63,6 +63,10 @@ export default function TabLayout() {
                     tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profile" focused={focused} />,
                 }}
             />
+            {/* Flow-only screens — hidden from tab bar */}
+            <Tabs.Screen name="loading" options={{ href: null }} />
+            <Tabs.Screen name="emergency" options={{ href: null }} />
+            <Tabs.Screen name="results" options={{ href: null }} />
         </Tabs>
     );
 }

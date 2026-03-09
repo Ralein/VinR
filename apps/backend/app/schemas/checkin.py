@@ -2,7 +2,6 @@
 
 from pydantic import BaseModel, Field
 from datetime import datetime
-from uuid import UUID
 
 
 class ReliefItem(BaseModel):
@@ -13,10 +12,8 @@ class ReliefItem(BaseModel):
     category: str  # breathing|grounding|movement|meditation|social|creative
     duration: str
     instructions: list[str]
-    science_note: str = Field(alias="scienceNote", default="")
+    scienceNote: str = ""
     source: str = ""
-
-    model_config = {"populate_by_name": True}
 
 
 class CheckinRequest(BaseModel):
@@ -26,24 +23,22 @@ class CheckinRequest(BaseModel):
 
 class PlanResponse(BaseModel):
     """Complete AI-generated plan response."""
-    is_emergency: bool = Field(alias="isEmergency", default=False)
-    primary_emotion: str = Field(alias="primaryEmotion", default="")
-    emotion_summary: str = Field(alias="emotionSummary", default="")
-    support_message: str = Field(alias="supportMessage", default="")
-    immediate_relief: list[ReliefItem] = Field(alias="immediateRelief", default_factory=list)
-    daily_habits: list[ReliefItem] = Field(alias="dailyHabits", default_factory=list)
+    isEmergency: bool = False
+    primaryEmotion: str = ""
+    emotionSummary: str = ""
+    supportMessage: str = ""
+    immediateRelief: list[ReliefItem] = Field(default_factory=list)
+    dailyHabits: list[ReliefItem] = Field(default_factory=list)
     affirmation: str = ""
-    gratitude_prompt: str = Field(alias="gratitudePrompt", default="")
-    therapist_note: str = Field(alias="therapistNote", default="")
-
-    model_config = {"populate_by_name": True}
+    gratitudePrompt: str = ""
+    therapistNote: str = ""
 
 
 class CheckinResponse(BaseModel):
     """Full check-in response with plan and streak info."""
-    checkin_id: UUID
+    checkin_id: str
     plan: PlanResponse
-    streak_id: UUID | None = None
+    streak_id: str | None = None
     current_streak: int = 0
     created_at: datetime
 

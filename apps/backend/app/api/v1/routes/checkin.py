@@ -78,10 +78,10 @@ async def create_checkin(
         )
         db.add(streak)
         await db.flush()
-        streak_id = streak.id
+        streak_id = str(streak.id)
 
     return CheckinResponse(
-        checkin_id=checkin.id,
+        checkin_id=str(checkin.id),
         plan=PlanResponse(**ai_response),
         streak_id=streak_id,
         current_streak=current_streak,
