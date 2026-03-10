@@ -442,17 +442,17 @@ Deliverable: Version 1.0 public launch
 
 SPRINT 3.1 — Mood Analytics Dashboard (Days 46–52)
   Backend:
-    □ Emotion trend aggregation:
+    [x] Emotion trend aggregation:
         Weekly average mood score (1-5 mapped from emotion)
         Most frequent emotion per week
         Streak correlation: does streak length correlate with 
         better mood scores? (show this to user — it WILL)
         Time-of-day pattern: when do they check in most?
-    □ GET /api/v1/analytics/{user_id}/summary
-    □ GET /api/v1/analytics/{user_id}/trends?period=30d
+    [x] GET /api/v1/analytics/{user_id}/summary
+    [x] GET /api/v1/analytics/{user_id}/trends?period=30d
 
   Frontend:
-    □ Profile tab → "My Journey" section:
+    [x] Profile tab → "My Journey" section:
         Mood trend line chart (Recharts/Victory Native)
           x: last 30 days | y: mood score 1–5
           Color: gold line, emerald dots on streak days
@@ -468,45 +468,45 @@ SPRINT 3.1 — Mood Analytics Dashboard (Days 46–52)
 
 SPRINT 3.2 — Adaptive AI (Days 53–58)
   Backend:
-    □ User context builder:
+    [x] User context builder:
         Pulls last 5 check-ins + mood trend + streak data
         Injects into every new Claude prompt as "user_context"
         Claude now knows: "This user has been anxious for 
         3 weeks, completed 12 streak days, responds well to 
         breathing techniques, struggles with consistency on weekends"
-    □ Adaptive habit selection:
+    [x] Adaptive habit selection:
         Tracks which habits user completes vs. skips
         Over time, de-prioritizes skipped habits, surfaces 
         completed ones first — learns preferences
-    □ Escalation detection:
+    [x] Escalation detection:
         If mood score drops 3 consecutive check-ins → 
         surfaces therapist directory prominently
         If user hasn't checked in for 5 days → sends 
         special re-engagement sequence (not generic)
 
   Frontend:
-    □ "VinR knows you better now" nudge cards on Home
-    □ Adaptive home feed: surfaces most relevant content 
+    [x] "VinR knows you better now" nudge cards on Home
+    [x] Adaptive home feed: surfaces most relevant content 
       based on time of day, recent emotion, streak status
-    □ Therapist directory screen:
+    [x] Therapist directory screen:
         Psychology Today embed or BetterHelp deep link
         Filter by: insurance, specialty, telehealth
         "Why therapy?" section — destigmatizing copy
 
 SPRINT 3.3 — Morning Ritual & Evening Wind-Down (Days 59–64)
   Backend:
-    □ GET /api/v1/rituals/morning — personalized by user history
-    □ GET /api/v1/rituals/evening — journal prompt + wind-down
+    [x] GET /api/v1/rituals/morning — personalized by user history
+    [x] GET /api/v1/rituals/evening — journal prompt + wind-down
 
   Frontend:
-    □ Morning Ritual screen (accessible at 6–10 AM):
+    [x] Morning Ritual screen (accessible at 6–10 AM):
         Time-aware greeting: "Good morning, [name]."
         Today's affirmation (AI-personalized, audio playable)
         Streak status: "Day X — you're on a roll"
         Today's daily habit reminder card
         "3 things to be grateful for" quick capture
         Morning breathing (animated circle guide, 2 min)
-    □ Evening Wind-Down screen (accessible at 8–11 PM):
+    [x] Evening Wind-Down screen (accessible at 8–11 PM):
         "How did your day go?" quick mood tap (1–5)
         Today's habit: "Did you complete it?" Yes/No
         Tonight's gratitude prompt
@@ -516,7 +516,7 @@ SPRINT 3.3 — Morning Ritual & Evening Wind-Down (Days 59–64)
 
 SPRINT 3.4 — Breathing & Meditation Guides (Days 65–70)
   Frontend:
-    □ Interactive breathing guide (built in React Native Skia):
+    [x] Interactive breathing guide (built in React Native Skia):
         Animated circle: expands (inhale), holds, contracts (exhale)
         Techniques: Box (4-4-4-4), 4-7-8, Coherent (5-5),
                     Physiological sigh (2 in, 1 out)
@@ -524,12 +524,12 @@ SPRINT 3.4 — Breathing & Meditation Guides (Days 65–70)
         Voice guide option (TTS via Expo Speech or audio file)
         Duration selector: 2 / 5 / 10 minutes
         Session complete: Lottie celebration + streak credit
-    □ Guided yoga screen:
+    [x] Guided yoga screen:
         12 illustrated yoga cards (simple asanas for anxiety/depression)
         Each card: pose name, emoji, 30-sec hold timer, benefit note
         Sources cited (Johns Hopkins, Mayo Clinic)
         "Sequence builder": user picks 3–5 poses for a session
-    □ Grounding 5-4-3-2-1 interactive:
+    [x] Grounding 5-4-3-2-1 interactive:
         Step-by-step animated prompts
         User types their answers into each field
         At end: AI reflects: "You noticed a lot of nature — 
