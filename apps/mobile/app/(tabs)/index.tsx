@@ -9,9 +9,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
+import { useEventSearch } from '../../hooks/useEvents';
 import AudioCategoryCard from '../../components/media/AudioCategoryCard';
 import YouTubeCard from '../../components/media/YouTubeCard';
 import SleepMode from '../../components/media/SleepMode';
+import EventsList from '../../components/events/EventsList';
 
 function getGreeting(): string {
     const h = new Date().getHours();
@@ -33,6 +35,9 @@ export default function HomeScreen() {
     // YouTube section — uses first genre by default
     const { data: youtubeData } = useYouTubeSearch('Pop', 'music');
     const { data: motivationData } = useYouTubeSearch('Pop', 'motivation');
+
+    // Events — using NYC coordinates as default (will use user location in production)
+    const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -116,6 +121,15 @@ export default function HomeScreen() {
                             label={cat.label}
                         />
                     ))}
+                </View>
+
+                {/* Get out & connect — Events */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>🤝 Get out & connect</Text>
+                    <EventsList
+                        events={eventsData?.events || []}
+                        isLoading={eventsLoading}
+                    />
                 </View>
 
                 {/* Sleep Mode */}
