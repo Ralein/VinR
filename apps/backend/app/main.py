@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
-from app.api.v1.routes import auth, checkin, streaks, notifications, journal, media, events, analytics
+from app.api.v1.routes import auth, checkin, streaks, notifications, journal, media, events, analytics, therapist, rituals
 
 settings = get_settings()
 
@@ -33,6 +33,8 @@ app.include_router(journal.router, prefix=settings.API_V1_PREFIX)
 app.include_router(media.router, prefix=settings.API_V1_PREFIX)
 app.include_router(events.router, prefix=settings.API_V1_PREFIX)
 app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
+app.include_router(therapist.router, prefix=settings.API_V1_PREFIX)
+app.include_router(rituals.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/health")

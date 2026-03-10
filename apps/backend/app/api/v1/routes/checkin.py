@@ -11,6 +11,7 @@ from app.models.streak import Streak
 from app.schemas.checkin import CheckinRequest, CheckinResponse, PlanResponse
 from app.services.llm_service import analyze_emotions
 from app.services.rag_service import retrieve_context
+from app.services.adaptive_service import build_user_context
 
 router = APIRouter(prefix="/checkin", tags=["checkin"])
 
@@ -26,22 +27,27 @@ async def create_checkin(
 
     Flow:
     1. Retrieve relevant RAG context based on user's text
-    2. Call Claude API with system prompt + RAG context
-    3. Parse structured JSON response
-    4. Store checkin + plan in DB
-    5. Create/update streak record
-    6. Return full plan to client
+    2. Build adaptive user context from history
+    3. Call Claude API with system prompt + RAG context + user context
+    4. Parse structured JSON response
+    5. Store checkin + plan in DB
+    6. Create/update streak record
+    7. Return full plan to client
     """
     user_id = current_user["sub"]
 
     # Step 1: Retrieve RAG context
     rag_context = await retrieve_context(request.text or request.mood_tag)
 
-    # Step 2-3: Call Claude and get structured response
+    # Step 2: Build adaptive user context
+    user_context = await build_user_context(db, user_id)
+
+    # Step 3-4: Call Claude with full context
     ai_response = await analyze_emotions(
         mood_tag=request.mood_tag,
         raw_text=request.text or "",
         rag_context=rag_context,
+        user_context=user_context,
     )
 
     # Step 4: Store checkin
