@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
+import { useAdaptiveHome } from '../../hooks/useAdaptive';
 import AudioCategoryCard from '../../components/media/AudioCategoryCard';
 import YouTubeCard from '../../components/media/YouTubeCard';
 import SleepMode from '../../components/media/SleepMode';
@@ -31,6 +32,7 @@ const AUDIO_CATEGORIES = [
 
 export default function HomeScreen() {
     const [showSleepMode, setShowSleepMode] = useState(false);
+    const { data: adaptiveData } = useAdaptiveHome();
 
     // YouTube section — uses first genre by default
     const { data: youtubeData } = useYouTubeSearch('Pop', 'music');
@@ -51,6 +53,35 @@ export default function HomeScreen() {
                     <Text style={styles.streakNumber}>0</Text>
                     <Text style={styles.streakLabel}>day streak 🔥</Text>
                 </View>
+
+                {/* Adaptive Nudge Cards */}
+                {adaptiveData?.nudge_cards && adaptiveData.nudge_cards.length > 0 && (
+                    <View style={styles.section}>
+                        {adaptiveData.nudge_cards.map((card, i) => (
+                            <Pressable
+                                key={i}
+                                style={({ pressed }) => [
+                                    styles.nudgeCard,
+                                    card.type === 'therapist' && styles.nudgeCardTherapist,
+                                    pressed && { opacity: 0.85 },
+                                ]}
+                                onPress={() => {
+                                    if (card.action === 'therapist_directory') {
+                                        router.push('/therapist');
+                                    } else if (card.action === 'journey') {
+                                        router.push('/(tabs)/journey');
+                                    }
+                                }}
+                            >
+                                <Text style={styles.nudgeEmoji}>{card.emoji}</Text>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.nudgeTitle}>{card.title}</Text>
+                                    <Text style={styles.nudgeMessage}>{card.message}</Text>
+                                </View>
+                            </Pressable>
+                        ))}
+                    </View>
+                )}
 
                 {/* Quick Actions */}
                 <View style={styles.section}>
@@ -248,5 +279,24 @@ const styles = StyleSheet.create({
         fontFamily: fonts.body,
         fontSize: 13,
         color: colors.textGhost,
+    },
+    nudgeCard: {
+        backgroundColor: colors.surface, borderRadius: borderRadius.md,
+        padding: spacing.md, flexDirection: 'row', alignItems: 'center',
+        gap: spacing.sm, marginBottom: spacing.sm,
+        borderWidth: 1, borderColor: colors.goldGlow,
+    },
+    nudgeCardTherapist: {
+        borderColor: colors.sapphire + '30',
+        backgroundColor: colors.sapphire + '08',
+    },
+    nudgeEmoji: { fontSize: 28 },
+    nudgeTitle: {
+        fontFamily: fonts.bodySemiBold, fontSize: 15,
+        color: colors.textPrimary,
+    },
+    nudgeMessage: {
+        fontFamily: fonts.body, fontSize: 13,
+        color: colors.textMuted, marginTop: 2,
     },
 });
