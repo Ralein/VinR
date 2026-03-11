@@ -1,10 +1,11 @@
 /**
  * Tab Layout — Bottom tab navigator with Midnight Gold theme
+ * Glass tab bar with gold active indicator
  */
 
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { colors } from '../../constants/theme';
+import { colors, glass, spacing } from '../../constants/theme';
 import MiniPlayer from '../../components/media/MiniPlayer';
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
@@ -14,6 +15,7 @@ function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focu
             <Text style={[styles.tabLabel, { color: focused ? colors.gold : colors.textGhost }]}>
                 {label}
             </Text>
+            {focused && <View style={styles.activeIndicator} />}
         </View>
     );
 }
@@ -25,7 +27,7 @@ export default function TabLayout() {
                 screenOptions={{
                     headerShown: false,
                     tabBarStyle: {
-                        backgroundColor: colors.surface,
+                        backgroundColor: 'rgba(15, 19, 32, 0.95)',
                         borderTopColor: colors.border,
                         borderTopWidth: 1,
                         height: Platform.OS === 'ios' ? 88 : 64,
@@ -87,12 +89,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     emoji: {
-        fontSize: 24,
-        marginBottom: 2,
+        fontSize: 22,
+        marginBottom: 3,
     },
     tabLabel: {
         fontFamily: 'DMSans_400Regular',
         fontSize: 10,
         letterSpacing: 0.5,
+    },
+    activeIndicator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.gold,
+        marginTop: 3,
     },
 });

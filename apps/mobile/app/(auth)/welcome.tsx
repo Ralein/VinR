@@ -2,11 +2,11 @@
  * Welcome Screen — Premium animated splash
  *
  * Features:
- * - Animated gradient background
+ * - Animated gradient background with floating gold particles
  * - VinR logo with spring entrance animation (scale + fade)
- * - "vin" white + "ℛ" gold italic lettermark 64px
- * - Tagline reveal with letter-by-letter stagger
- * - "Begin your comeback →" CTA button with gold glow pulse
+ * - Secondary lavender glow orb for depth
+ * - Tagline reveal with stagger
+ * - "Begin your comeback →" CTA with gold glow pulse
  * - "Already winning? Sign in" secondary link
  */
 
@@ -23,13 +23,56 @@ import Animated, {
     withRepeat,
     withTiming,
     FadeIn,
-    SlideInDown,
+    Easing,
 } from 'react-native-reanimated';
-import { colors, animation } from '../../constants/theme';
+import { colors, gradients, animation, shadows } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 const { width, height } = Dimensions.get('window');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Floating particle dot */
+function Particle({ size, x, y, delay: d }: { size: number; x: number; y: number; delay: number }) {
+    const translateY = useSharedValue(0);
+    const opacity = useSharedValue(0);
+
+    useEffect(() => {
+        opacity.value = withDelay(d, withTiming(0.6, { duration: 1000 }));
+        translateY.value = withDelay(
+            d,
+            withRepeat(
+                withSequence(
+                    withTiming(-20, { duration: 3000, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(20, { duration: 3000, easing: Easing.inOut(Easing.sin) })
+                ),
+                -1,
+                true
+            )
+        );
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        transform: [{ translateY: translateY.value }],
+        opacity: opacity.value,
+    }));
+
+    return (
+        <Animated.View
+            style={[
+                {
+                    position: 'absolute',
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: colors.gold,
+                    left: x,
+                    top: y,
+                },
+                style,
+            ]}
+        />
+    );
+}
 
 export default function WelcomeScreen() {
     const logoScale = useSharedValue(0.3);
@@ -38,6 +81,7 @@ export default function WelcomeScreen() {
     const ctaTranslateY = useSharedValue(60);
     const ctaOpacity = useSharedValue(0);
     const glowOpacity = useSharedValue(0.3);
+    const glowScale = useSharedValue(0.8);
     const ctaScale = useSharedValue(1);
 
     useEffect(() => {
@@ -45,20 +89,31 @@ export default function WelcomeScreen() {
         logoScale.value = withSpring(1, { stiffness: 80, damping: 12 });
         logoOpacity.value = withTiming(1, { duration: 600 });
 
-        // Tagline reveal — delayed
+        // Tagline reveal
         taglineOpacity.value = withDelay(600, withTiming(1, { duration: 800 }));
 
-        // CTA slide up — delayed
+        // CTA slide up
         ctaTranslateY.value = withDelay(1000, withSpring(0, animation.spring));
         ctaOpacity.value = withDelay(1000, withTiming(1, { duration: 500 }));
 
-        // Gold glow pulse — infinite
+        // Gold glow pulse — breathes
         glowOpacity.value = withDelay(
-            1200,
+            400,
             withRepeat(
                 withSequence(
-                    withTiming(0.6, { duration: 1500 }),
-                    withTiming(0.2, { duration: 1500 })
+                    withTiming(0.5, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(0.15, { duration: 2000, easing: Easing.inOut(Easing.sin) })
+                ),
+                -1,
+                true
+            )
+        );
+        glowScale.value = withDelay(
+            400,
+            withRepeat(
+                withSequence(
+                    withTiming(1.1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(0.9, { duration: 2000, easing: Easing.inOut(Easing.sin) })
                 ),
                 -1,
                 true
@@ -85,6 +140,7 @@ export default function WelcomeScreen() {
 
     const glowAnimatedStyle = useAnimatedStyle(() => ({
         opacity: glowOpacity.value,
+        transform: [{ scale: glowScale.value }],
     }));
 
     const handleCTAPress = () => {
@@ -105,14 +161,24 @@ export default function WelcomeScreen() {
         <View style={styles.container}>
             {/* Gradient Background */}
             <LinearGradient
-                colors={['#0A0E1A', colors.void, '#070B14']}
+                colors={[...gradients.void]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
             />
 
-            {/* Decorative glow behind logo */}
+            {/* Floating particles */}
+            <Particle size={4} x={width * 0.15} y={height * 0.2} delay={500} />
+            <Particle size={3} x={width * 0.75} y={height * 0.15} delay={800} />
+            <Particle size={5} x={width * 0.6} y={height * 0.35} delay={1200} />
+            <Particle size={3} x={width * 0.3} y={height * 0.45} delay={1500} />
+            <Particle size={4} x={width * 0.85} y={height * 0.5} delay={2000} />
+
+            {/* Gold glow orb */}
             <Animated.View style={[styles.glowOrb, glowAnimatedStyle]} />
+
+            {/* Lavender secondary glow (depth) */}
+            <Animated.View style={[styles.lavenderOrb, glowAnimatedStyle]} />
 
             {/* Logo */}
             <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
@@ -163,11 +229,20 @@ const styles = StyleSheet.create({
     },
     glowOrb: {
         position: 'absolute',
-        width: 280,
-        height: 280,
-        borderRadius: 140,
+        width: 320,
+        height: 320,
+        borderRadius: 160,
         backgroundColor: colors.goldGlow,
-        top: height * 0.25,
+        top: height * 0.22,
+    },
+    lavenderOrb: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: colors.lavenderGlow,
+        top: height * 0.18,
+        right: -40,
     },
     logoContainer: {
         flexDirection: 'row',
@@ -202,13 +277,9 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gold,
         paddingVertical: 18,
         paddingHorizontal: 48,
-        borderRadius: 14,
+        borderRadius: 16,
         marginBottom: 16,
-        shadowColor: colors.gold,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 24,
-        elevation: 12,
+        ...shadows.gold,
     },
     ctaText: {
         fontFamily: 'DMSans_600SemiBold',

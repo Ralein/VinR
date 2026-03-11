@@ -15,7 +15,7 @@ import { useSignIn } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { colors } from '../../constants/theme';
+import { colors, gradients, shadows, glass, borderRadius, spacing } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 export default function SignInScreen() {
@@ -78,6 +78,12 @@ export default function SignInScreen() {
                     </Pressable>
                 </Animated.View>
 
+                {/* VinR Logo */}
+                <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.logoRow}>
+                    <Text style={styles.logoVin}>vin</Text>
+                    <Text style={styles.logoR}>ℛ</Text>
+                </Animated.View>
+
                 {/* Header */}
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
                     <Text style={styles.title}>Welcome back</Text>
@@ -118,6 +124,11 @@ export default function SignInScreen() {
                         />
                     </View>
 
+                    {/* Forgot Password */}
+                    <Pressable style={styles.forgotLink}>
+                        <Text style={styles.forgotText}>Forgot password?</Text>
+                    </Pressable>
+
                     {/* Sign In Button */}
                     <Pressable
                         style={[styles.signInButton, (!email || !password) && styles.buttonDisabled]}
@@ -144,14 +155,14 @@ export default function SignInScreen() {
                             style={styles.oauthButton}
                             onPress={() => handleOAuth('oauth_google')}
                         >
-                            <Text style={styles.oauthEmoji}>🔵</Text>
+                            <Text style={styles.oauthIcon}>G</Text>
                             <Text style={styles.oauthText}>Google</Text>
                         </Pressable>
                         <Pressable
                             style={styles.oauthButton}
                             onPress={() => handleOAuth('oauth_apple')}
                         >
-                            <Text style={styles.oauthEmoji}>🍎</Text>
+                            <Text style={styles.oauthIcon}></Text>
                             <Text style={styles.oauthText}>Apple</Text>
                         </Pressable>
                     </View>
@@ -176,34 +187,45 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    content: { flex: 1, paddingHorizontal: 24, paddingTop: 60, justifyContent: 'center' },
-    backButton: { marginBottom: 24 },
+    content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: 60, justifyContent: 'center' },
+    backButton: { marginBottom: spacing.lg },
     backText: { fontFamily: 'DMSans_400Regular', color: colors.textMuted, fontSize: 16 },
+    logoRow: {
+        flexDirection: 'row', alignItems: 'baseline',
+        alignSelf: 'center', marginBottom: spacing.lg,
+    },
+    logoVin: {
+        fontFamily: 'PlayfairDisplay_700Bold', fontSize: 42,
+        color: colors.textPrimary, letterSpacing: -1,
+    },
+    logoR: {
+        fontFamily: 'PlayfairDisplay_700Bold', fontSize: 48,
+        color: colors.gold, marginLeft: -4, fontStyle: 'italic',
+    },
     title: {
         fontFamily: 'PlayfairDisplay_700Bold', fontSize: 36,
         color: colors.textPrimary, marginBottom: 8,
     },
     subtitle: {
         fontFamily: 'DMSans_400Regular', fontSize: 16,
-        color: colors.textMuted, marginBottom: 32,
+        color: colors.textSecondary, marginBottom: spacing.xl,
     },
     card: {
-        backgroundColor: 'rgba(15, 19, 32, 0.85)',
-        borderRadius: 20,
-        padding: 24,
+        backgroundColor: glass.background,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
         borderWidth: 1,
-        borderColor: colors.border,
-        backdropFilter: 'blur(20px)',
+        borderColor: glass.border,
     },
-    inputContainer: { marginBottom: 16 },
+    inputContainer: { marginBottom: spacing.md },
     inputLabel: {
         fontFamily: 'DMSans_400Regular', fontSize: 13,
         color: colors.textMuted, marginBottom: 6, letterSpacing: 0.5,
     },
     input: {
         backgroundColor: colors.void,
-        borderRadius: 12,
-        paddingHorizontal: 16,
+        borderRadius: borderRadius.md,
+        paddingHorizontal: spacing.md,
         paddingVertical: 14,
         fontFamily: 'DMSans_400Regular',
         fontSize: 16,
@@ -211,18 +233,20 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
     },
+    forgotLink: { alignSelf: 'flex-end', marginBottom: spacing.sm },
+    forgotText: {
+        fontFamily: 'DMSans_400Regular', fontSize: 13,
+        color: colors.gold,
+    },
     signInButton: {
         backgroundColor: colors.gold,
-        borderRadius: 12,
+        borderRadius: borderRadius.lg,
         paddingVertical: 16,
         alignItems: 'center',
-        marginTop: 8,
-        shadowColor: colors.gold,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
+        marginTop: spacing.sm,
+        ...shadows.gold,
     },
-    buttonDisabled: { opacity: 0.5 },
+    buttonDisabled: { opacity: 0.45 },
     signInButtonText: {
         fontFamily: 'DMSans_600SemiBold', fontSize: 17,
         color: colors.void, letterSpacing: 0.3,
@@ -240,14 +264,16 @@ const styles = StyleSheet.create({
     oauthRow: { flexDirection: 'row', gap: 12 },
     oauthButton: {
         flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: colors.elevated, borderRadius: 12, paddingVertical: 14,
-        borderWidth: 1, borderColor: colors.border, gap: 8,
+        backgroundColor: colors.elevated, borderRadius: borderRadius.md, paddingVertical: 14,
+        borderWidth: 1, borderColor: colors.border, gap: spacing.sm,
     },
-    oauthEmoji: { fontSize: 18 },
+    oauthIcon: {
+        fontSize: 18, fontWeight: '700', color: colors.textPrimary,
+    },
     oauthText: {
         fontFamily: 'DMSans_400Regular', fontSize: 15, color: colors.textPrimary,
     },
-    switchLink: { alignItems: 'center', marginTop: 24, paddingVertical: 12 },
+    switchLink: { alignItems: 'center', marginTop: spacing.lg, paddingVertical: 12 },
     switchText: {
         fontFamily: 'DMSans_400Regular', fontSize: 15, color: colors.textMuted,
     },
