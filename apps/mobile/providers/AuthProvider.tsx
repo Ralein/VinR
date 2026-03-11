@@ -8,6 +8,7 @@
 import React from 'react';
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 
@@ -15,7 +16,7 @@ const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '
  * Secure token cache using expo-secure-store.
  * Clerk uses this to persist session tokens across app restarts.
  */
-const tokenCache = {
+const tokenCache = Platform.OS === 'web' ? undefined : {
     async getToken(key: string): Promise<string | null> {
         try {
             return await SecureStore.getItemAsync(key);
@@ -41,7 +42,7 @@ const tokenCache = {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!CLERK_PUBLISHABLE_KEY) {
-        console.warn('⚠️ EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not set');
+        throw new Error('⚠️ Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env');
     }
 
     return (
