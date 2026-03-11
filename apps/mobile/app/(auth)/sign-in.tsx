@@ -52,7 +52,6 @@ export default function SignInScreen() {
         haptics.medium();
 
         try {
-            const { startOAuthFlow } = await import('@clerk/clerk-expo');
             // OAuth handled by Clerk's built-in flow
             Alert.alert('Coming soon', `${strategy === 'oauth_google' ? 'Google' : 'Apple'} sign-in will be configured next`);
         } catch (err: any) {
