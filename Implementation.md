@@ -66,46 +66,6 @@ RAG KNOWLEDGE BASE (curated US government + validated sources):
   - Harvard Health Publishing — CBT, DBT techniques
   - Mayo Clinic — yoga, breathing, exercise for mental health
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DESIGN SYSTEM — "MIDNIGHT GOLD" AESTHETIC
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Visual Identity:
-  Palette:
-    --void:         #07090F   (primary background)
-    --surface:      #0F1320   (card backgrounds)
-    --elevated:     #161C2E   (modals, sheets)
-    --gold:         #D4A853   (primary brand accent)
-    --gold-light:   #F0C96B   (hover states, highlights)
-    --gold-glow:    rgba(212,168,83,0.15)
-    --emerald:      #4ECBA0   (success, streaks, habits)
-    --sapphire:     #4A90D9   (info, therapist nudge)
-    --crimson:      #E85D5D   (emergency, alerts)
-    --text-primary: #EEF0F7
-    --text-muted:   #7A8099
-    --text-ghost:   #3D4560
-    --border:       rgba(255,255,255,0.07)
-
-Typography:
-    Display:  Playfair Display (serif, weight 700/900) — headings
-    Body:     DM Sans (weight 300/400/600) — all body text
-    Italic:   Cormorant Garamond (light italic) — reflections, quotes
-    Mono:     JetBrains Mono — stats, numbers, streaks
-
-Logo Rendering:
-    "vin" in Playfair Display Bold #EEF0F7
-    "ℛ" in Playfair Display Italic Bold #D4A853 (larger, 
-        slightly overlapping the 'n')
-    Tagline: "Win your life back" in DM Sans 300 tracking-widest
-
-Motion Principles:
-    - Spring animations (stiffness: 100, damping: 14) for 
-      all entrance/exit transitions
-    - Stagger reveals: 80ms delay between list items
-    - Streak milestone: scale bounce + haptic heavy impact
-    - Emergency screen: pulsing red border, 2s cycle
-    - All pressable elements: scale(0.96) on press with haptic light
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PHASE 1 — FOUNDATION (Weeks 1–4) — MVP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
