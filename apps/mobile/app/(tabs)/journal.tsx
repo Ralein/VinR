@@ -5,10 +5,11 @@
 import { useState, useCallback } from 'react';
 import {
     View, Text, ScrollView, TextInput, StyleSheet,
-    ActivityIndicator, Pressable, FlatList,
+    ActivityIndicator, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import { Search, PenLine, BookOpen, CheckCircle2, FileText, BarChart2, ChevronRight } from 'lucide-react-native';
+import { colors, fonts, spacing, glass, borderRadius } from '../../constants/theme';
 import {
     useJournalEntries,
     useJournalCalendar,
@@ -97,7 +98,7 @@ export default function JournalScreen() {
                     style={styles.searchToggle}
                     onPress={() => setShowSearch(!showSearch)}
                 >
-                    <Text style={styles.searchIcon}>🔍</Text>
+                    <Search size={14} color={colors.gold} strokeWidth={2} />
                     <Text style={styles.searchToggleText}>
                         {showSearch ? 'Hide search' : 'Search entries'}
                     </Text>
@@ -144,7 +145,7 @@ export default function JournalScreen() {
                     <View style={styles.section}>
                         <View style={styles.insightCard}>
                             <View style={styles.insightHeader}>
-                                <Text style={styles.insightEmoji}>📊</Text>
+                                <BarChart2 size={15} color={colors.sapphire} strokeWidth={2} />
                                 <Text style={styles.insightLabel}>Weekly Insight</Text>
                             </View>
                             <Text style={styles.insightText}>{weeklyInsight.insight}</Text>
@@ -164,13 +165,14 @@ export default function JournalScreen() {
                         ]}
                         onPress={() => setViewMode('write')}
                     >
+                        <PenLine size={14} color={viewMode === 'write' ? colors.gold : colors.textMuted} strokeWidth={2} />
                         <Text
                             style={[
                                 styles.modeButtonText,
                                 viewMode === 'write' && styles.modeButtonTextActive,
                             ]}
                         >
-                            ✏️ Write
+                            Write
                         </Text>
                     </Pressable>
                     <Pressable
@@ -180,13 +182,14 @@ export default function JournalScreen() {
                         ]}
                         onPress={() => setViewMode('entries')}
                     >
+                        <BookOpen size={14} color={viewMode === 'entries' ? colors.gold : colors.textMuted} strokeWidth={2} />
                         <Text
                             style={[
                                 styles.modeButtonText,
                                 viewMode === 'entries' && styles.modeButtonTextActive,
                             ]}
                         >
-                            📖 Entries
+                            Entries
                         </Text>
                     </Pressable>
                 </View>
@@ -196,7 +199,7 @@ export default function JournalScreen() {
                     <View style={styles.section}>
                         {todayEntry ? (
                             <View style={styles.alreadyDoneCard}>
-                                <Text style={styles.alreadyDoneEmoji}>✅</Text>
+                                <CheckCircle2 size={32} color={colors.emerald} strokeWidth={1.8} />
                                 <Text style={styles.alreadyDoneText}>
                                     You've already journaled today. Beautiful work!
                                 </Text>
@@ -204,7 +207,8 @@ export default function JournalScreen() {
                                     style={styles.viewEntryButton}
                                     onPress={() => setViewMode('entries')}
                                 >
-                                    <Text style={styles.viewEntryText}>View today's entry →</Text>
+                                    <Text style={styles.viewEntryText}>View today's entry</Text>
+                                    <ChevronRight size={14} color={colors.gold} strokeWidth={2} />
                                 </Pressable>
                             </View>
                         ) : (
@@ -236,7 +240,9 @@ export default function JournalScreen() {
                             ))
                         ) : (
                             <View style={styles.emptyState}>
-                                <Text style={styles.emptyEmoji}>📝</Text>
+                                <View style={styles.emptyIconWrap}>
+                                    <FileText size={36} color={colors.textGhost} strokeWidth={1.5} />
+                                </View>
                                 <Text style={styles.emptyText}>
                                     No entries this month yet.{'\n'}Start writing to build your gratitude practice.
                                 </Text>
@@ -267,10 +273,9 @@ const styles = StyleSheet.create({
 
     // Search
     searchToggle: {
-        flexDirection: 'row', alignItems: 'center',
+        flexDirection: 'row', alignItems: 'center', gap: 6,
         marginBottom: spacing.md,
     },
-    searchIcon: { fontSize: 14, marginRight: spacing.xs },
     searchToggleText: {
         fontFamily: fonts.body, fontSize: 14,
         color: colors.gold,
@@ -325,7 +330,7 @@ const styles = StyleSheet.create({
 
     // Mode Toggle
     modeToggle: {
-        flexDirection: 'row', gap: spacing.sm,
+        flexDirection: 'row', gap: spacing.sm, alignItems: 'center',
         marginBottom: spacing.md,
     },
     modeButton: {
@@ -333,6 +338,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', borderRadius: borderRadius.md,
         backgroundColor: colors.surface,
         borderWidth: 1, borderColor: colors.border,
+        flexDirection: 'row', gap: 6, justifyContent: 'center',
     },
     modeButtonActive: {
         backgroundColor: colors.gold + '15',
@@ -349,9 +355,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderRadius: borderRadius.lg,
         padding: spacing.lg, alignItems: 'center',
-        borderWidth: 1, borderColor: colors.emerald + '30',
+        borderWidth: 1, borderColor: colors.emerald + '30', gap: spacing.sm,
     },
-    alreadyDoneEmoji: { fontSize: 32, marginBottom: spacing.sm },
     alreadyDoneText: {
         fontFamily: fonts.body, fontSize: 15,
         color: colors.textPrimary, textAlign: 'center',
@@ -360,6 +365,7 @@ const styles = StyleSheet.create({
     viewEntryButton: {
         paddingVertical: spacing.sm,
         paddingHorizontal: spacing.md,
+        flexDirection: 'row', alignItems: 'center', gap: 4,
     },
     viewEntryText: {
         fontFamily: fonts.bodySemiBold, fontSize: 14,
@@ -373,9 +379,13 @@ const styles = StyleSheet.create({
     },
     emptyState: {
         paddingVertical: spacing['2xl'],
-        alignItems: 'center',
+        alignItems: 'center', gap: spacing.md,
     },
-    emptyEmoji: { fontSize: 40, marginBottom: spacing.md },
+    emptyIconWrap: {
+        width: 72, height: 72, borderRadius: 36,
+        backgroundColor: `${colors.textGhost}0A`,
+        alignItems: 'center', justifyContent: 'center',
+    },
     emptyText: {
         fontFamily: fonts.body, fontSize: 15,
         color: colors.textMuted, textAlign: 'center',

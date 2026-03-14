@@ -1,9 +1,9 @@
 /**
- * Home / Dashboard — Main tab screen
+ * Home / Dashboard — Main tab screen (redesigned)
  *
- * Premium layout: greeting, streak hero card, adaptive nudges,
- * quick actions, media sections, events, and sleep mode.
- * Uses GlassCard components and staggered entrance animations.
+ * Premium layout: AvatarRing greeting, StreakHero card, NudgeCards with
+ * Lucide icons, section headers with vector icons, Sleep Mode with Moon icon.
+ * Zero emoji — all replaced with Lucide vector icons.
  */
 
 import { useState } from 'react';
@@ -11,7 +11,11 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import {
+    Music2, Zap, Headphones, Users, Moon, ChevronRight,
+    Activity, Brain, Sparkles, Wind, Heart, Sun,
+} from 'lucide-react-native';
+import { colors, fonts, spacing, glass, borderRadius, shadows } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
 import { useAdaptiveHome } from '../../hooks/useAdaptive';
@@ -21,6 +25,10 @@ import SleepMode from '../../components/media/SleepMode';
 import EventsList from '../../components/events/EventsList';
 import GlassCard from '../../components/ui/GlassCard';
 import GoldButton from '../../components/ui/GoldButton';
+import AvatarRing from '../../components/ui/AvatarRing';
+import SectionHeader from '../../components/ui/SectionHeader';
+import StreakHero from '../../components/ui/StreakHero';
+import NudgeCard from '../../components/ui/NudgeCard';
 
 function getGreeting(): string {
     const h = new Date().getHours();
@@ -29,11 +37,20 @@ function getGreeting(): string {
     return 'Good evening';
 }
 
+// Map card type/action to Lucide icon
+const NUDGE_ICON_MAP: Record<string, any> = {
+    therapist_directory: Brain,
+    journey: Activity,
+    breathing: Wind,
+    affirmation: Sparkles,
+    default: Heart,
+};
+
 const AUDIO_CATEGORIES = [
-    { category: 'breathing', emoji: '🫁', label: 'Guided Breathing' },
-    { category: 'meditation', emoji: '🧘', label: 'Meditations' },
-    { category: 'sleep', emoji: '🌙', label: 'Sleep Sounds' },
-    { category: 'affirmation', emoji: '☀️', label: 'Morning Affirmations' },
+    { category: 'breathing', Icon: Wind, label: 'Guided Breathing' },
+    { category: 'meditation', Icon: Brain, label: 'Meditations' },
+    { category: 'sleep', Icon: Moon, label: 'Sleep Sounds' },
+    { category: 'affirmation', Icon: Sun, label: 'Morning Affirmations' },
 ];
 
 export default function HomeScreen() {
@@ -47,6 +64,7 @@ export default function HomeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
                 {/* Header Row */}
                 <View style={styles.headerRow}>
                     <View style={styles.headerText}>
@@ -57,37 +75,45 @@ export default function HomeScreen() {
                             Welcome to VinR
                         </Animated.Text>
                     </View>
-                    {/* Profile Avatar */}
                     <Animated.View entering={FadeIn.delay(200).duration(400)}>
-                        <View style={styles.avatarRing}>
-                            <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>👤</Text>
-                            </View>
-                        </View>
+                        <AvatarRing
+                            initials="VR"
+                            size={44}
+                            pulse
+                            style={{ marginTop: 4 }}
+                        />
                     </Animated.View>
                 </View>
 
-                {/* Streak Badge — Hero Card */}
-                <GlassCard accent="gold" delay={200} elevated>
-                    <View style={styles.streakInner}>
-                        <Text style={styles.streakNumber}>0</Text>
-                        <Text style={styles.streakLabel}>day streak 🔥</Text>
-                        <Text style={styles.streakSubtitle}>Complete a check-in to start</Text>
-                    </View>
+                {/* Streak Hero Card */}
+                <GlassCard accent="gold" delay={200} elevated shimmer glow>
+                    <StreakHero
+                        streak={0}
+                        todayDone={false}
+                        weeklyDays={[false, false, false, false, false, false, false]}
+                    />
                 </GlassCard>
 
                 {/* Adaptive Nudge Cards */}
                 {adaptiveData?.nudge_cards && adaptiveData.nudge_cards.length > 0 && (
                     <View style={styles.section}>
-                        {adaptiveData.nudge_cards.map((card: any, i: number) => (
-                            <GlassCard
-                                key={i}
-                                accent={card.type === 'therapist' ? 'sapphire' : 'gold'}
-                                accentBorder
-                                delay={300 + i * 100}
-                            >
-                                <Pressable
-                                    style={styles.nudgeInner}
+                        <SectionHeader
+                            title="For You"
+                            Icon={Sparkles}
+                            iconColor={colors.gold}
+                            delay={280}
+                        />
+                        {adaptiveData.nudge_cards.map((card: any, i: number) => {
+                            const IconComp = NUDGE_ICON_MAP[card.action] ?? NUDGE_ICON_MAP.default;
+                            const isTherapist = card.type === 'therapist';
+                            return (
+                                <NudgeCard
+                                    key={i}
+                                    title={card.title}
+                                    message={card.message}
+                                    Icon={IconComp}
+                                    accent={isTherapist ? 'sapphire' : 'gold'}
+                                    delay={300 + i * 80}
                                     onPress={() => {
                                         if (card.action === 'therapist_directory') {
                                             router.push('/therapist');
@@ -95,42 +121,37 @@ export default function HomeScreen() {
                                             router.push('/(tabs)/journey');
                                         }
                                     }}
-                                >
-                                    <Text style={styles.nudgeEmoji}>{card.emoji}</Text>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.nudgeTitle}>{card.title}</Text>
-                                        <Text style={styles.nudgeMessage}>{card.message}</Text>
-                                    </View>
-                                </Pressable>
-                            </GlassCard>
-                        ))}
+                                />
+                            );
+                        })}
                     </View>
                 )}
 
                 {/* Quick Actions */}
                 <View style={styles.section}>
-                    <Animated.Text entering={FadeInDown.delay(400).duration(400)} style={styles.sectionTitle}>
-                        How are you feeling?
-                    </Animated.Text>
+                    <SectionHeader
+                        title="How are you feeling?"
+                        Icon={Heart}
+                        iconColor={colors.crimson}
+                        delay={400}
+                    />
                     <GoldButton
-                        label="Start a check-in →"
+                        label="Start a check-in"
                         onPress={() => router.push('/(tabs)/checkin')}
                     />
                 </View>
 
                 {/* Today's Habit */}
                 <View style={styles.section}>
-                    <Animated.Text entering={FadeInDown.delay(500).duration(400)} style={styles.sectionTitle}>
-                        Today's Habit
-                    </Animated.Text>
-                    <GlassCard delay={550}>
+                    <SectionHeader title="Today's Habit" Icon={Activity} iconColor={colors.emerald} delay={500} />
+                    <GlassCard delay={550} noAnimation>
                         <View style={styles.habitRow}>
-                            <Text style={styles.habitEmoji}>🧘</Text>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.habitText}>
-                                    Complete a check-in to get your personalized plan
-                                </Text>
+                            <View style={styles.habitIconWrap}>
+                                <Brain size={22} color={colors.lavender} strokeWidth={1.8} />
                             </View>
+                            <Text style={styles.habitText}>
+                                Complete a check-in to get your personalized plan
+                            </Text>
                         </View>
                     </GlassCard>
                 </View>
@@ -138,9 +159,7 @@ export default function HomeScreen() {
                 {/* Your Vibe — YouTube */}
                 {youtubeData && youtubeData.results.length > 0 && (
                     <View style={styles.section}>
-                        <Animated.Text entering={FadeInDown.delay(600).duration(400)} style={styles.sectionTitle}>
-                            🎵 Your Vibe
-                        </Animated.Text>
+                        <SectionHeader title="Your Vibe" Icon={Music2} iconColor={colors.sapphire} delay={600} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {youtubeData.results.map((video: any) => (
                                 <YouTubeCard
@@ -158,9 +177,7 @@ export default function HomeScreen() {
                 {/* Get Fired Up — Motivation */}
                 {motivationData && motivationData.results.length > 0 && (
                     <View style={styles.section}>
-                        <Animated.Text entering={FadeInDown.delay(700).duration(400)} style={styles.sectionTitle}>
-                            🔥 Get Fired Up
-                        </Animated.Text>
+                        <SectionHeader title="Get Fired Up" Icon={Zap} iconColor={colors.gold} delay={700} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {motivationData.results.map((video: any) => (
                                 <YouTubeCard
@@ -175,16 +192,14 @@ export default function HomeScreen() {
                     </View>
                 )}
 
-                {/* Audio Categories */}
+                {/* Audio Categories — Tonight's Wind-down */}
                 <View style={styles.section}>
-                    <Animated.Text entering={FadeInDown.delay(800).duration(400)} style={styles.sectionTitle}>
-                        🎧 Tonight's Wind-down
-                    </Animated.Text>
-                    {AUDIO_CATEGORIES.map((cat, i) => (
+                    <SectionHeader title="Tonight's Wind-down" Icon={Headphones} iconColor={colors.lavender} delay={800} />
+                    {AUDIO_CATEGORIES.map((cat) => (
                         <AudioCategoryCard
                             key={cat.category}
                             category={cat.category}
-                            emoji={cat.emoji}
+                            emoji=""
                             label={cat.label}
                         />
                     ))}
@@ -192,9 +207,7 @@ export default function HomeScreen() {
 
                 {/* Get out & connect — Events */}
                 <View style={styles.section}>
-                    <Animated.Text entering={FadeInDown.delay(900).duration(400)} style={styles.sectionTitle}>
-                        🤝 Get out & connect
-                    </Animated.Text>
+                    <SectionHeader title="Get Out & Connect" Icon={Users} iconColor={colors.emerald} delay={900} />
                     <EventsList
                         events={eventsData?.events || []}
                         isLoading={eventsLoading}
@@ -203,20 +216,19 @@ export default function HomeScreen() {
 
                 {/* Sleep Mode */}
                 <View style={styles.section}>
-                    <GlassCard accent="gold" delay={1000}>
-                        <Pressable
-                            style={styles.sleepRow}
-                            onPress={() => setShowSleepMode(true)}
-                        >
-                            <Text style={styles.sleepEmoji}>🌙</Text>
+                    <GlassCard accent="sapphire" delay={1000} shimmer onPress={() => setShowSleepMode(true)}>
+                        <View style={styles.sleepRow}>
+                            <View style={styles.sleepIconWrap}>
+                                <Moon size={24} color={colors.sapphire} strokeWidth={1.8} />
+                            </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.sleepTitle}>Sleep Mode</Text>
                                 <Text style={styles.sleepSubtitle}>
                                     Dim lights, breathing, auto-stop
                                 </Text>
                             </View>
-                            <Text style={styles.chevron}>→</Text>
-                        </Pressable>
+                            <ChevronRight size={18} color={colors.textGhost} strokeWidth={1.5} />
+                        </View>
                     </GlassCard>
                 </View>
             </ScrollView>
@@ -231,7 +243,7 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
-        paddingBottom: spacing['2xl'] + spacing['2xl'],
+        paddingBottom: 120,
     },
     // Header
     headerRow: {
@@ -243,94 +255,40 @@ const styles = StyleSheet.create({
     headerText: { flex: 1 },
     greeting: {
         fontFamily: fonts.bodyLight,
-        fontSize: 13,
-        color: colors.textMuted,
+        fontSize: 12,
+        color: colors.textGhost,
         letterSpacing: 2,
         textTransform: 'uppercase',
     },
     name: {
         fontFamily: fonts.display,
-        fontSize: 28,
+        fontSize: 26,
         color: colors.textPrimary,
-        marginTop: 4,
-    },
-    avatarRing: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 2,
-        borderColor: colors.gold,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 4,
-    },
-    avatar: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: colors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarText: { fontSize: 18 },
-    // Streak Hero
-    streakInner: {
-        alignItems: 'center',
-        paddingVertical: spacing.sm,
-    },
-    streakNumber: {
-        fontSize: 56,
-        color: colors.gold,
-        fontWeight: '900',
-        lineHeight: 64,
-    },
-    streakLabel: {
-        fontFamily: fonts.body,
-        fontSize: 16,
-        color: colors.textSecondary,
-        marginTop: 2,
-    },
-    streakSubtitle: {
-        fontFamily: fonts.bodyLight,
-        fontSize: 12,
-        color: colors.textGhost,
         marginTop: 4,
     },
     // Sections
     section: { marginTop: spacing.lg },
-    sectionTitle: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 18,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-    },
-    // Nudge
-    nudgeInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-    },
-    nudgeEmoji: { fontSize: 28 },
-    nudgeTitle: {
-        fontFamily: fonts.bodySemiBold, fontSize: 15,
-        color: colors.textPrimary,
-    },
-    nudgeMessage: {
-        fontFamily: fonts.body, fontSize: 13,
-        color: colors.textMuted, marginTop: 2,
-    },
     // Habit
     habitRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
     },
-    habitEmoji: { fontSize: 32 },
+    habitIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: `${colors.lavender}15`,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+    },
     habitText: {
         fontFamily: fonts.body,
         fontSize: 14,
         color: colors.textSecondary,
         lineHeight: 20,
+        flex: 1,
     },
     // Sleep Mode
     sleepRow: {
@@ -338,7 +296,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: spacing.md,
     },
-    sleepEmoji: { fontSize: 32 },
+    sleepIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: `${colors.sapphire}15`,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+    },
     sleepTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
@@ -349,10 +315,5 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: colors.textMuted,
         marginTop: 2,
-    },
-    chevron: {
-        fontFamily: fonts.body,
-        fontSize: 20,
-        color: colors.textGhost,
     },
 });

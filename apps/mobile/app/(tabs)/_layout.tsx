@@ -1,20 +1,46 @@
 /**
- * Tab Layout — Bottom tab navigator with Midnight Gold theme
- * Glass tab bar with gold active indicator
+ * Tab Layout — Premium bottom tab navigator
+ *
+ * Replaces emoji icons with Lucide vector icons + animated indicator dot.
+ * Glass tab bar with gold glow on active icon.
  */
 
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import { Home, Heart, Map, BookOpen, User } from 'lucide-react-native';
+import Animated, {
+    useAnimatedStyle,
+    withSpring,
+} from 'react-native-reanimated';
+import { colors, fonts, spacing, glass } from '../../constants/theme';
 import MiniPlayer from '../../components/media/MiniPlayer';
 
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
+type TabIconProps = {
+    label: string;
+    focused: boolean;
+    Icon: typeof Home;
+};
+
+function TabIcon({ Icon, label, focused }: TabIconProps) {
+    const color = focused ? colors.gold : colors.textGhost;
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: withSpring(focused ? 1.12 : 1, { stiffness: 200, damping: 18 }) }],
+    }));
+
     return (
         <View style={styles.tabIcon}>
-            <Text style={[styles.emoji, { opacity: focused ? 1 : 0.5 }]}>{emoji}</Text>
-            <Text style={[styles.tabLabel, { color: focused ? colors.gold : colors.textGhost }]}>
-                {label}
-            </Text>
+            <Animated.View style={animatedIconStyle}>
+                {focused && (
+                    <View style={styles.iconGlow} />
+                )}
+                <Icon
+                    size={22}
+                    color={color}
+                    strokeWidth={focused ? 2.2 : 1.7}
+                />
+            </Animated.View>
+            <Text style={[styles.tabLabel, { color }]}>{label}</Text>
             {focused && <View style={styles.activeIndicator} />}
         </View>
     );
@@ -27,12 +53,12 @@ export default function TabLayout() {
                 screenOptions={{
                     headerShown: false,
                     tabBarStyle: {
-                        backgroundColor: 'rgba(15, 19, 32, 0.95)',
-                        borderTopColor: colors.border,
+                        backgroundColor: 'rgba(10,13,24,0.97)',
+                        borderTopColor: 'rgba(255,255,255,0.06)',
                         borderTopWidth: 1,
-                        height: Platform.OS === 'ios' ? 88 : 64,
-                        paddingTop: 8,
-                        paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+                        height: Platform.OS === 'ios' ? 88 : 68,
+                        paddingTop: 10,
+                        paddingBottom: Platform.OS === 'ios' ? 28 : 10,
                     },
                     tabBarShowLabel: false,
                 }}
@@ -40,31 +66,41 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="index"
                     options={{
-                        tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Home" focused={focused} />,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={Home} label="Home" focused={focused} />
+                        ),
                     }}
                 />
                 <Tabs.Screen
                     name="checkin"
                     options={{
-                        tabBarIcon: ({ focused }) => <TabIcon emoji="💬" label="Check-in" focused={focused} />,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={Heart} label="Check-in" focused={focused} />
+                        ),
                     }}
                 />
                 <Tabs.Screen
                     name="journey"
                     options={{
-                        tabBarIcon: ({ focused }) => <TabIcon emoji="🔥" label="Journey" focused={focused} />,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={Map} label="Journey" focused={focused} />
+                        ),
                     }}
                 />
                 <Tabs.Screen
                     name="journal"
                     options={{
-                        tabBarIcon: ({ focused }) => <TabIcon emoji="📓" label="Journal" focused={focused} />,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={BookOpen} label="Journal" focused={focused} />
+                        ),
                     }}
                 />
                 <Tabs.Screen
                     name="profile"
                     options={{
-                        tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profile" focused={focused} />,
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={User} label="Profile" focused={focused} />
+                        ),
                     }}
                 />
                 {/* Flow-only screens — hidden from tab bar */}
@@ -87,21 +123,32 @@ const styles = StyleSheet.create({
     tabIcon: {
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    emoji: {
-        fontSize: 22,
-        marginBottom: 3,
+        gap: 3,
     },
     tabLabel: {
-        fontFamily: 'DMSans_400Regular',
+        fontFamily: fonts.body,
         fontSize: 10,
-        letterSpacing: 0.5,
+        letterSpacing: 0.4,
     },
     activeIndicator: {
         width: 4,
         height: 4,
         borderRadius: 2,
         backgroundColor: colors.gold,
-        marginTop: 3,
+        shadowColor: colors.gold,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    iconGlow: {
+        position: 'absolute',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: `${colors.gold}15`,
+        top: -5,
+        left: -5,
+        zIndex: -1,
     },
 });

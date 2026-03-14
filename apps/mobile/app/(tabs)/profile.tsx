@@ -13,7 +13,11 @@ import {
     Dimensions, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import {
+    MessageSquare, CalendarDays, Flame, BookText,
+    BarChart2, TrendingUp,
+} from 'lucide-react-native';
+import { colors, fonts, spacing, glass, borderRadius } from '../../constants/theme';
 import {
     useAnalyticsSummary,
     useAnalyticsTrends,
@@ -172,10 +176,12 @@ function EmotionDonut({ distribution }: { distribution: EmotionSlice[] }) {
 
 // ──────────────────────────── Stat Card ────────────────────────────
 
-function StatCard({ value, label, emoji }: { value: number; label: string; emoji: string }) {
+function StatCard({ value, label, Icon, color }: { value: number; label: string; Icon: any; color: string }) {
     return (
         <View style={statStyles.card}>
-            <Text style={statStyles.emoji}>{emoji}</Text>
+            <View style={[statStyles.iconWrap, { backgroundColor: `${color}15` }]}>
+                <Icon size={18} color={color} strokeWidth={1.8} />
+            </View>
             <Text style={statStyles.value}>{value}</Text>
             <Text style={statStyles.label}>{label}</Text>
         </View>
@@ -187,7 +193,9 @@ function StatCard({ value, label, emoji }: { value: number; label: string; emoji
 function InsightCardView({ insight }: { insight: InsightCard }) {
     return (
         <View style={insightStyles.card}>
-            <Text style={insightStyles.emoji}>{insight.emoji}</Text>
+            <View style={insightStyles.iconWrap}>
+                <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
+            </View>
             <Text style={insightStyles.text}>{insight.text}</Text>
         </View>
     );
@@ -211,7 +219,7 @@ export default function ProfileScreen() {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarEmoji}>👤</Text>
+                        <Flame size={32} color={colors.gold} strokeWidth={1.5} fill={`${colors.gold}25`} />
                     </View>
                     <Text style={styles.title}>My Journey</Text>
                     <Text style={styles.subtitle}>Your wellness analytics</Text>
@@ -227,10 +235,10 @@ export default function ProfileScreen() {
                         {/* Stats Row */}
                         {summary && (
                             <View style={styles.statsRow}>
-                                <StatCard value={summary.total_checkins} label="Check-ins" emoji="💬" />
-                                <StatCard value={summary.total_days_completed} label="Days" emoji="📅" />
-                                <StatCard value={summary.best_streak} label="Best Streak" emoji="🔥" />
-                                <StatCard value={summary.journal_entries} label="Journals" emoji="📓" />
+                                <StatCard value={summary.total_checkins}     label="Check-ins"  Icon={MessageSquare} color={colors.gold} />
+                                <StatCard value={summary.total_days_completed} label="Days"      Icon={CalendarDays}  color={colors.emerald} />
+                                <StatCard value={summary.best_streak}        label="Best Streak" Icon={Flame}         color='#E84545' />
+                                <StatCard value={summary.journal_entries}    label="Journals"   Icon={BookText}      color={colors.sapphire} />
                             </View>
                         )}
 
@@ -286,7 +294,9 @@ export default function ProfileScreen() {
                         {/* Streak Correlation */}
                         {trends?.streak_correlation && trends.streak_correlation.improvement_percent > 0 && (
                             <View style={styles.correlationCard}>
-                                <Text style={styles.correlationEmoji}>📊</Text>
+                                <View style={styles.correlationIconWrap}>
+                                    <BarChart2 size={22} color={colors.emerald} strokeWidth={1.8} />
+                                </View>
                                 <Text style={styles.correlationText}>
                                     You feel{' '}
                                     <Text style={styles.correlationHighlight}>
@@ -322,11 +332,10 @@ const styles = StyleSheet.create({
         alignItems: 'center', paddingTop: spacing.xl, paddingBottom: spacing.lg,
     },
     avatarCircle: {
-        width: 72, height: 72, borderRadius: 36,
-        backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.gold,
+        width: 88, height: 88, borderRadius: 44,
+        backgroundColor: `${colors.gold}10`, borderWidth: 2, borderColor: colors.gold,
         alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md,
     },
-    avatarEmoji: { fontSize: 32 },
     title: {
         fontFamily: fonts.display, fontSize: 28,
         color: colors.textPrimary, marginBottom: 4,
@@ -396,7 +405,12 @@ const styles = StyleSheet.create({
         borderColor: colors.emerald + '30',
         gap: spacing.sm,
     },
-    correlationEmoji: { fontSize: 28 },
+    correlationIconWrap: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: `${colors.emerald}15`,
+        alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+    },
     correlationText: {
         fontFamily: fonts.body, fontSize: 14,
         color: colors.textPrimary, flex: 1,
@@ -474,14 +488,18 @@ const statStyles = StyleSheet.create({
         borderRadius: borderRadius.md, paddingVertical: spacing.md,
         marginHorizontal: 4, borderWidth: 1, borderColor: colors.border,
     },
-    emoji: { fontSize: 20, marginBottom: 4 },
+    iconWrap: {
+        width: 36, height: 36, borderRadius: 18,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 6,
+    },
     value: {
-        fontFamily: fonts.mono, fontSize: 22,
+        fontFamily: fonts.mono, fontSize: 20,
         color: colors.textPrimary,
     },
     label: {
-        fontFamily: fonts.body, fontSize: 11,
-        color: colors.textMuted, marginTop: 2,
+        fontFamily: fonts.body, fontSize: 10,
+        color: colors.textMuted, marginTop: 2, textAlign: 'center',
     },
 });
 
@@ -494,10 +512,15 @@ const insightStyles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.goldGlow,
         gap: spacing.sm,
     },
-    emoji: { fontSize: 24, marginTop: 2 },
+    iconWrap: {
+        width: 34, height: 34, borderRadius: 17,
+        backgroundColor: `${colors.gold}15`,
+        alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+    },
     text: {
         fontFamily: fonts.body, fontSize: 14,
         color: colors.textPrimary, flex: 1,
-        lineHeight: 20,
+        lineHeight: 20, paddingTop: 7,
     },
 });
