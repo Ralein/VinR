@@ -3,7 +3,7 @@
  */
 
 import { Stack } from 'expo-router';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 
 export default function AuthLayout() {
     return (

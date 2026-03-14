@@ -8,7 +8,7 @@ import {
     ActivityIndicator, Pressable, FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import {
     useJournalEntries,
     useJournalCalendar,
@@ -252,7 +252,7 @@ export default function JournalScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.void },
     scrollView: { flex: 1 },
-    scrollContent: { padding: spacing.lg, paddingBottom: spacing.xxl },
+    scrollContent: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
 
     // Header
     header: { marginBottom: spacing.lg },
@@ -368,11 +368,11 @@ const styles = StyleSheet.create({
 
     // Loading & Empty
     loadingContainer: {
-        paddingVertical: spacing.xxl,
+        paddingVertical: spacing['2xl'],
         alignItems: 'center',
     },
     emptyState: {
-        paddingVertical: spacing.xxl,
+        paddingVertical: spacing['2xl'],
         alignItems: 'center',
     },
     emptyEmoji: { fontSize: 40, marginBottom: spacing.md },

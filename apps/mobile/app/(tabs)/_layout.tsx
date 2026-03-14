@@ -5,7 +5,7 @@
 
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { colors, glass, spacing } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import MiniPlayer from '../../components/media/MiniPlayer';
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {

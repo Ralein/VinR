@@ -17,7 +17,7 @@ import Animated, {
     withTiming,
     FadeIn,
 } from 'react-native-reanimated';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import { useCheckin } from '../../hooks/useCheckin';

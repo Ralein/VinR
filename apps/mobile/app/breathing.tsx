@@ -1,335 +1,298 @@
-/**
- * Interactive Breathing Guide — Animated circle with technique selection
- *
- * Techniques: Box, 4-7-8, Coherent, Physiological Sigh
- * Gold glow circle synced to breathing pattern
- */
-
-import { useState, useEffect, useRef } from 'react';
-import {
-    View, Text, Pressable, StyleSheet, Animated,
-    Easing, Dimensions,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { colors, fonts, spacing, borderRadius } from '../constants/theme';
-import {
-    BREATHING_TECHNIQUES,
-    DURATIONS,
-    useLogSession,
-    BreathingTechnique,
-} from '../hooks/useBreathing';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withRepeat,
+    withSequence,
+    Easing,
+    interpolate,
+    FadeIn,
+    FadeOut,
+} from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { X, Play, Pause, Wind } from 'lucide-react-native';
+import GlassCard from '../components/ui/GlassCard';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
+import { haptics } from '../services/haptics';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CIRCLE_SIZE = SCREEN_WIDTH * 0.55;
 
-type Phase = 'inhale' | 'hold_in' | 'exhale' | 'hold_out' | 'idle' | 'complete';
-
-const PHASE_LABELS: Record<Phase, string> = {
-    inhale: 'Breathe in',
-    hold_in: 'Hold',
-    exhale: 'Breathe out',
-    hold_out: 'Hold',
-    idle: 'Ready?',
-    complete: 'Well done 🎉',
-};
+type Phase = 'inhale' | 'hold' | 'exhale' | 'idle';
 
 export default function BreathingScreen() {
-    const router = useRouter();
-    const [technique, setTechnique] = useState<BreathingTechnique>(BREATHING_TECHNIQUES[0]);
-    const [durationIdx, setDurationIdx] = useState(0);
     const [isActive, setIsActive] = useState(false);
     const [phase, setPhase] = useState<Phase>('idle');
-    const [elapsed, setElapsed] = useState(0);
+    const [timeRemaining, setTimeRemaining] = useState(60 * 3); // 3 minutes total
 
-    const scaleAnim = useRef(new Animated.Value(0.5)).current;
-    const opacityAnim = useRef(new Animated.Value(0.4)).current;
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const logSession = useLogSession();
+    // Animation values
+    const progress = useSharedValue(0); // 0 to 1
+    const pulse = useSharedValue(1);
 
-    const totalDuration = DURATIONS[durationIdx].seconds;
-    const pattern = technique.pattern; // [inhale, hold, exhale, hold]
-
-    useEffect(() => {
-        if (!isActive) return;
-
-        const cycleTime = pattern.reduce((a, b) => a + b, 0) * 1000;
-        let currentElapsed = 0;
-
-        const interv = setInterval(() => {
-            currentElapsed += 1;
-            setElapsed(currentElapsed);
-
-            if (currentElapsed >= totalDuration) {
-                setIsActive(false);
-                setPhase('complete');
-                clearInterval(interv);
-                // Log the session
-                logSession.mutate({
-                    session_type: 'breathing',
-                    duration_seconds: totalDuration,
-                    technique: technique.id,
-                });
-                return;
-            }
-
-            // Determine current phase within the cycle
-            const posInCycle = (currentElapsed * 1000) % cycleTime;
-            let accumulated = 0;
-            const phases: Phase[] = ['inhale', 'hold_in', 'exhale', 'hold_out'];
-
-            for (let i = 0; i < 4; i++) {
-                accumulated += pattern[i] * 1000;
-                if (posInCycle < accumulated) {
-                    setPhase(phases[i]);
-                    break;
-                }
-            }
-        }, 1000);
-
-        timerRef.current = interv;
-        return () => clearInterval(interv);
-    }, [isActive, technique, totalDuration]);
-
-    // Animate circle based on phase
-    useEffect(() => {
-        if (phase === 'inhale') {
-            Animated.timing(scaleAnim, {
-                toValue: 1,
-                duration: pattern[0] * 1000,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(opacityAnim, {
-                toValue: 0.8,
-                duration: pattern[0] * 1000,
-                useNativeDriver: true,
-            }).start();
-        } else if (phase === 'exhale') {
-            Animated.timing(scaleAnim, {
-                toValue: 0.5,
-                duration: pattern[2] * 1000,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: true,
-            }).start();
-            Animated.timing(opacityAnim, {
-                toValue: 0.4,
-                duration: pattern[2] * 1000,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [phase]);
-
-    const formatTime = (s: number) => {
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        return `${m}:${sec.toString().padStart(2, '0')}`;
+    // Box breathing config (4s inhale, 4s hold, 4s exhale, 4s hold... wait, classic box is 4-4-4-4, let's just do 4-in, 7-hold, 8-out or simpler relax 4-in, 6-out)
+    // We'll do a simple relax: 4s inhale, 2s hold, 6s exhale
+    const config = {
+        inhale: 4000,
+        hold: 2000,
+        exhale: 6000,
     };
 
-    const handleStartStop = () => {
-        if (phase === 'complete') {
-            setPhase('idle');
-            setElapsed(0);
-            return;
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isActive && timeRemaining > 0) {
+            interval = setInterval(() => {
+                setTimeRemaining((t) => t - 1);
+            }, 1000);
+        } else if (timeRemaining === 0) {
+            stopExercise();
         }
+        return () => clearInterval(interval);
+    }, [isActive, timeRemaining]);
+
+    const runCycle = () => {
+        if (!isActive) return;
+
+        // Inhale
+        setPhase('inhale');
+        haptics.medium();
+        progress.value = withTiming(1, { duration: config.inhale, easing: Easing.inOut(Easing.quad) }, (finished) => {
+            if (finished && isActive) {
+                // Hold
+                setPhase('hold');
+                progress.value = withTiming(1, { duration: config.hold }, (holdFinished) => {
+                    if (holdFinished && isActive) {
+                        // Exhale
+                        setPhase('exhale');
+                        haptics.medium();
+                        progress.value = withTiming(0, { duration: config.exhale, easing: Easing.inOut(Easing.quad) }, (exhaleFinished) => {
+                            if (exhaleFinished && isActive) {
+                                // Loop
+                                runCycle();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    };
+
+    useEffect(() => {
         if (isActive) {
-            setIsActive(false);
-            setPhase('idle');
-            setElapsed(0);
-            if (timerRef.current) clearInterval(timerRef.current);
+            runCycle();
+            // Subtle pulse ring animation
+            pulse.value = withRepeat(
+                withSequence(
+                    withTiming(1.2, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+                ),
+                -1,
+                true
+            ) as any;
         } else {
-            setIsActive(true);
-            setPhase('inhale');
+            setPhase('idle');
+            progress.value = withTiming(0, { duration: 1000 });
+            pulse.value = withTiming(1, { duration: 1000 });
+        }
+    }, [isActive]);
+
+    const toggleExercise = () => {
+        haptics.light();
+        setIsActive(!isActive);
+    };
+
+    const stopExercise = () => {
+        haptics.light();
+        setIsActive(false);
+    };
+
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const circleStyle = useAnimatedStyle(() => {
+        const scale = interpolate(progress.value, [0, 1], [1, 2.5]);
+        const opacity = interpolate(progress.value, [0, 1], [0.3, 0.8]);
+        return {
+            transform: [{ scale }],
+            opacity,
+        };
+    });
+
+    const outerRingStyle = useAnimatedStyle(() => {
+        const scale = interpolate(progress.value, [0, 1], [1.2, 3]);
+        const opacity = interpolate(progress.value, [0, 1], [0.1, 0.4]);
+        return {
+            transform: [{ scale: scale * pulse.value }],
+            opacity,
+        };
+    });
+
+    const textStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(progress.value, [0.1, 0.5, 0.9], [0, 1, 0]),
+            transform: [{ translateY: interpolate(progress.value, [0, 1], [10, -10]) }],
+        };
+    });
+
+    const getPhaseText = () => {
+        switch (phase) {
+            case 'inhale': return 'Breathe In...';
+            case 'hold': return 'Hold...';
+            case 'exhale': return 'Breathe Out...';
+            default: return 'Ready?';
         }
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header */}
+            <LinearGradient
+                colors={[colors.void, 'rgba(167, 139, 250, 0.1)']}
+                style={StyleSheet.absoluteFillObject}
+            />
+            
             <View style={styles.header}>
-                <Pressable onPress={() => router.back()}>
-                    <Text style={styles.backText}>← Back</Text>
+                <Pressable onPress={() => router.back()} style={styles.closeButton}>
+                    <X size={24} color={colors.textPrimary} />
                 </Pressable>
-                <Text style={styles.title}>Breathing Guide</Text>
-                <View style={{ width: 50 }} />
+                <Text style={styles.timer}>{formatTime(timeRemaining)}</Text>
+                <View style={styles.placeholder} />
             </View>
 
-            {/* Technique Selector */}
-            {!isActive && phase !== 'complete' && (
-                <View style={styles.techniqueRow}>
-                    {BREATHING_TECHNIQUES.map((t) => (
-                        <Pressable
-                            key={t.id}
-                            style={[
-                                styles.techniqueChip,
-                                technique.id === t.id && styles.techniqueChipActive,
-                            ]}
-                            onPress={() => setTechnique(t)}
-                        >
-                            <Text style={styles.techniqueEmoji}>{t.emoji}</Text>
-                            <Text
-                                style={[
-                                    styles.techniqueName,
-                                    technique.id === t.id && styles.techniqueNameActive,
-                                ]}
-                            >
-                                {t.name}
-                            </Text>
-                        </Pressable>
-                    ))}
+            <View style={styles.content}>
+                {/* Visualizer */}
+                <View style={styles.visualizerContainer}>
+                    <Animated.View style={[styles.outerRing, outerRingStyle]} />
+                    <Animated.View style={[styles.circle, circleStyle]}>
+                        <LinearGradient
+                            colors={[colors.sapphire, '#818CF8']}
+                            style={StyleSheet.absoluteFillObject}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        />
+                    </Animated.View>
+
+                    <View style={styles.textOverlay}>
+                        {!isActive ? (
+                            <Animated.View entering={FadeIn} exiting={FadeOut}>
+                                <Text style={styles.idleText}>Tap to begin</Text>
+                            </Animated.View>
+                        ) : (
+                            <Text style={styles.phaseText}>{getPhaseText()}</Text>
+                        )}
+                    </View>
                 </View>
-            )}
 
-            {/* Description */}
-            {!isActive && phase !== 'complete' && (
-                <Text style={styles.description}>{technique.description}</Text>
-            )}
-
-            {/* Breathing Circle */}
-            <View style={styles.circleWrapper}>
-                <Animated.View
-                    style={[
-                        styles.circle,
-                        {
-                            transform: [{ scale: scaleAnim }],
-                            opacity: opacityAnim,
-                        },
-                    ]}
-                />
-                <View style={styles.circleContent}>
-                    <Text style={styles.phaseLabel}>{PHASE_LABELS[phase]}</Text>
-                    {isActive && (
-                        <Text style={styles.timer}>
-                            {formatTime(totalDuration - elapsed)}
-                        </Text>
-                    )}
+                {/* Controls */}
+                <View style={styles.controls}>
+                    <Pressable
+                        style={styles.playButton}
+                        onPress={toggleExercise}
+                    >
+                        {isActive ? (
+                            <Pause size={32} color={colors.void} fill={colors.void} />
+                        ) : (
+                            <Play size={32} color={colors.void} fill={colors.void} style={{ marginLeft: 4 }} />
+                        )}
+                    </Pressable>
                 </View>
             </View>
-
-            {/* Duration Selector */}
-            {!isActive && phase !== 'complete' && (
-                <View style={styles.durationRow}>
-                    {DURATIONS.map((d, i) => (
-                        <Pressable
-                            key={d.label}
-                            style={[
-                                styles.durationChip,
-                                durationIdx === i && styles.durationChipActive,
-                            ]}
-                            onPress={() => setDurationIdx(i)}
-                        >
-                            <Text
-                                style={[
-                                    styles.durationText,
-                                    durationIdx === i && styles.durationTextActive,
-                                ]}
-                            >
-                                {d.label}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </View>
-            )}
-
-            {/* Start / Stop */}
-            <Pressable
-                style={[
-                    styles.actionButton,
-                    isActive && styles.actionButtonStop,
-                    phase === 'complete' && styles.actionButtonComplete,
-                ]}
-                onPress={handleStartStop}
-            >
-                <Text style={styles.actionText}>
-                    {phase === 'complete' ? 'Done ✓' : isActive ? 'Stop' : 'Begin'}
-                </Text>
-            </Pressable>
         </SafeAreaView>
     );
 }
 
+const CIRCLE_SIZE = 120;
+
 const styles = StyleSheet.create({
     container: {
-        flex: 1, backgroundColor: colors.void,
-        alignItems: 'center',
+        flex: 1,
+        backgroundColor: colors.void,
     },
     header: {
-        flexDirection: 'row', justifyContent: 'space-between',
-        alignItems: 'center', width: '100%',
-        paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.md,
     },
-    backText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.gold },
-    title: {
-        fontFamily: fonts.display, fontSize: 22, color: colors.textPrimary,
-    },
-    techniqueRow: {
-        flexDirection: 'row', flexWrap: 'wrap',
-        justifyContent: 'center', gap: spacing.sm,
-        paddingHorizontal: spacing.lg, marginTop: spacing.lg,
-    },
-    techniqueChip: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-        borderRadius: borderRadius.full, backgroundColor: colors.surface,
-        borderWidth: 1, borderColor: colors.border,
-    },
-    techniqueChipActive: {
-        backgroundColor: colors.goldGlow, borderColor: colors.gold,
-    },
-    techniqueEmoji: { fontSize: 16 },
-    techniqueName: {
-        fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.textMuted,
-    },
-    techniqueNameActive: { color: colors.gold },
-    description: {
-        fontFamily: fonts.body, fontSize: 14, color: colors.textMuted,
-        textAlign: 'center', paddingHorizontal: 40,
-        marginTop: spacing.md,
-    },
-    circleWrapper: {
-        width: CIRCLE_SIZE + 40, height: CIRCLE_SIZE + 40,
-        alignItems: 'center', justifyContent: 'center',
-        marginVertical: spacing.xl,
-    },
-    circle: {
-        width: CIRCLE_SIZE, height: CIRCLE_SIZE,
-        borderRadius: CIRCLE_SIZE / 2,
-        backgroundColor: colors.gold,
-        position: 'absolute',
-    },
-    circleContent: {
-        alignItems: 'center', justifyContent: 'center',
-    },
-    phaseLabel: {
-        fontFamily: fonts.display, fontSize: 24,
-        color: colors.void, textAlign: 'center',
+    closeButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timer: {
-        fontFamily: fonts.mono, fontSize: 18,
-        color: colors.void, marginTop: 4,
+        fontFamily: 'DMSans_700Bold',
+        fontSize: 20,
+        color: colors.textPrimary,
+        fontVariant: ['tabular-nums'],
     },
-    durationRow: {
-        flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg,
+    placeholder: {
+        width: 44,
     },
-    durationChip: {
-        paddingHorizontal: spacing.lg, paddingVertical: spacing.sm,
-        borderRadius: borderRadius.full, backgroundColor: colors.surface,
-        borderWidth: 1, borderColor: colors.border,
+    content: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    durationChipActive: {
-        backgroundColor: colors.goldGlow, borderColor: colors.gold,
+    visualizerContainer: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_WIDTH,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    durationText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.textMuted,
+    outerRing: {
+        position: 'absolute',
+        width: CIRCLE_SIZE,
+        height: CIRCLE_SIZE,
+        borderRadius: CIRCLE_SIZE / 2,
+        backgroundColor: colors.sapphire,
     },
-    durationTextActive: { color: colors.gold },
-    actionButton: {
-        paddingHorizontal: 48, paddingVertical: spacing.md,
-        borderRadius: borderRadius.full, backgroundColor: colors.gold,
+    circle: {
+        position: 'absolute',
+        width: CIRCLE_SIZE,
+        height: CIRCLE_SIZE,
+        borderRadius: CIRCLE_SIZE / 2,
+        overflow: 'hidden',
     },
-    actionButtonStop: { backgroundColor: colors.crimson },
-    actionButtonComplete: { backgroundColor: colors.emerald },
-    actionText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 18, color: colors.void,
+    textOverlay: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    idleText: {
+        ...typography.h3,
+        color: colors.textPrimary,
+        opacity: 0.8,
+    },
+    phaseText: {
+        ...typography.h1,
+        color: colors.textPrimary,
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
+    },
+    controls: {
+        marginTop: 60,
+    },
+    playButton: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: colors.textPrimary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: colors.textPrimary,
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+        shadowOffset: { width: 0, height: 8 },
     },
 });
