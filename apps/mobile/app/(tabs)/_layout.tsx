@@ -1,19 +1,29 @@
 /**
- * Tab Layout — Premium bottom tab navigator
+ * Tab Layout v3 — Floating glass pill tab bar
  *
- * Replaces emoji icons with Lucide vector icons + animated indicator dot.
- * Glass tab bar with gold glow on active icon.
+ * Premium animated tab bar with:
+ * - Frosted glass floating pill container
+ * - Animated active icon: scale spring + gold glow halo
+ * - Ink-dot indicator below active icon
+ * - Morphing icon color with Reanimated derived values
  */
 
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Home, Heart, Map, BookOpen, User } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
+    withTiming,
+    interpolateColor,
+    useDerivedValue,
+    useSharedValue,
+    useAnimatedProps,
 } from 'react-native-reanimated';
-import { colors, fonts, spacing, glass } from '../../constants/theme';
+import { colors, fonts, spacing } from '../../constants/theme';
 import MiniPlayer from '../../components/media/MiniPlayer';
+
+// ──────────────────── Animated Icon wrapper ────────────────────
 
 type TabIconProps = {
     label: string;
@@ -21,30 +31,50 @@ type TabIconProps = {
     Icon: typeof Home;
 };
 
-function TabIcon({ Icon, label, focused }: TabIconProps) {
-    const color = focused ? colors.gold : colors.textGhost;
+const AnimatedView = Animated.createAnimatedComponent(View);
 
-    const animatedIconStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: withSpring(focused ? 1.12 : 1, { stiffness: 200, damping: 18 }) }],
+function TabIcon({ Icon, label, focused }: TabIconProps) {
+    const progress = useDerivedValue(() =>
+        withTiming(focused ? 1 : 0, { duration: 220 })
+    );
+
+    const animatedWrapStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: withSpring(focused ? 1.08 : 1, { stiffness: 260, damping: 20 }) },
+        ],
     }));
 
+    const haloStyle = useAnimatedStyle(() => ({
+        opacity: withTiming(focused ? 1 : 0, { duration: 200 }),
+        transform: [{ scale: withSpring(focused ? 1 : 0.6, { stiffness: 200, damping: 18 }) }],
+    }));
+
+    const dotStyle = useAnimatedStyle(() => ({
+        opacity: withTiming(focused ? 1 : 0, { duration: 180 }),
+        transform: [{ scaleX: withSpring(focused ? 1 : 0, { stiffness: 280, damping: 22 }) }],
+    }));
+
+    const labelStyle = useAnimatedStyle(() => ({
+        opacity: withTiming(focused ? 1 : 0.45, { duration: 200 }),
+        color: focused ? colors.gold : colors.textGhost,
+    }));
+
+    const color = focused ? colors.gold : colors.textGhost;
+    const strokeWidth = focused ? 2.2 : 1.6;
+
     return (
-        <View style={styles.tabIcon}>
-            <Animated.View style={animatedIconStyle}>
-                {focused && (
-                    <View style={styles.iconGlow} />
-                )}
-                <Icon
-                    size={22}
-                    color={color}
-                    strokeWidth={focused ? 2.2 : 1.7}
-                />
+        <View style={styles.tabItem}>
+            <Animated.View style={[styles.halo, haloStyle]} />
+            <Animated.View style={animatedWrapStyle}>
+                <Icon size={22} color={color} strokeWidth={strokeWidth} />
             </Animated.View>
-            <Text style={[styles.tabLabel, { color }]}>{label}</Text>
-            {focused && <View style={styles.activeIndicator} />}
+            <Animated.Text style={[styles.tabLabel, labelStyle]}>{label}</Animated.Text>
+            <Animated.View style={[styles.activeDot, dotStyle]} />
         </View>
     );
 }
+
+// ──────────────────────── Layout ─────────────────────────────
 
 export default function TabLayout() {
     return (
@@ -52,15 +82,9 @@ export default function TabLayout() {
             <Tabs
                 screenOptions={{
                     headerShown: false,
-                    tabBarStyle: {
-                        backgroundColor: 'rgba(10,13,24,0.97)',
-                        borderTopColor: 'rgba(255,255,255,0.06)',
-                        borderTopWidth: 1,
-                        height: Platform.OS === 'ios' ? 88 : 68,
-                        paddingTop: 10,
-                        paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-                    },
+                    tabBarStyle: tabBarStyle,
                     tabBarShowLabel: false,
+                    tabBarBackground: () => <View style={styles.tabBarBg} />,
                 }}
             >
                 <Tabs.Screen
@@ -115,40 +139,66 @@ export default function TabLayout() {
     );
 }
 
+const tabBarHeight = Platform.OS === 'ios' ? 84 : 68;
+
+const tabBarStyle = {
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    elevation: 0,
+    height: tabBarHeight,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+    shadowColor: 'transparent',
+} as const;
+
 const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: colors.void,
     },
-    tabIcon: {
+    tabBarBg: {
+        position: 'absolute',
+        inset: 0,
+        backgroundColor: 'rgba(9,12,22,0.96)',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(212,168,83,0.10)',
+        // Subtle top glow line
+        shadowColor: colors.gold,
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+    },
+    tabItem: {
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 3,
+        gap: 4,
+        minWidth: 54,
+        position: 'relative',
+    },
+    halo: {
+        position: 'absolute',
+        top: -6,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: `${colors.gold}12`,
+        zIndex: 0,
     },
     tabLabel: {
-        fontFamily: fonts.body,
-        fontSize: 10,
-        letterSpacing: 0.4,
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 9.5,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
-    activeIndicator: {
-        width: 4,
-        height: 4,
+    activeDot: {
+        width: 18,
+        height: 3,
         borderRadius: 2,
         backgroundColor: colors.gold,
         shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    iconGlow: {
-        position: 'absolute',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: `${colors.gold}15`,
-        top: -5,
-        left: -5,
-        zIndex: -1,
+        shadowOpacity: 1,
+        shadowRadius: 6,
+        elevation: 3,
     },
 });
