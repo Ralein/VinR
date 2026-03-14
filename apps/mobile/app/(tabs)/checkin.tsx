@@ -1,55 +1,45 @@
 /**
- * Check-in Screen — Daily mood check-in
+ * Check-in Screen — Daily mood check-in (redesigned)
  *
- * Mood grid (8 chips), text area with rotating placeholders,
- * char counter, privacy badge, "Analyze my feelings →" CTA.
+ * MoodOrb grid (8 moods with Lucide icons), text area with rotating placeholders,
+ * char counter, privacy badge with Lock icon, "Analyze my feelings" CTA.
+ * Zero emoji — all replaced with Lucide vector icons.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, Pressable, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Animated, {
-    FadeInDown,
-    useAnimatedStyle,
-    withSpring,
-} from 'react-native-reanimated';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+    Cloud, Zap, Sun, CloudRain, Target, BatteryLow,
+    Heart, Flame, Lock, ArrowRight,
+} from 'lucide-react-native';
+import { colors, fonts, spacing, glass, borderRadius, animation } from '../../constants/theme';
 import { config } from '../../constants/config';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
+import MoodOrb, { type MoodOption } from '../../components/ui/MoodOrb';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function MoodChip({ emoji, label, value, isSelected, onPress, index }: {
-    emoji: string; label: string; value: string;
-    isSelected: boolean; onPress: () => void; index: number;
-}) {
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: withSpring(isSelected ? 1.05 : 1, animation.spring) }],
-        borderColor: isSelected ? colors.gold : colors.border,
-        borderWidth: isSelected ? 2 : 1,
-        backgroundColor: isSelected ? 'rgba(212,168,83,0.12)' : colors.surface,
-    }));
-
-    return (
-        <AnimatedPressable onPress={onPress} style={[styles.moodChip, animatedStyle]}>
-            <Animated.View entering={FadeInDown.delay(100 + index * 60).duration(400)}>
-                <Text style={styles.moodEmoji}>{emoji}</Text>
-                <Text style={[styles.moodLabel, isSelected && styles.moodLabelActive]}>
-                    {label}
-                </Text>
-            </Animated.View>
-        </AnimatedPressable>
-    );
-}
+// Mood options with Lucide icons and accent colors
+const MOOD_OPTIONS: MoodOption[] = [
+    { value: 'calm',       label: 'Calm',      Icon: Cloud,     color: colors.sapphire },
+    { value: 'anxious',    label: 'Anxious',   Icon: Zap,       color: colors.gold },
+    { value: 'happy',      label: 'Happy',     Icon: Sun,       color: '#F5C842' },
+    { value: 'sad',        label: 'Sad',       Icon: CloudRain, color: '#7AB5E8' },
+    { value: 'focused',    label: 'Focused',   Icon: Target,    color: colors.emerald },
+    { value: 'tired',      label: 'Tired',     Icon: BatteryLow,color: colors.lavender },
+    { value: 'grateful',   label: 'Grateful',  Icon: Heart,     color: colors.crimson },
+    { value: 'frustrated', label: 'Frustrated',Icon: Flame,    color: '#E84545' },
+];
 
 export default function CheckinScreen() {
     const { selectedMood, setMood, inputText, setText } = useCheckinStore();
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
+    const [textFocused, setTextFocused] = useState(false);
     const canSubmit = selectedMood !== null;
 
     // Rotate placeholders every 4 seconds
@@ -63,7 +53,6 @@ export default function CheckinScreen() {
     }, []);
 
     const handleMoodSelect = (value: string) => {
-        haptics.selection();
         setMood(value);
     };
 
@@ -85,33 +74,42 @@ export default function CheckinScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Header */}
-                    <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+                    <Animated.View entering={FadeInDown.delay(80).duration(450)}>
                         <Text style={styles.title}>How are you feeling?</Text>
                         <Text style={styles.subtitle}>
-                            Select your mood and tell us what's on your mind
+                            Select your mood — we'll personalize your experience
                         </Text>
                     </Animated.View>
 
-                    {/* Mood Grid */}
-                    <View style={styles.moodGrid}>
-                        {config.MOOD_TAGS.map((mood, index) => (
-                            <MoodChip
-                                key={mood.value}
-                                {...mood}
-                                index={index}
-                                isSelected={selectedMood === mood.value}
-                                onPress={() => handleMoodSelect(mood.value)}
-                            />
-                        ))}
-                    </View>
+                    {/* Mood Orb Grid */}
+                    <Animated.View
+                        entering={FadeInDown.delay(180).duration(450)}
+                        style={styles.moodSection}
+                    >
+                        <MoodOrb
+                            moods={MOOD_OPTIONS}
+                            selected={selectedMood}
+                            onSelect={handleMoodSelect}
+                            columns={4}
+                        />
+                    </Animated.View>
 
                     {/* Text Area */}
                     <Animated.View
-                        entering={FadeInDown.delay(600).duration(500)}
+                        entering={FadeInDown.delay(500).duration(450)}
                         style={styles.textAreaWrapper}
                     >
                         <TextInput
-                            style={styles.textArea}
+                            style={[
+                                styles.textArea,
+                                textFocused && {
+                                    borderColor: `${colors.gold}60`,
+                                    shadowColor: colors.gold,
+                                    shadowOpacity: 0.15,
+                                    shadowRadius: 12,
+                                    shadowOffset: { width: 0, height: 0 },
+                                },
+                            ]}
                             placeholder={config.CHECKIN_PLACEHOLDERS[placeholderIndex]}
                             placeholderTextColor={colors.textGhost}
                             value={inputText}
@@ -119,6 +117,8 @@ export default function CheckinScreen() {
                             multiline
                             maxLength={config.CHECKIN_TEXT_MAX_LENGTH}
                             textAlignVertical="top"
+                            onFocus={() => setTextFocused(true)}
+                            onBlur={() => setTextFocused(false)}
                         />
                         <Text style={styles.charCounter}>
                             {inputText.length}/{config.CHECKIN_TEXT_MAX_LENGTH}
@@ -126,23 +126,30 @@ export default function CheckinScreen() {
                     </Animated.View>
 
                     {/* Submit Button */}
-                    <Animated.View entering={FadeInDown.delay(800).duration(400)}>
+                    <Animated.View entering={FadeInDown.delay(700).duration(400)}>
                         <Pressable
                             style={[styles.submitButton, !canSubmit && styles.buttonDisabled]}
                             onPress={handleSubmit}
                             disabled={!canSubmit}
                         >
-                            <Text style={styles.submitText}>Analyze my feelings →</Text>
+                            <Text style={styles.submitText}>Analyze my feelings</Text>
+                            <ArrowRight
+                                size={18}
+                                color={colors.void}
+                                strokeWidth={2.2}
+                                style={{ opacity: canSubmit ? 1 : 0.5 }}
+                            />
                         </Pressable>
                     </Animated.View>
 
                     {/* Privacy Badge */}
-                    <Animated.Text
-                        entering={FadeInDown.delay(1000).duration(400)}
+                    <Animated.View
+                        entering={FadeInDown.delay(900).duration(400)}
                         style={styles.privacyBadge}
                     >
-                        🔒 Private & secure — your data is encrypted
-                    </Animated.Text>
+                        <Lock size={12} color={colors.textGhost} strokeWidth={2} />
+                        <Text style={styles.privacyText}>Private & secure — your data is encrypted</Text>
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -153,78 +160,59 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.void },
     flex: { flex: 1 },
     content: {
-        paddingHorizontal: 24,
-        paddingTop: 24,
-        paddingBottom: 32,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.lg,
+        paddingBottom: 40,
     },
     title: {
-        fontFamily: 'PlayfairDisplay_700Bold',
+        fontFamily: fonts.display,
         fontSize: 30,
         color: colors.textPrimary,
         marginBottom: 8,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 16,
+        fontFamily: fonts.body,
+        fontSize: 15,
         color: colors.textMuted,
         marginBottom: 28,
+        lineHeight: 22,
     },
-    moodGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
+    moodSection: {
         marginBottom: 28,
-    },
-    moodChip: {
-        width: '22.5%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 14,
-        borderRadius: 14,
-        gap: 4,
-    },
-    moodEmoji: {
-        fontSize: 26,
-        textAlign: 'center',
-    },
-    moodLabel: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 11,
-        color: colors.textMuted,
-        textAlign: 'center',
-    },
-    moodLabelActive: {
-        color: colors.gold,
-        fontFamily: 'DMSans_600SemiBold',
     },
     textAreaWrapper: {
         marginBottom: 24,
     },
     textArea: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
+        backgroundColor: glass.background,
+        borderRadius: borderRadius.lg,
         padding: 18,
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 16,
+        fontFamily: fonts.body,
+        fontSize: 15,
         color: colors.textPrimary,
         borderWidth: 1,
         borderColor: colors.border,
         minHeight: 120,
         lineHeight: 24,
+        elevation: 2,
     },
     charCounter: {
-        fontFamily: 'DMSans_300Light',
+        fontFamily: fonts.bodyLight,
         fontSize: 12,
         color: colors.textGhost,
         textAlign: 'right',
-        marginTop: 6,
+        marginTop: 8,
     },
     submitButton: {
         backgroundColor: colors.gold,
-        borderRadius: 14,
+        borderRadius: borderRadius.md,
         paddingVertical: 18,
         alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 16,
+        flexDirection: 'row',
+        gap: 8,
         shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
@@ -235,13 +223,19 @@ const styles = StyleSheet.create({
         opacity: 0.4,
     },
     submitText: {
-        fontFamily: 'DMSans_600SemiBold',
+        fontFamily: fonts.bodySemiBold,
         fontSize: 17,
         color: colors.void,
         letterSpacing: 0.3,
     },
     privacyBadge: {
-        fontFamily: 'DMSans_300Light',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+    },
+    privacyText: {
+        fontFamily: fonts.bodyLight,
         fontSize: 12,
         color: colors.textGhost,
         textAlign: 'center',
