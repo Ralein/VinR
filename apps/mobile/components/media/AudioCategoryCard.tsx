@@ -1,13 +1,16 @@
 /**
- * AudioCategoryCard v2 — Icon-based header (no emoji)
+ * AudioCategoryCard v3 — Premium with graceful fallback
  *
- * Accepts an Icon (Lucide) component instead of an emoji string.
- * Track items: Play icon + music note accent. Loading/empty states polished.
+ * Shows audio tracks from the backend. When the API fails or returns
+ * no tracks, renders beautiful placeholder cards so the UI never
+ * looks empty.
  */
 
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
-import { Play, Music, Radio } from 'lucide-react-native';
+import Animated, {
+    useAnimatedStyle, withSpring, useSharedValue, FadeInDown,
+} from 'react-native-reanimated';
+import { Play, Music, Radio, Wifi, WifiOff, Clock } from 'lucide-react-native';
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useAudioLibrary, usePlayTrack, type AudioTrack } from '../../hooks/useMedia';
 
@@ -18,9 +21,33 @@ interface AudioCategoryCardProps {
     /** Accent color for the icon circle */
     iconColor?: string;
     label: string;
-    /** @deprecated — pass Icon instead */
-    emoji?: string;
+    /** Placeholder tracks to show when API is unavailable */
+    placeholderTracks?: Array<{ title: string; duration: string }>;
 }
+
+// Default placeholder tracks shown when the backend is unavailable
+const FALLBACK_TRACKS: Record<string, Array<{ title: string; duration: string }>> = {
+    sleep: [
+        { title: 'Gentle Rain', duration: '30 min' },
+        { title: 'Ocean Waves', duration: '45 min' },
+        { title: 'White Noise', duration: '60 min' },
+    ],
+    breathing: [
+        { title: 'Box Breathing (4-4-4-4)', duration: '5 min' },
+        { title: '4-7-8 Breathing', duration: '5 min' },
+        { title: 'Coherent Breathing', duration: '10 min' },
+    ],
+    meditation: [
+        { title: 'Quick Calm', duration: '5 min' },
+        { title: 'Mindful Reset', duration: '10 min' },
+        { title: 'Deep Presence', duration: '15 min' },
+    ],
+    affirmation: [
+        { title: 'Morning Power', duration: '3 min' },
+        { title: 'I Am Enough', duration: '5 min' },
+        { title: 'Peace Within', duration: '3 min' },
+    ],
+};
 
 function TrackItem({ track, onPlay }: { track: AudioTrack; onPlay: (t: AudioTrack) => void }) {
     const scale = useSharedValue(1);
@@ -50,33 +77,98 @@ function TrackItem({ track, onPlay }: { track: AudioTrack; onPlay: (t: AudioTrac
     );
 }
 
+function PlaceholderTrackItem({
+    title, duration, index,
+}: { title: string; duration: string; index: number }) {
+    return (
+        <Animated.View
+            entering={FadeInDown.delay(index * 60).duration(400)}
+            style={styles.trackItem}
+        >
+            <View style={styles.trackIconWrap}>
+                <Music size={14} color={colors.textGhost} strokeWidth={1.8} />
+            </View>
+            <View style={styles.trackInfo}>
+                <Text style={styles.trackTitle} numberOfLines={1}>{title}</Text>
+                <View style={styles.durationRow}>
+                    <Clock size={10} color={colors.textGhost} strokeWidth={1.8} />
+                    <Text style={styles.trackDuration}>{duration}</Text>
+                </View>
+            </View>
+            <View style={[styles.playBtn, styles.playBtnOffline]}>
+                <Play size={12} color={colors.textGhost} strokeWidth={2} />
+            </View>
+        </Animated.View>
+    );
+}
+
 export default function AudioCategoryCard({
     category, Icon, iconColor, label,
 }: AudioCategoryCardProps) {
-    const { data, isLoading } = useAudioLibrary(category);
+    const { data, isLoading, isError } = useAudioLibrary(category);
     const playTrack = usePlayTrack();
     const accentColor = iconColor ?? colors.gold;
     const IconComp = Icon ?? Radio;
 
+    const fallback = FALLBACK_TRACKS[category] ?? [];
+
     return (
         <View style={styles.container}>
+            {/* Header */}
             <View style={styles.header}>
-                <View style={[styles.iconCircle, { backgroundColor: `${accentColor}15` }]}>
+                <View style={[styles.iconCircle, { backgroundColor: `${accentColor}18` }]}>
                     <IconComp size={18} color={accentColor} strokeWidth={1.8} />
                 </View>
                 <Text style={styles.headerLabel}>{label}</Text>
+                {(isError || (!isLoading && !data?.tracks?.length)) && (
+                    <View style={styles.offlineBadge}>
+                        <WifiOff size={10} color={colors.textGhost} strokeWidth={2} />
+                        <Text style={styles.offlineBadgeText}>Offline</Text>
+                    </View>
+                )}
             </View>
 
+            {/* Content */}
             {isLoading ? (
-                <Text style={styles.loadingText}>Loading...</Text>
+                /* Skeleton loader */
+                <View>
+                    {[0, 1, 2].map((i) => (
+                        <View key={i} style={[styles.trackItem, styles.skeleton]}>
+                            <View style={[styles.trackIconWrap, styles.skeletonBox]} />
+                            <View style={styles.trackInfo}>
+                                <View style={[styles.skeletonLine, { width: '70%' }]} />
+                                <View style={[styles.skeletonLine, { width: '35%', marginTop: 5 }]} />
+                            </View>
+                        </View>
+                    ))}
+                </View>
             ) : data?.tracks && data.tracks.length > 0 ? (
+                /* Live tracks from API */
                 <View>
                     {data.tracks.map((track) => (
                         <TrackItem key={track.id} track={track} onPlay={playTrack} />
                     ))}
                 </View>
             ) : (
-                <Text style={styles.emptyText}>No tracks available</Text>
+                /* Fallback tracks — shown when offline or API returns empty */
+                <View>
+                    {fallback.map((item, i) => (
+                        <PlaceholderTrackItem
+                            key={item.title}
+                            title={item.title}
+                            duration={item.duration}
+                            index={i}
+                        />
+                    ))}
+                    {isError && (
+                        <View style={styles.offlineNote}>
+                            <Wifi size={12} color={colors.textGhost} strokeWidth={1.8} />
+                            <Text style={styles.offlineNoteText}>
+                                Connect to stream audio
+                            </Text>
+                        </View>
+                    )}
+                </View>
             )}
         </View>
     );
@@ -105,6 +197,21 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bodySemiBold,
         fontSize: 15,
         color: colors.textPrimary,
+        flex: 1,
+    },
+    offlineBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: `${colors.textGhost}15`,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: borderRadius.sm,
+    },
+    offlineBadgeText: {
+        fontFamily: fonts.body,
+        fontSize: 10,
+        color: colors.textGhost,
     },
     trackItem: {
         flexDirection: 'row',
@@ -125,25 +232,48 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.textPrimary,
     },
+    durationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2,
+    },
     trackDuration: {
         fontFamily: fonts.body,
         fontSize: 11,
         color: colors.textGhost,
-        marginTop: 1,
     },
     playBtn: {
         width: 28, height: 28, borderRadius: 14,
         backgroundColor: `${colors.gold}15`,
         alignItems: 'center', justifyContent: 'center',
     },
-    loadingText: {
-        fontFamily: fonts.body,
-        fontSize: 13,
-        color: colors.textGhost,
+    playBtnOffline: {
+        backgroundColor: colors.elevated,
     },
-    emptyText: {
+    // Skeleton
+    skeleton: {
+        opacity: 0.6,
+    },
+    skeletonBox: {
+        backgroundColor: colors.elevated,
+    },
+    skeletonLine: {
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: colors.elevated,
+    },
+    // Offline note
+    offlineNote: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingTop: spacing.sm,
+    },
+    offlineNoteText: {
         fontFamily: fonts.body,
-        fontSize: 13,
+        fontSize: 12,
         color: colors.textGhost,
         fontStyle: 'italic',
     },

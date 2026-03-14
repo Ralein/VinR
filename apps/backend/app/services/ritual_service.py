@@ -180,12 +180,12 @@ def _get_streak_message(current_streak: int) -> str:
     if current_streak == 0:
         return "Start fresh today — no judgment, just forward."
     elif current_streak < 5:
-        return f"Day {current_streak} — you're building momentum!"
+        return f"Day {current_streak} — you're building momentum."
     elif current_streak < 10:
-        return f"Day {current_streak} — you're on a roll! 🌱"
+        return f"Day {current_streak} — you're on a roll."
     elif current_streak < 15:
-        return f"Day {current_streak} — halfway hero! 🌿"
+        return f"Day {current_streak} — halfway to a powerful habit."
     elif current_streak < 21:
-        return f"Day {current_streak} — almost there! 🌸"
+        return f"Day {current_streak} — almost there. Keep going."
     else:
-        return f"Day {current_streak} — YOU ARE A WINNER! 🏆"
+        return f"Day {current_streak} — you are unstoppable."

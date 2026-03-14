@@ -11,26 +11,26 @@ settings = get_settings()
 
 AUDIO_CATALOG = {
     "sleep": [
-        {"id": "sleep-rain", "title": "Gentle Rain", "artist": "VinR Sounds", "duration_label": "30 min", "duration_seconds": 1800, "thumbnail_emoji": "🌧️"},
-        {"id": "sleep-ocean", "title": "Ocean Waves", "artist": "VinR Sounds", "duration_label": "45 min", "duration_seconds": 2700, "thumbnail_emoji": "🌊"},
-        {"id": "sleep-whitenoise", "title": "White Noise", "artist": "VinR Sounds", "duration_label": "60 min", "duration_seconds": 3600, "thumbnail_emoji": "☁️"},
-        {"id": "sleep-forest", "title": "Forest Night", "artist": "VinR Sounds", "duration_label": "30 min", "duration_seconds": 1800, "thumbnail_emoji": "🌲"},
-        {"id": "sleep-binaural", "title": "Binaural Beats (Delta)", "artist": "VinR Sounds", "duration_label": "45 min", "duration_seconds": 2700, "thumbnail_emoji": "🔮"},
+        {"id": "sleep-rain", "title": "Gentle Rain", "artist": "VinR Sounds", "duration_label": "30 min", "duration_seconds": 1800, "thumbnail_emoji": "rain", "url": None},
+        {"id": "sleep-ocean", "title": "Ocean Waves", "artist": "VinR Sounds", "duration_label": "45 min", "duration_seconds": 2700, "thumbnail_emoji": "ocean", "url": None},
+        {"id": "sleep-whitenoise", "title": "White Noise", "artist": "VinR Sounds", "duration_label": "60 min", "duration_seconds": 3600, "thumbnail_emoji": "cloud", "url": None},
+        {"id": "sleep-forest", "title": "Forest Night", "artist": "VinR Sounds", "duration_label": "30 min", "duration_seconds": 1800, "thumbnail_emoji": "forest", "url": None},
+        {"id": "sleep-binaural", "title": "Binaural Beats (Delta)", "artist": "VinR Sounds", "duration_label": "45 min", "duration_seconds": 2700, "thumbnail_emoji": "binaural", "url": None},
     ],
     "breathing": [
-        {"id": "breath-box", "title": "Box Breathing (4-4-4-4)", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "📦"},
-        {"id": "breath-478", "title": "4-7-8 Breathing", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "🫁"},
-        {"id": "breath-coherent", "title": "Coherent Breathing (5-5)", "artist": "VinR Guide", "duration_label": "10 min", "duration_seconds": 600, "thumbnail_emoji": "🌬️"},
+        {"id": "breath-box", "title": "Box Breathing (4-4-4-4)", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "box", "url": None},
+        {"id": "breath-478", "title": "4-7-8 Breathing", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "breath", "url": None},
+        {"id": "breath-coherent", "title": "Coherent Breathing (5-5)", "artist": "VinR Guide", "duration_label": "10 min", "duration_seconds": 600, "thumbnail_emoji": "coherent", "url": None},
     ],
     "meditation": [
-        {"id": "med-5min", "title": "Quick Calm", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "🧘"},
-        {"id": "med-10min", "title": "Mindful Reset", "artist": "VinR Guide", "duration_label": "10 min", "duration_seconds": 600, "thumbnail_emoji": "🧘‍♀️"},
-        {"id": "med-15min", "title": "Deep Presence", "artist": "VinR Guide", "duration_label": "15 min", "duration_seconds": 900, "thumbnail_emoji": "🕉️"},
+        {"id": "med-5min", "title": "Quick Calm", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "calm", "url": None},
+        {"id": "med-10min", "title": "Mindful Reset", "artist": "VinR Guide", "duration_label": "10 min", "duration_seconds": 600, "thumbnail_emoji": "mindful", "url": None},
+        {"id": "med-15min", "title": "Deep Presence", "artist": "VinR Guide", "duration_label": "15 min", "duration_seconds": 900, "thumbnail_emoji": "deep", "url": None},
     ],
     "affirmation": [
-        {"id": "affirm-morning", "title": "Morning Power", "artist": "VinR Guide", "duration_label": "3 min", "duration_seconds": 180, "thumbnail_emoji": "☀️"},
-        {"id": "affirm-confidence", "title": "I Am Enough", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "💪"},
-        {"id": "affirm-calm", "title": "Peace Within", "artist": "VinR Guide", "duration_label": "3 min", "duration_seconds": 180, "thumbnail_emoji": "🕊️"},
+        {"id": "affirm-morning", "title": "Morning Power", "artist": "VinR Guide", "duration_label": "3 min", "duration_seconds": 180, "thumbnail_emoji": "morning", "url": None},
+        {"id": "affirm-confidence", "title": "I Am Enough", "artist": "VinR Guide", "duration_label": "5 min", "duration_seconds": 300, "thumbnail_emoji": "confidence", "url": None},
+        {"id": "affirm-calm", "title": "Peace Within", "artist": "VinR Guide", "duration_label": "3 min", "duration_seconds": 180, "thumbnail_emoji": "peace", "url": None},
     ],
 }
 
