@@ -25,7 +25,7 @@ import Animated, {
     FadeIn,
     Easing,
 } from 'react-native-reanimated';
-import { colors, gradients, animation, shadows } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 const { width, height } = Dimensions.get('window');

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, fonts, spacing, borderRadius } from '../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 
 interface GroundingStep {
     count: number;
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     // Complete screen
     completeContainer: {
         alignItems: 'center', paddingHorizontal: spacing.xl,
-        paddingTop: spacing.xxl,
+        paddingTop: spacing['2xl'],
     },
     completeEmoji: { fontSize: 56, marginBottom: spacing.md },
     completeTitle: {

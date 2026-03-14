@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, fonts, spacing, borderRadius } from '../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 import { useEveningWindDown } from '../hooks/useRituals';
 
 const MOOD_OPTIONS = [
@@ -128,7 +128,7 @@ export default function EveningScreen() {
                         <Text style={styles.sectionTitle}>🌙 Sleep Music</Text>
                         <Pressable
                             style={styles.sleepCard}
-                            onPress={() => router.push('/(tabs)/index')}
+                            onPress={() => router.push('/')}
                         >
                             <Text style={styles.sleepEmoji}>🎵</Text>
                             <View style={{ flex: 1 }}>

@@ -10,7 +10,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import { InstructionSheet } from '../../components/checkin/InstructionSheet';

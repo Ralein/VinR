@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { colors, fonts, spacing, borderRadius } from '../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 import { useTherapistDirectory, TherapistProvider, WhyTherapy } from '../hooks/useAdaptive';
 
 const SPECIALTIES = ['all', 'anxiety', 'depression', 'stress', 'trauma', 'relationships'];

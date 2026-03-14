@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: spacing.xxl,
+        marginTop: spacing['2xl'],
         marginBottom: spacing.lg,
         borderWidth: 1,
         borderColor: colors.gold + '30',

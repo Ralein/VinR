@@ -58,6 +58,17 @@ export const fonts = {
     mono: 'JetBrainsMono_400Regular',
 } as const;
 
+export const typography = {
+    h1: { fontFamily: fonts.display, fontSize: 32, lineHeight: 40, color: colors.textPrimary },
+    h2: { fontFamily: fonts.display, fontSize: 24, lineHeight: 32, color: colors.textPrimary },
+    h3: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28, color: colors.textPrimary },
+    h4: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, color: colors.textPrimary },
+    body: { fontFamily: fonts.body, fontSize: 16, lineHeight: 24, color: colors.textPrimary },
+    bodySm: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.textPrimary },
+    caption: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
+    label: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: colors.textMuted, textTransform: 'uppercase' as const },
+} as const;
+
 export const spacing = {
     '2xs': 2,
     xs: 4,
@@ -156,3 +167,4 @@ export const theme: Theme = {
     shadows,
     gradients,
 };
+export const designSystem = theme;

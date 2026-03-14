@@ -13,7 +13,7 @@ import { useSignUp } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 export default function SignUpScreen() {

@@ -17,7 +17,7 @@ import Animated, {
     useAnimatedStyle,
     withSpring,
 } from 'react-native-reanimated';
-import { colors, animation } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { config } from '../../constants/config';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';

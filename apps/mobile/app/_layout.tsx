@@ -19,7 +19,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuth } from '@clerk/clerk-expo';
 import { AuthProvider } from '../providers/AuthProvider';
 import { QueryProvider } from '../providers/QueryProvider';
-import { colors } from '../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 
 // Keep splash screen visible while loading fonts
 SplashScreen.preventAutoHideAsync();

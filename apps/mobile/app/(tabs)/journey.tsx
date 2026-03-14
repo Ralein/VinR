@@ -19,7 +19,7 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 import { useStreakStore } from '../../stores/streakStore';
 import { useActiveStreak, useCompleteDay } from '../../hooks/useStreak';
