@@ -662,3 +662,4 @@ a $10M-funded mental health startup built it?" If not,
 redesign until it does.
 
 VinR doesn't compete on features. It wins on follow-through.
+
