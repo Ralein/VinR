@@ -1,70 +1,74 @@
-"""Clerk JWT authentication middleware.
+"""Custom JWT authentication and password hashing."""
 
-Validates JWTs issued by Clerk using JWKS (RS256).
-Clerk tokens use RS256 with rotating keys fetched from the JWKS endpoint.
-"""
-
-import httpx
+from datetime import datetime, timedelta
+from typing import Any
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import jwt
-from jwt import PyJWKClient
+from passlib.context import CryptContext
+
 from app.core.config import get_settings
 
 settings = get_settings()
 security = HTTPBearer()
 
-# Cache the JWKS client (handles key rotation automatically)
-_jwks_client: PyJWKClient | None = None
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def get_jwks_client() -> PyJWKClient:
-    """Get or create a cached JWKS client for Clerk key verification."""
-    global _jwks_client
-    if _jwks_client is None and settings.CLERK_JWKS_URL:
-        _jwks_client = PyJWKClient(settings.CLERK_JWKS_URL)
-    return _jwks_client
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against its hash."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password: str) -> str:
+    """Hash a password for storing."""
+    return pwd_context.hash(password)
+
+
+def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+    """Create a short-lived JWT access token."""
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
+
+
+def create_refresh_token(subject: str | Any) -> str:
+    """Create a long-lived JWT refresh token."""
+    expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
     """
-    Validate Clerk JWT token and return decoded payload.
-
-    Clerk JWTs use RS256 with JWKS for key rotation.
-
+    Validate JWT access token and return decoded payload.
+    
     Returns the user payload containing:
-    - sub: Clerk user ID (e.g., user_2abc123)
-    - email: user email (in session claims)
-    - azp: authorized party (your frontend URL)
+    - sub: user ID
     """
     token = credentials.credentials
 
     try:
-        jwks_client = get_jwks_client()
-
-        if jwks_client is None:
-            # Fallback: if JWKS not configured, try basic decode (dev mode)
-            payload = jwt.decode(
-                token,
-                options={"verify_signature": False},
-                algorithms=["RS256"],
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=["HS256"]
+        )
+        
+        if payload.get("type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
             )
-        else:
-            # Production: verify with Clerk's JWKS
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["RS256"],
-                issuer=settings.CLERK_ISSUER or None,
-                options={
-                    "verify_iss": bool(settings.CLERK_ISSUER),
-                    "verify_aud": False,  # Clerk doesn't always set aud
-                },
-            )
-
+            
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(
@@ -88,3 +92,4 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication failed: {str(e)}",
         )
+

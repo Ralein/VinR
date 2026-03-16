@@ -12,7 +12,7 @@ import {
     View, Text, TextInput, Pressable, StyleSheet,
     KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
-import { useSignIn } from '@clerk/clerk-expo';
+import { AuthService } from '../../services/auth';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -20,36 +20,28 @@ import { colors, fonts, spacing, glass, typography, borderRadius, animation, sha
 import { haptics } from '../../services/haptics';
 
 export default function SignInScreen() {
-    const { signIn, setActive, isLoaded } = useSignIn();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSignIn = async () => {
-        if (!isLoaded || !email || !password) return;
+        if (!email || !password) return;
         haptics.medium();
         setLoading(true);
 
         try {
-            const result = await signIn.create({
-                identifier: email,
-                password,
-            });
-
-            if (result.status === 'complete') {
-                await setActive({ session: result.createdSessionId });
-                haptics.success();
-            }
+            await AuthService.signIn(email, password);
+            haptics.success();
+            // Automatically redirected by layout
         } catch (err: any) {
             haptics.error();
-            Alert.alert('Sign In Failed', err.errors?.[0]?.message || 'Please try again');
+            Alert.alert('Sign In Failed', err.response?.data?.error || err.message || 'Please try again');
         } finally {
             setLoading(false);
         }
     };
 
     const handleOAuth = async (strategy: 'oauth_google' | 'oauth_apple') => {
-        if (!isLoaded) return;
         haptics.medium();
 
         try {
