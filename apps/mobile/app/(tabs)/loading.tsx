@@ -7,7 +7,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import VinRLogo from '../../components/ui/VinRLogo';
 import { router } from 'expo-router';
 import Animated, {
     useSharedValue,
@@ -128,8 +129,7 @@ export default function LoadingScreen() {
 
             {/* Logo */}
             <Animated.View style={[styles.logoWrap, logoAnimatedStyle]}>
-                <Text style={styles.logoVin}>vin</Text>
-                <Text style={styles.logoR}>ℛ</Text>
+                <VinRLogo size="lg" />
             </Animated.View>
 
             {/* Subtitle */}
@@ -166,22 +166,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.goldGlow,
     },
     logoWrap: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
+        alignItems: 'center',
         marginBottom: 16,
-    },
-    logoVin: {
-        fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 56,
-        color: colors.textPrimary,
-        letterSpacing: -2,
-    },
-    logoR: {
-        fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 64,
-        color: colors.gold,
-        marginLeft: -4,
-        fontStyle: 'italic',
     },
     subtitle: {
         fontFamily: 'DMSans_400Regular',
