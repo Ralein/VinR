@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import VinRLogo from '../../components/ui/VinRLogo';
 import {
     View, Text, TextInput, Pressable, StyleSheet,
     KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
@@ -80,8 +81,7 @@ export default function SignInScreen() {
 
                 {/* VinR Logo */}
                 <Animated.View entering={FadeInDown.delay(50).duration(400)} style={styles.logoRow}>
-                    <Text style={styles.logoVin}>vin</Text>
-                    <Text style={styles.logoR}>ℛ</Text>
+                    <VinRLogo size="md" />
                 </Animated.View>
 
                 {/* Header */}
@@ -191,16 +191,8 @@ const styles = StyleSheet.create({
     backButton: { marginBottom: spacing.lg },
     backText: { fontFamily: 'DMSans_400Regular', color: colors.textMuted, fontSize: 16 },
     logoRow: {
-        flexDirection: 'row', alignItems: 'baseline',
+        alignItems: 'center',
         alignSelf: 'center', marginBottom: spacing.lg,
-    },
-    logoVin: {
-        fontFamily: 'PlayfairDisplay_700Bold', fontSize: 42,
-        color: colors.textPrimary, letterSpacing: -1,
-    },
-    logoR: {
-        fontFamily: 'PlayfairDisplay_700Bold', fontSize: 48,
-        color: colors.gold, marginLeft: -4, fontStyle: 'italic',
     },
     title: {
         fontFamily: 'PlayfairDisplay_700Bold', fontSize: 36,

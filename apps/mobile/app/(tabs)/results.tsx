@@ -10,6 +10,10 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import {
+    Wind, Layers, Activity, Moon, Heart, Star,
+    Zap, ChevronRight, Leaf, Sparkles,
+} from 'lucide-react-native';
 import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
@@ -26,18 +30,36 @@ interface ReliefItem {
     source: string;
 }
 
+// Map category strings → Lucide icon components
+const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
+    breathing:    Wind,
+    grounding:    Layers,
+    movement:     Activity,
+    sleep:        Moon,
+    mindfulness:  Sparkles,
+    gratitude:    Heart,
+    habit:        Leaf,
+    meditation:   Star,
+};
+function getCategoryIcon(category: string): React.ElementType {
+    return CATEGORY_ICON_MAP[category.toLowerCase()] ?? Zap;
+}
+
 function TechniqueCard({ item, onPress, index }: {
     item: ReliefItem; onPress: () => void; index: number;
 }) {
+    const Icon = getCategoryIcon(item.category);
     return (
         <Animated.View entering={FadeInDown.delay(200 + index * 100).duration(400)}>
             <Pressable style={styles.techniqueCard} onPress={onPress}>
-                <Text style={styles.techniqueEmoji}>{item.emoji}</Text>
+                <View style={styles.techniqueIconWrap}>
+                    <Icon size={20} color={colors.gold} strokeWidth={1.8} />
+                </View>
                 <View style={styles.techniqueInfo}>
                     <Text style={styles.techniqueName}>{item.name}</Text>
                     <Text style={styles.techniqueDuration}>{item.duration} • {item.category}</Text>
                 </View>
-                <Text style={styles.techniqueArrow}>→</Text>
+                <ChevronRight size={18} color={colors.textGhost} strokeWidth={1.5} />
             </Pressable>
         </Animated.View>
     );
@@ -100,7 +122,7 @@ export default function ResultsScreen() {
 
                 {/* Therapist Nudge */}
                 <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.therapistBanner}>
-                    <Text style={styles.therapistEmoji}>💙</Text>
+                    <Heart size={18} color={colors.sapphire} strokeWidth={1.8} />
                     <Text style={styles.therapistText}>{plan.therapistNote}</Text>
                 </Animated.View>
 
@@ -108,7 +130,8 @@ export default function ResultsScreen() {
                 <Animated.View entering={FadeInDown.delay(600).duration(400)}>
                     <View style={styles.pathwayHeader}>
                         <View style={[styles.pathwayDot, { backgroundColor: colors.gold }]} />
-                        <Text style={styles.pathwayTitle}>⚡ Immediate Relief</Text>
+                        <Zap size={15} color={colors.gold} strokeWidth={2} style={{ marginRight: 4 }} />
+                        <Text style={styles.pathwayTitle}>Immediate Relief</Text>
                     </View>
                     <View style={[styles.pathwayCard, styles.goldBorder]}>
                         {plan.immediateRelief.map((item, index) => (
@@ -126,7 +149,8 @@ export default function ResultsScreen() {
                 <Animated.View entering={FadeInDown.delay(800).duration(400)}>
                     <View style={styles.pathwayHeader}>
                         <View style={[styles.pathwayDot, { backgroundColor: colors.emerald }]} />
-                        <Text style={styles.pathwayTitle}>🌱 21-Day Daily Habits</Text>
+                        <Leaf size={15} color={colors.emerald} strokeWidth={2} style={{ marginRight: 4 }} />
+                        <Text style={styles.pathwayTitle}>21-Day Daily Habits</Text>
                     </View>
                     <View style={[styles.pathwayCard, styles.emeraldBorder]}>
                         {plan.dailyHabits.map((item, index) => (
@@ -240,7 +264,6 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(74,144,217,0.2)',
         marginBottom: 28,
     },
-    therapistEmoji: { fontSize: 20 },
     therapistText: {
         fontFamily: 'DMSans_400Regular',
         fontSize: 14,
@@ -252,7 +275,7 @@ const styles = StyleSheet.create({
     pathwayHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
         marginBottom: 12,
     },
     pathwayDot: {
@@ -264,6 +287,7 @@ const styles = StyleSheet.create({
         fontFamily: 'DMSans_600SemiBold',
         fontSize: 17,
         color: colors.textPrimary,
+        flex: 1,
     },
     pathwayCard: {
         backgroundColor: colors.surface,
@@ -286,8 +310,15 @@ const styles = StyleSheet.create({
         padding: 14,
         gap: 14,
     },
-    techniqueEmoji: {
-        fontSize: 28,
+    techniqueIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: `${colors.gold}14`,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: `${colors.gold}22`,
     },
     techniqueInfo: {
         flex: 1,

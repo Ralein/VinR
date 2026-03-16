@@ -12,6 +12,7 @@
 
 import { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import VinRLogo from '../../components/ui/VinRLogo';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -182,8 +183,7 @@ export default function WelcomeScreen() {
 
             {/* Logo */}
             <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-                <Text style={styles.logoVin}>vin</Text>
-                <Text style={styles.logoR}>ℛ</Text>
+                <VinRLogo size="xl" glow />
             </Animated.View>
 
             {/* Tagline */}
@@ -245,22 +245,8 @@ const styles = StyleSheet.create({
         right: -40,
     },
     logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
         marginBottom: 12,
-    },
-    logoVin: {
-        fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 72,
-        color: colors.textPrimary,
-        letterSpacing: -2,
-    },
-    logoR: {
-        fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 82,
-        color: colors.gold,
-        marginLeft: -6,
-        fontStyle: 'italic',
+        alignItems: 'center',
     },
     tagline: {
         fontFamily: 'DMSans_300Light',
