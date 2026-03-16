@@ -20,11 +20,21 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # Clerk Auth
-    CLERK_SECRET_KEY: str = ""
-    CLERK_PUBLISHABLE_KEY: str = ""
-    CLERK_JWKS_URL: str = ""  # e.g. https://your-app.clerk.accounts.dev/.well-known/jwks.json
-    CLERK_ISSUER: str = ""    # e.g. https://your-app.clerk.accounts.dev
+    # JWT Auth
+    SECRET_KEY: str = "vinr_super_secret_key_placeholder_change_in_production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    FRONTEND_URL: str = "exp://localhost:8081" # Deep link for password reset
+
+    # OAuth
+    GOOGLE_CLIENT_ID: str = ""
+
+    # SMTP for emails
+    SMTP_HOST: str = "smtp.mailtrap.io"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM_EMAIL: str = "noreply@vinrmobile.com"
 
     # Anthropic (Claude)
     ANTHROPIC_API_KEY: str = ""
@@ -56,6 +66,7 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
+        "extra": "ignore",
     }
 
 

@@ -9,7 +9,7 @@ import {
     View, Text, TextInput, Pressable, StyleSheet,
     KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
-import { useSignUp } from '@clerk/clerk-expo';
+import { AuthService } from '../../services/auth';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -17,46 +17,23 @@ import { colors, fonts, spacing, glass, typography, borderRadius, animation, sha
 import { haptics } from '../../services/haptics';
 
 export default function SignUpScreen() {
-    const { signUp, setActive, isLoaded } = useSignUp();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [code, setCode] = useState('');
-    const [pendingVerification, setPendingVerification] = useState(false);
+    const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSignUp = async () => {
-        if (!isLoaded || !email || !password) return;
+        if (!email || !password || !name) return;
         haptics.medium();
         setLoading(true);
 
         try {
-            await signUp.create({ emailAddress: email, password });
-            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-            setPendingVerification(true);
+            await AuthService.signUp(email, password, name);
             haptics.success();
+            // Auth store will update and auto redirect to (tabs)
         } catch (err: any) {
             haptics.error();
-            Alert.alert('Sign Up Failed', err.errors?.[0]?.message || 'Please try again');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerify = async () => {
-        if (!isLoaded || !code) return;
-        haptics.medium();
-        setLoading(true);
-
-        try {
-            const result = await signUp.attemptEmailAddressVerification({ code });
-            if (result.status === 'complete') {
-                await setActive({ session: result.createdSessionId });
-                haptics.success();
-                // User will be auto-redirected by auth guard to onboarding
-            }
-        } catch (err: any) {
-            haptics.error();
-            Alert.alert('Verification Failed', err.errors?.[0]?.message || 'Invalid code');
+            Alert.alert('Sign Up Failed', err.response?.data?.detail || err.message || 'Please try again');
         } finally {
             setLoading(false);
         }
@@ -83,12 +60,10 @@ export default function SignUpScreen() {
                 {/* Header */}
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
                     <Text style={styles.title}>
-                        {pendingVerification ? 'Verify your email' : 'Your comeback starts now'}
+                        Your comeback starts now
                     </Text>
                     <Text style={styles.subtitle}>
-                        {pendingVerification
-                            ? `We sent a verification code to ${email}`
-                            : 'Create your VinR account'}
+                        Create your VinR account
                     </Text>
                 </Animated.View>
 
@@ -97,102 +72,80 @@ export default function SignUpScreen() {
                     entering={FadeInDown.delay(200).duration(500)}
                     style={styles.card}
                 >
-                    {!pendingVerification ? (
-                        <>
-                            {/* Email Input */}
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.inputLabel}>Email</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="you@example.com"
-                                    placeholderTextColor={colors.textGhost}
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    autoComplete="email"
-                                />
-                            </View>
+                    {/* Name Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="John Doe"
+                            placeholderTextColor={colors.textGhost}
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
+                            autoComplete="name"
+                        />
+                    </View>
 
-                            {/* Password Input */}
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.inputLabel}>Password</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="At least 8 characters"
-                                    placeholderTextColor={colors.textGhost}
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry
-                                    autoComplete="new-password"
-                                />
-                            </View>
+                    {/* Email Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Email</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="you@example.com"
+                            placeholderTextColor={colors.textGhost}
+                            value={email}
+                            onChangeText={setEmail}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoComplete="email"
+                        />
+                    </View>
 
-                            {/* Sign Up Button */}
-                            <Pressable
-                                style={[styles.actionButton, (!email || !password) && styles.buttonDisabled]}
-                                onPress={handleSignUp}
-                                disabled={loading || !email || !password}
-                            >
-                                {loading ? (
-                                    <ActivityIndicator color={colors.void} />
-                                ) : (
-                                    <Text style={styles.actionButtonText}>Create account →</Text>
-                                )}
-                            </Pressable>
+                    {/* Password Input */}
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Password</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="At least 8 characters"
+                            placeholderTextColor={colors.textGhost}
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                            autoComplete="new-password"
+                        />
+                    </View>
 
-                            {/* Privacy note */}
-                            <Text style={styles.privacyNote}>
-                                🔒 Your data is encrypted and never shared
-                            </Text>
-                        </>
-                    ) : (
-                        <>
-                            {/* Verification Code Input */}
-                            <View style={styles.inputContainer}>
-                                <Text style={styles.inputLabel}>Verification Code</Text>
-                                <TextInput
-                                    style={[styles.input, styles.codeInput]}
-                                    placeholder="Enter 6-digit code"
-                                    placeholderTextColor={colors.textGhost}
-                                    value={code}
-                                    onChangeText={setCode}
-                                    keyboardType="number-pad"
-                                    maxLength={6}
-                                    autoFocus
-                                />
-                            </View>
+                    {/* Sign Up Button */}
+                    <Pressable
+                        style={[styles.actionButton, (!email || !password || !name) && styles.buttonDisabled]}
+                        onPress={handleSignUp}
+                        disabled={loading || !email || !password || !name}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color={colors.void} />
+                        ) : (
+                            <Text style={styles.actionButtonText}>Create account →</Text>
+                        )}
+                    </Pressable>
 
-                            {/* Verify Button */}
-                            <Pressable
-                                style={[styles.actionButton, !code && styles.buttonDisabled]}
-                                onPress={handleVerify}
-                                disabled={loading || !code}
-                            >
-                                {loading ? (
-                                    <ActivityIndicator color={colors.void} />
-                                ) : (
-                                    <Text style={styles.actionButtonText}>Verify & continue →</Text>
-                                )}
-                            </Pressable>
-                        </>
-                    )}
+                    {/* Privacy note */}
+                    <Text style={styles.privacyNote}>
+                        🔒 Your data is encrypted and never shared
+                    </Text>
                 </Animated.View>
 
                 {/* Sign In Link */}
-                {!pendingVerification && (
-                    <Animated.View entering={FadeIn.delay(600).duration(400)}>
-                        <Pressable
-                            onPress={() => router.replace('/(auth)/sign-in')}
-                            style={styles.switchLink}
-                        >
-                            <Text style={styles.switchText}>
-                                Already have an account?{' '}
-                                <Text style={styles.switchHighlight}>Sign in</Text>
-                            </Text>
-                        </Pressable>
-                    </Animated.View>
-                )}
+                <Animated.View entering={FadeIn.delay(600).duration(400)}>
+                    <Pressable
+                        onPress={() => router.replace('/(auth)/sign-in')}
+                        style={styles.switchLink}
+                    >
+                        <Text style={styles.switchText}>
+                            Already have an account?{' '}
+                            <Text style={styles.switchHighlight}>Sign in</Text>
+                        </Text>
+                    </Pressable>
+                </Animated.View>
             </KeyboardAvoidingView>
         </View>
     );

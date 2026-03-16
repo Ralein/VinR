@@ -11,6 +11,37 @@ class UserCreate(BaseModel):
     avatar_url: str | None = None
 
 
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str | None = None
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class GoogleLogin(BaseModel):
+    id_token: str
+
+
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+
+class ResetPassword(BaseModel):
+    token: str
+    new_password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+
 class UserUpdate(BaseModel):
     name: str | None = None
     avatar_url: str | None = None

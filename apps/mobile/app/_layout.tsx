@@ -16,7 +16,7 @@ import {
     DMSans_600SemiBold,
 } from '@expo-google-fonts/dm-sans';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuthStore } from '../stores/authStore';
 import { AuthProvider } from '../providers/AuthProvider';
 import { QueryProvider } from '../providers/QueryProvider';
 import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
@@ -25,9 +25,7 @@ import { colors, fonts, spacing, glass, typography, borderRadius, animation, sha
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-    const { isLoaded, isSignedIn } = useAuth();
-
-    if (!isLoaded) return null;
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
     return (
         <Stack
@@ -37,7 +35,7 @@ function RootNavigator() {
                 animation: 'slide_from_right',
             }}
         >
-            {!isSignedIn ? (
+            {!isAuthenticated ? (
                 <Stack.Screen name="(auth)" />
             ) : (
                 <Stack.Screen name="(tabs)" />
@@ -54,12 +52,14 @@ export default function RootLayout() {
         DMSans_400Regular,
         DMSans_600SemiBold,
     });
+    
+    const isLoadingAuth = useAuthStore((state) => state.isLoading);
 
     useEffect(() => {
-        if (fontsLoaded) {
+        if (fontsLoaded && !isLoadingAuth) {
             SplashScreen.hideAsync();
         }
-    }, [fontsLoaded]);
+    }, [fontsLoaded, isLoadingAuth]);
 
     if (!fontsLoaded) {
         return null;
