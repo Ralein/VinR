@@ -19,6 +19,9 @@ from app.models.push_token import PushToken
 from app.models.notification_preferences import NotificationPreferences
 from app.services.notification_service import send_push_notification
 
+from celery import shared_task
+import asyncio
+import random
 
 MILESTONES = [5, 10, 15, 21]
 
@@ -273,3 +276,28 @@ async def send_re_engagement_notifications():
                 data={"screen": "checkin"},
                 channel_id="streaks",
             )
+
+# --- Celery Tasks ---
+
+@shared_task
+def send_daily_reminders_task():
+    """Wrapper for async daily reminders."""
+    asyncio.run(send_daily_reminders())
+
+
+@shared_task
+def send_streak_at_risk_notifications_task():
+    """Wrapper for async streak warnings."""
+    asyncio.run(send_streak_at_risk_notifications())
+
+
+@shared_task
+def send_milestone_notifications_task():
+    """Wrapper for async milestone notifications."""
+    asyncio.run(send_milestone_notifications())
+
+
+@shared_task
+def send_re_engagement_notifications_task():
+    """Wrapper for async re-engagement notifications."""
+    asyncio.run(send_re_engagement_notifications())

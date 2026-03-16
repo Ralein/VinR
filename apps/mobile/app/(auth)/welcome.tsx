@@ -1,27 +1,49 @@
 /**
- * Welcome Screen — Ultra-premium animated splash
+ * WelcomeScreen — "Void Emergence"
  *
- * Enhancements over v1:
- * - Aurora mesh background (3 animated blobs with chromatic mixing)
- * - Grain/noise overlay for tactile depth
- * - Logo entrance with staggered radial pulse rings
- * - Character-by-character tagline typewriter reveal
- * - Animated gold shimmer sweep on CTA button
- * - CTA border glow ring with rotation animation
- * - Richer particle field (8 particles, varying glow sizes)
- * - Lavender orb repositioned for asymmetric depth
- * - "Social proof" micro-pill fades in below CTA
+ * Six signature animation moments:
+ *
+ * 1. WARP SPEED INTRO (t=0ms)
+ *    24 gold streaks explode radially from screen center, each
+ *    elongating (scaleX 1→14) as it accelerates outward then fading
+ *    at the edge. The "awakening from void" moment.
+ *
+ * 2. GYROSCOPE RINGS (t=700ms)
+ *    Three concentric arcs rotate at different speeds — two clockwise,
+ *    one counter-clockwise. Each uses asymmetric border-color opacity
+ *    (bright top, faded sides, transparent bottom) so a luminous arc
+ *    perpetually sweeps the logo like a targeting reticle.
+ *
+ * 3. COMET LOGO ASSEMBLY (t=760ms)
+ *    "vin" rises from y+24 with a spring snap. "R" rockets in from
+ *    x+170 with a gold comet tail (LinearGradient streak to its right)
+ *    that flares then fades as it lands. A light-sweep underline then
+ *    races beneath the full "vinR" wordmark.
+ *
+ * 4. RADAR LINE DRAW (t=1200ms)
+ *    A 0.5px rule expands from a glowing center node outward to both
+ *    edges. A bright dot races along the right arm then disappears —
+ *    like an energy scanner activating.
+ *
+ * 5. FOCUS-PULL TYPOGRAPHY (t=1850ms–2350ms)
+ *    Headlines start with wide letterSpacing (soft-focus blur feel),
+ *    then compress to tight tracking — the photographic rack-focus
+ *    technique. Each line staggered 250ms.
+ *
+ * 6. LIQUID FILL CTA (t=2550ms)
+ *    Button border glows in first. Molten gold floods left→right over
+ *    550ms. Label materializes only once fill is complete.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import {
     View,
     Text,
     Pressable,
     StyleSheet,
     Dimensions,
+    Platform,
 } from 'react-native';
-import VinRLogo from '../../components/ui/VinRLogo';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -32,483 +54,589 @@ import Animated, {
     withSequence,
     withRepeat,
     withTiming,
-    FadeIn,
     Easing,
     interpolate,
-    useAnimatedProps,
 } from 'react-native-reanimated';
-import {
-    colors,
-    fonts,
-    spacing,
-    typography,
-    borderRadius,
-    animation,
-    shadows,
-    gradients,
-} from '../../constants/theme';
+import { animation } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 const { width, height } = Dimensions.get('window');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// ─── Particle ────────────────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
+const GOLD        = '#D4AF37';
+const GOLD_BRIGHT = '#F2C84B';
+const VOID        = '#060510';
+const TEXT_HI     = '#ECEAF6';
+const TEXT_MID    = 'rgba(236,234,246,0.48)';
+const TEXT_LO     = 'rgba(236,234,246,0.2)';
+const CTA_W       = width - 56;
+const HALF_W      = (width - 56) / 2;
 
-interface ParticleProps {
-    size: number;
-    x: number;
-    y: number;
-    delay: number;
-    color?: string;
-}
+// ─── 1. Warp Streak ───────────────────────────────────────────────────────────
 
-function Particle({ size, x, y, delay: d, color = colors.gold }: ParticleProps) {
-    const translateY = useSharedValue(0);
-    const translateX = useSharedValue(0);
-    const opacity = useSharedValue(0);
+const STREAK_ANGLES = Array.from({ length: 24 }, (_, i) => i * 15);
+const WARP_DIST     = Math.max(width, height) * 0.76;
+
+function WarpStreak({ angleDeg, delay: d }: { angleDeg: number; delay: number }) {
+    const p = useSharedValue(0);
 
     useEffect(() => {
-        opacity.value = withDelay(d, withTiming(0.7, { duration: 1200 }));
-
-        // Drift Y
-        translateY.value = withDelay(
-            d,
-            withRepeat(
-                withSequence(
-                    withTiming(-18, { duration: 2800 + d * 0.3, easing: Easing.inOut(Easing.sin) }),
-                    withTiming(18, { duration: 2800 + d * 0.3, easing: Easing.inOut(Easing.sin) })
-                ),
-                -1,
-                true
-            )
-        );
-
-        // Subtle drift X for organic feel
-        translateX.value = withDelay(
-            d + 300,
-            withRepeat(
-                withSequence(
-                    withTiming(-8, { duration: 4000, easing: Easing.inOut(Easing.sin) }),
-                    withTiming(8, { duration: 4000, easing: Easing.inOut(Easing.sin) })
-                ),
-                -1,
-                true
-            )
-        );
+        p.value = withDelay(d, withTiming(1, { duration: 780, easing: Easing.out(Easing.cubic) }));
     }, []);
 
     const style = useAnimatedStyle(() => ({
+        opacity: interpolate(p.value, [0, 0.06, 0.48, 1], [0, 1, 0.65, 0]),
         transform: [
-            { translateY: translateY.value },
-            { translateX: translateX.value },
+            { rotate: `${angleDeg}deg` },
+            { translateX: WARP_DIST * p.value },
+            { scaleX: interpolate(p.value, [0, 0.1, 1], [1, 5, 14]) },
         ],
-        opacity: opacity.value,
     }));
 
     return (
         <Animated.View
-            style={[
-                {
-                    position: 'absolute',
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: color,
-                    left: x,
-                    top: y,
-                    // Soft glow via shadow
-                    shadowColor: color,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.9,
-                    shadowRadius: size * 2.5,
-                },
-                style,
-            ]}
+            style={[{
+                position: 'absolute',
+                width: 3,
+                height: 1.5,
+                borderRadius: 1,
+                backgroundColor: GOLD_BRIGHT,
+                left: width / 2 - 1.5,
+                top: height / 2 - 0.75,
+            }, style]}
         />
     );
 }
 
-// ─── Aurora Blob ─────────────────────────────────────────────────────────────
+// ─── 2. Gyroscope Ring ────────────────────────────────────────────────────────
 
-interface AuraBlobProps {
-    color: string;
-    size: number;
-    top: number;
-    left?: number;
-    right?: number;
-    delay: number;
-    duration: number;
+function OrbitRing({
+    size, duration, reverse = false, delay: d,
+}: {
+    size: number; duration: number; reverse?: boolean; delay: number;
+}) {
+    const rot = useSharedValue(0);
+    const op  = useSharedValue(0);
+
+    useEffect(() => {
+        op.value  = withDelay(d, withTiming(1, { duration: 700 }));
+        rot.value = withDelay(d, withRepeat(
+            withTiming(reverse ? -360 : 360, { duration, easing: Easing.linear }),
+            -1,
+            false
+        ));
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rot.value}deg` }],
+        opacity: op.value,
+    }));
+
+    return (
+        <Animated.View style={[{
+            position: 'absolute',
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: 1,
+            borderTopColor:    'rgba(212,175,55,0.70)',
+            borderRightColor:  'rgba(212,175,55,0.22)',
+            borderBottomColor: 'transparent',
+            borderLeftColor:   'rgba(212,175,55,0.22)',
+        }, style]} />
+    );
 }
 
-function AuraBlob({ color, size, top, left, right, delay, duration }: AuraBlobProps) {
+// ─── Ambient Blob ─────────────────────────────────────────────────────────────
+
+function AmbientBlob({
+    color, size, top, left, right, delay: d, duration,
+}: {
+    color: string; size: number; top: number;
+    left?: number; right?: number; delay: number; duration: number;
+}) {
     const scale = useSharedValue(0.85);
-    const opacity = useSharedValue(0);
+    const op    = useSharedValue(0);
+    const tx    = useSharedValue(0);
+    const ty    = useSharedValue(0);
 
     useEffect(() => {
-        opacity.value = withDelay(delay, withTiming(1, { duration: 1200 }));
-        scale.value = withDelay(
-            delay,
-            withRepeat(
-                withSequence(
-                    withTiming(1.15, { duration, easing: Easing.inOut(Easing.sin) }),
-                    withTiming(0.85, { duration, easing: Easing.inOut(Easing.sin) })
-                ),
-                -1,
-                true
-            )
-        );
+        op.value    = withDelay(d, withTiming(1, { duration: 1200 }));
+        scale.value = withDelay(d, withRepeat(
+            withSequence(
+                withTiming(1.15, { duration,        easing: Easing.inOut(Easing.sin) }),
+                withTiming(0.85, { duration,        easing: Easing.inOut(Easing.sin) })
+            ), -1, true
+        ));
+        // Slow organic drift X
+        tx.value = withDelay(d + 400, withRepeat(
+            withSequence(
+                withTiming( 28, { duration: duration * 1.3, easing: Easing.inOut(Easing.sin) }),
+                withTiming(-28, { duration: duration * 1.3, easing: Easing.inOut(Easing.sin) })
+            ), -1, true
+        ));
+        // Slow organic drift Y
+        ty.value = withDelay(d + 900, withRepeat(
+            withSequence(
+                withTiming(-22, { duration: duration * 1.1, easing: Easing.inOut(Easing.sin) }),
+                withTiming( 22, { duration: duration * 1.1, easing: Easing.inOut(Easing.sin) })
+            ), -1, true
+        ));
     }, []);
 
     const style = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-        transform: [{ scale: scale.value }],
-    }));
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    position: 'absolute',
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: color,
-                    top,
-                    left,
-                    right,
-                },
-                style,
-            ]}
-        />
-    );
-}
-
-// ─── Pulse Ring ──────────────────────────────────────────────────────────────
-
-function PulseRing({ delay: d, baseSize = 120 }: { delay: number; baseSize?: number }) {
-    const scale = useSharedValue(0.5);
-    const opacity = useSharedValue(0);
-
-    useEffect(() => {
-        scale.value = withDelay(
-            d,
-            withRepeat(
-                withSequence(
-                    withTiming(1, { duration: 0 }),
-                    withTiming(2.2, { duration: 1800, easing: Easing.out(Easing.quad) })
-                ),
-                -1,
-                false
-            )
-        );
-        opacity.value = withDelay(
-            d,
-            withRepeat(
-                withSequence(
-                    withTiming(0.45, { duration: 0 }),
-                    withTiming(0, { duration: 1800, easing: Easing.out(Easing.quad) })
-                ),
-                -1,
-                false
-            )
-        );
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-        opacity: opacity.value,
-    }));
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    position: 'absolute',
-                    width: baseSize,
-                    height: baseSize,
-                    borderRadius: baseSize / 2,
-                    borderWidth: 1.5,
-                    borderColor: colors.gold,
-                },
-                style,
-            ]}
-        />
-    );
-}
-
-// ─── Shimmer Bar ─────────────────────────────────────────────────────────────
-
-/** A thin animated horizontal shimmer that sweeps across the CTA button */
-function ShimmerSweep() {
-    const translateX = useSharedValue(-200);
-
-    useEffect(() => {
-        translateX.value = withDelay(
-            1400,
-            withRepeat(
-                withSequence(
-                    withTiming(300, { duration: 900, easing: Easing.inOut(Easing.quad) }),
-                    withTiming(-200, { duration: 0 }),
-                    withDelay(2600, withTiming(-200, { duration: 0 })) // pause between sweeps
-                ),
-                -1,
-                false
-            )
-        );
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        transform: [{ translateX: translateX.value }],
-    }));
-
-    return (
-        <Animated.View
-            style={[styles.shimmerTrack, style]}
-            pointerEvents="none"
-        >
-            <LinearGradient
-                colors={['transparent', 'rgba(255,255,255,0.35)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ width: 80, height: '100%' }}
-            />
-        </Animated.View>
-    );
-}
-
-// ─── Rotating Border Ring ────────────────────────────────────────────────────
-
-function RotatingBorderRing() {
-    const rotate = useSharedValue(0);
-
-    useEffect(() => {
-        rotate.value = withDelay(
-            1200,
-            withRepeat(
-                withTiming(360, { duration: 5000, easing: Easing.linear }),
-                -1,
-                false
-            )
-        );
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        transform: [{ rotate: `${rotate.value}deg` }],
-    }));
-
-    return (
-        <Animated.View style={[styles.rotateBorderWrap, style]} pointerEvents="none">
-            <LinearGradient
-                colors={[colors.gold, 'transparent', colors.gold, 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.rotateBorderGradient}
-            />
-        </Animated.View>
-    );
-}
-
-// ─── Main Screen ─────────────────────────────────────────────────────────────
-
-export default function WelcomeScreen() {
-    const logoScale = useSharedValue(0.2);
-    const logoOpacity = useSharedValue(0);
-    const taglineOpacity = useSharedValue(0);
-    const taglineTranslateY = useSharedValue(10);
-    const ctaTranslateY = useSharedValue(70);
-    const ctaOpacity = useSharedValue(0);
-    const ctaScale = useSharedValue(1);
-    const subTextOpacity = useSharedValue(0);
-    const subTextTranslateY = useSharedValue(12);
-
-    useEffect(() => {
-        // Logo entrance
-        logoScale.value = withSpring(1, { stiffness: 70, damping: 10 });
-        logoOpacity.value = withTiming(1, { duration: 700 });
-
-        // Tagline
-        taglineOpacity.value = withDelay(700, withTiming(1, { duration: 900 }));
-        taglineTranslateY.value = withDelay(700, withSpring(0, { stiffness: 100, damping: 18 }));
-
-        // CTA
-        ctaTranslateY.value = withDelay(1100, withSpring(0, animation.spring));
-        ctaOpacity.value = withDelay(1100, withTiming(1, { duration: 500 }));
-
-        // Sub text
-        subTextOpacity.value = withDelay(1600, withTiming(1, { duration: 600 }));
-        subTextTranslateY.value = withDelay(1600, withSpring(0, { stiffness: 120, damping: 20 }));
-    }, []);
-
-    const logoAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: logoScale.value }],
-        opacity: logoOpacity.value,
-    }));
-
-    const taglineAnimatedStyle = useAnimatedStyle(() => ({
-        opacity: taglineOpacity.value,
-        transform: [{ translateY: taglineTranslateY.value }],
-    }));
-
-    const ctaAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: op.value,
         transform: [
-            { translateY: ctaTranslateY.value },
-            { scale: ctaScale.value },
+            { scale:      scale.value },
+            { translateX: tx.value    },
+            { translateY: ty.value    },
         ],
-        opacity: ctaOpacity.value,
     }));
 
-    const subTextAnimatedStyle = useAnimatedStyle(() => ({
-        opacity: subTextOpacity.value,
-        transform: [{ translateY: subTextTranslateY.value }],
+    return (
+        <Animated.View style={[{
+            position: 'absolute',
+            width: size, height: size,
+            borderRadius: size / 2,
+            backgroundColor: color,
+            top, left, right,
+        }, style]} />
+    );
+}
+
+// ─── Particle ─────────────────────────────────────────────────────────────────
+
+function Particle({
+    x, y, r, delay: d, color = GOLD_BRIGHT,
+}: {
+    x: number; y: number; r: number; delay: number; color?: string;
+}) {
+    const op = useSharedValue(0);
+    const ty = useSharedValue(0);
+    const tx = useSharedValue(0);
+
+    useEffect(() => {
+        op.value = withDelay(d, withTiming(0.7, { duration: 1000 }));
+        ty.value = withDelay(d, withRepeat(
+            withSequence(
+                withTiming(-14, { duration: 2600 + d * 0.2, easing: Easing.inOut(Easing.sin) }),
+                withTiming( 14, { duration: 2600 + d * 0.2, easing: Easing.inOut(Easing.sin) })
+            ), -1, true
+        ));
+        tx.value = withDelay(d + 400, withRepeat(
+            withSequence(
+                withTiming(-7, { duration: 3800, easing: Easing.inOut(Easing.sin) }),
+                withTiming( 7, { duration: 3800, easing: Easing.inOut(Easing.sin) })
+            ), -1, true
+        ));
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        opacity: op.value,
+        transform: [{ translateY: ty.value }, { translateX: tx.value }],
     }));
 
-    const handleCTAPress = () => {
+    return (
+        <Animated.View style={[{
+            position: 'absolute', left: x, top: y,
+            width: r, height: r, borderRadius: r / 2,
+            backgroundColor: color,
+            shadowColor: color,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 1,
+            shadowRadius: r * 2.5,
+        }, style]} />
+    );
+}
+
+// ─── 4. Radar Line ────────────────────────────────────────────────────────────
+
+function RadarLine({ delay: d }: { delay: number }) {
+    const lw     = useSharedValue(0);
+    const rw     = useSharedValue(0);
+    const dotX   = useSharedValue(0);
+    const dotOp  = useSharedValue(0);
+    const lineOp = useSharedValue(0);
+    const arm    = HALF_W - 4;
+
+    useEffect(() => {
+        lineOp.value = withDelay(d, withTiming(1, { duration: 150 }));
+        lw.value     = withDelay(d, withTiming(arm, { duration: 480, easing: Easing.out(Easing.quad) }));
+        rw.value     = withDelay(d, withTiming(arm, { duration: 480, easing: Easing.out(Easing.quad) }));
+        dotOp.value  = withDelay(d, withSequence(
+            withTiming(1, { duration: 60 }),
+            withDelay(440, withTiming(0, { duration: 280 }))
+        ));
+        dotX.value = withDelay(d, withTiming(arm, { duration: 480, easing: Easing.out(Easing.quad) }));
+    }, []);
+
+    const leftStyle  = useAnimatedStyle(() => ({ width: lw.value, opacity: lineOp.value }));
+    const rightStyle = useAnimatedStyle(() => ({ width: rw.value, opacity: lineOp.value }));
+    const dotStyle   = useAnimatedStyle(() => ({
+        opacity: dotOp.value,
+        transform: [{ translateX: dotX.value }],
+    }));
+
+    return (
+        <View style={s.radarWrap}>
+            <Animated.View style={[s.radarLineLeft,  leftStyle]}  />
+            <View          style={s.radarNode} />
+            <Animated.View style={[s.radarLineRight, rightStyle]} />
+            <Animated.View style={[s.radarDot, dotStyle]} />
+        </View>
+    );
+}
+
+// ─── Scan Line ────────────────────────────────────────────────────────────────
+
+function ScanLine() {
+    const ty = useSharedValue(-40);
+    const op = useSharedValue(0);
+
+    useEffect(() => {
+        op.value = withDelay(2000, withTiming(1, { duration: 400 }));
+        ty.value = withDelay(2000, withRepeat(
+            withSequence(
+                withTiming(height + 40, { duration: 7000, easing: Easing.inOut(Easing.sin) }),
+                withDelay(4000, withTiming(-40, { duration: 0 }))
+            ), -1, false
+        ));
+    }, []);
+
+    const style = useAnimatedStyle(() => ({
+        transform: [{ translateY: ty.value }],
+        opacity: op.value,
+    }));
+
+    return (
+        <Animated.View style={[s.scanWrap, style]} pointerEvents="none">
+            <LinearGradient
+                colors={['transparent', 'rgba(212,175,55,0.05)', 'transparent']}
+                start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+                style={{ width: '100%', height: 50 }}
+            />
+        </Animated.View>
+    );
+}
+
+// ─── HUD Corner ───────────────────────────────────────────────────────────────
+
+function HudCorner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
+    const l = pos === 'tl' || pos === 'bl';
+    const t = pos === 'tl' || pos === 'tr';
+    return (
+        <View style={[s.hudCorner, {
+            top:              t ? 0 : undefined,
+            bottom:           t ? undefined : 0,
+            left:             l ? 0 : undefined,
+            right:            l ? undefined : 0,
+            borderTopWidth:    t ? 1 : 0,
+            borderBottomWidth: t ? 0 : 1,
+            borderLeftWidth:   l ? 1 : 0,
+            borderRightWidth:  l ? 0 : 1,
+        }]} />
+    );
+}
+
+// ─── 6. Liquid Fill CTA ──────────────────────────────────────────────────────
+
+function LiquidCTA({ delay: d }: { delay: number }) {
+    const borderOp = useSharedValue(0);
+    const glowOp   = useSharedValue(0);
+    const fillW    = useSharedValue(0);
+    const labelOp  = useSharedValue(0);
+    const scale    = useSharedValue(1);
+
+    useEffect(() => {
+        borderOp.value = withDelay(d,       withTiming(1,    { duration: 320 }));
+        glowOp.value   = withDelay(d + 150, withTiming(1,    { duration: 380 }));
+        fillW.value    = withDelay(d + 300, withTiming(CTA_W, {
+            duration: 550, easing: Easing.inOut(Easing.quad),
+        }));
+        labelOp.value  = withDelay(d + 880, withTiming(1, { duration: 300 }));
+    }, []);
+
+    const borderStyle = useAnimatedStyle(() => ({ opacity: borderOp.value }));
+    const glowStyle   = useAnimatedStyle(() => ({ opacity: glowOp.value }));
+    const fillStyle   = useAnimatedStyle(() => ({ width: fillW.value }));
+    const labelStyle  = useAnimatedStyle(() => ({ opacity: labelOp.value }));
+    const pressStyle  = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    const handlePress = () => {
         haptics.medium();
-        ctaScale.value = withSequence(
-            withSpring(0.94, { stiffness: 350 }),
+        scale.value = withSequence(
+            withSpring(0.95, { stiffness: 400 }),
             withSpring(1, animation.spring)
         );
-        setTimeout(() => router.push('/(auth)/sign-up'), 160);
-    };
-
-    const handleSignInPress = () => {
-        haptics.light();
-        router.push('/(auth)/sign-in');
+        setTimeout(() => router.push('/(auth)/sign-up'), 150);
     };
 
     return (
-        <View style={styles.container}>
+        <AnimatedPressable onPress={handlePress} style={[s.ctaOuter, pressStyle]}>
+            <Animated.View style={[StyleSheet.absoluteFill, s.ctaGlow,   glowStyle]}   />
+            <Animated.View style={[StyleSheet.absoluteFill, s.ctaBorder, borderStyle]} />
+            <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 16 }]}>
+                <Animated.View style={[{ height: '100%' }, fillStyle]}>
+                    <LinearGradient
+                        colors={[GOLD_BRIGHT, GOLD, '#BF961E']}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                        style={{ flex: 1 }}
+                    />
+                </Animated.View>
+            </View>
+            <Animated.View style={[StyleSheet.absoluteFill, s.ctaLabelRow, labelStyle]}>
+                <Text style={s.ctaText}>Begin your comeback</Text>
+                <View style={s.ctaArrowCircle}>
+                    <Text style={s.ctaArrow}>›</Text>
+                </View>
+            </Animated.View>
+        </AnimatedPressable>
+    );
+}
+
+// ─── Trust Pill ───────────────────────────────────────────────────────────────
+
+function TrustPill({ icon, label }: { icon: string; label: string }) {
+    return (
+        <View style={s.trustPill}>
+            <Text style={s.trustIcon}>{icon}</Text>
+            <Text style={s.trustLabel}>{label}</Text>
+        </View>
+    );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
+export default function WelcomeScreen() {
+
+    // Logo
+    const vinOp    = useSharedValue(0);
+    const vinY     = useSharedValue(24);
+    const rX       = useSharedValue(170);
+    const rOp      = useSharedValue(0);
+    const streakOp = useSharedValue(0);
+    const uLineX   = useSharedValue(-60);
+    const uLineOp  = useSharedValue(0);
+    const logoOp   = useSharedValue(0);
+
+    // Headline
+    const eyeOp  = useSharedValue(0);
+    const eyeY   = useSharedValue(10);
+    const h1Op   = useSharedValue(0);
+    const h1Y    = useSharedValue(18);
+    const h1Spc  = useSharedValue(7);
+    const h2Op   = useSharedValue(0);
+    const h2Y    = useSharedValue(18);
+    const h2Spc  = useSharedValue(7);
+    const subOp  = useSharedValue(0);
+    const subY   = useSharedValue(14);
+
+    // Bottom
+    const hudOp    = useSharedValue(0);
+    const signInOp = useSharedValue(0);
+    const trustOp  = useSharedValue(0);
+
+    useEffect(() => {
+        hudOp.value    = withDelay(900,  withTiming(1, { duration: 600 }));
+        logoOp.value   = withDelay(700,  withTiming(1, { duration: 250 }));
+
+        // "vin" rises
+        vinOp.value    = withDelay(760,  withTiming(1, { duration: 500 }));
+        vinY.value     = withDelay(760,  withSpring(0, { stiffness: 90, damping: 15 }));
+
+        // "R" rockets in
+        rOp.value      = withDelay(960,  withTiming(1, { duration: 100 }));
+        rX.value       = withDelay(960,  withSpring(0, { stiffness: 130, damping: 18, velocity: -60 }));
+        streakOp.value = withDelay(960,  withSequence(
+            withTiming(1,   { duration: 55  }),
+            withTiming(0.7, { duration: 260 }),
+            withTiming(0,   { duration: 180 })
+        ));
+
+        // Underline sweep
+        uLineOp.value  = withDelay(1450, withSequence(
+            withTiming(1, { duration: 60 }),
+            withDelay(500, withTiming(0, { duration: 200 }))
+        ));
+        uLineX.value   = withDelay(1450, withTiming(220, {
+            duration: 500, easing: Easing.out(Easing.quad),
+        }));
+
+        // 5. Focus-pull headlines
+        eyeOp.value    = withDelay(1650, withTiming(1,  { duration: 480 }));
+        eyeY.value     = withDelay(1650, withSpring(0,  { stiffness: 120, damping: 18 }));
+        h1Op.value     = withDelay(1850, withTiming(1,  { duration: 520 }));
+        h1Y.value      = withDelay(1850, withSpring(0,  { stiffness: 90, damping: 16 }));
+        h1Spc.value    = withDelay(1850, withTiming(-1.5, { duration: 580, easing: Easing.out(Easing.quad) }));
+        h2Op.value     = withDelay(2100, withTiming(1,  { duration: 520 }));
+        h2Y.value      = withDelay(2100, withSpring(0,  { stiffness: 90, damping: 16 }));
+        h2Spc.value    = withDelay(2100, withTiming(-2, { duration: 580, easing: Easing.out(Easing.quad) }));
+        subOp.value    = withDelay(2350, withTiming(1,  { duration: 500 }));
+        subY.value     = withDelay(2350, withSpring(0,  { stiffness: 110, damping: 20 }));
+
+        signInOp.value = withDelay(3250, withTiming(1, { duration: 500 }));
+        trustOp.value  = withDelay(3400, withTiming(1, { duration: 500 }));
+    }, []);
+
+    const vinStyle    = useAnimatedStyle(() => ({ opacity: vinOp.value,  transform: [{ translateY: vinY.value }] }));
+    const rStyle      = useAnimatedStyle(() => ({ opacity: rOp.value,    transform: [{ translateX: rX.value   }] }));
+    const streakStyle = useAnimatedStyle(() => ({ opacity: streakOp.value }));
+    const uLineStyle  = useAnimatedStyle(() => ({ opacity: uLineOp.value, transform: [{ translateX: uLineX.value }] }));
+    const logoStyle   = useAnimatedStyle(() => ({ opacity: logoOp.value }));
+    const hudStyle    = useAnimatedStyle(() => ({ opacity: hudOp.value  }));
+    const eyeStyle    = useAnimatedStyle(() => ({ opacity: eyeOp.value,  transform: [{ translateY: eyeY.value  }] }));
+    const h1Style     = useAnimatedStyle(() => ({ opacity: h1Op.value,   transform: [{ translateY: h1Y.value   }], letterSpacing: h1Spc.value }));
+    const h2Style     = useAnimatedStyle(() => ({ opacity: h2Op.value,   transform: [{ translateY: h2Y.value   }], letterSpacing: h2Spc.value }));
+    const subStyle    = useAnimatedStyle(() => ({ opacity: subOp.value,  transform: [{ translateY: subY.value  }] }));
+    const signInStyle = useAnimatedStyle(() => ({ opacity: signInOp.value }));
+    const trustStyle  = useAnimatedStyle(() => ({ opacity: trustOp.value  }));
+
+    return (
+        <View style={s.container}>
+
             {/* ── Base gradient ── */}
             <LinearGradient
-                colors={['#08060F', '#0D0A1A', '#100D22', '#0A080F']}
+                colors={['#060510', '#0C0918', '#100E22', '#07050F']}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.3, y: 0 }}
                 end={{ x: 0.7, y: 1 }}
             />
 
-            {/* ── Aurora blobs ── */}
-            <AuraBlob
-                color="rgba(212,175,55,0.07)"
-                size={420}
-                top={height * 0.08}
-                left={-60}
-                delay={200}
-                duration={5000}
-            />
-            <AuraBlob
-                color="rgba(120,80,220,0.09)"
-                size={340}
-                top={height * 0.12}
-                right={-80}
-                delay={600}
-                duration={6200}
-            />
-            <AuraBlob
-                color="rgba(212,175,55,0.05)"
-                size={260}
-                top={height * 0.55}
-                left={width * 0.3}
-                delay={900}
-                duration={4400}
-            />
+            {/* ── 1. Warp field ── */}
+            {STREAK_ANGLES.map((a, i) => (
+                <WarpStreak key={i} angleDeg={a} delay={i * 10} />
+            ))}
 
-            {/* ── Grain overlay ── */}
-            {/* Simulated via tiled tiny dots — pure RN approach */}
-            <View style={styles.grainOverlay} pointerEvents="none" />
+            {/* ── Scan line ── */}
+            <ScanLine />
 
-            {/* ── Particles ── */}
-            <Particle size={3} x={width * 0.12} y={height * 0.18} delay={600} />
-            <Particle size={4} x={width * 0.78} y={height * 0.13} delay={900} />
-            <Particle size={2.5} x={width * 0.62} y={height * 0.32} delay={1100} />
-            <Particle size={3.5} x={width * 0.28} y={height * 0.43} delay={1400} />
-            <Particle size={4} x={width * 0.88} y={height * 0.48} delay={1700} />
-            <Particle size={2} x={width * 0.45} y={height * 0.72} delay={2000} color="rgba(150,100,255,0.9)" />
-            <Particle size={3} x={width * 0.08} y={height * 0.6} delay={2300} color="rgba(150,100,255,0.9)" />
-            <Particle size={2.5} x={width * 0.92} y={height * 0.28} delay={2600} />
-
-            {/* ── Logo area with pulse rings ── */}
-            <View style={styles.logoArea}>
-                <View style={styles.pulseRingContainer}>
-                    <PulseRing delay={800} baseSize={130} />
-                    <PulseRing delay={1400} baseSize={130} />
-                    <PulseRing delay={2000} baseSize={130} />
+            {/* ── HUD corners ── */}
+            <Animated.View style={[StyleSheet.absoluteFill, hudStyle]} pointerEvents="none">
+                <View style={s.hudFrame}>
+                    <HudCorner pos="tl" /><HudCorner pos="tr" />
+                    <HudCorner pos="bl" /><HudCorner pos="br" />
                 </View>
-                <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
-                    <VinRLogo size="xl" glow />
+            </Animated.View>
+
+            {/* ── Aurora blobs ── */}
+            <AmbientBlob color="rgba(212,175,55,0.07)" size={420} top={height * 0.05} left={-70}             delay={200} duration={5200} />
+            <AmbientBlob color="rgba(110,70,220,0.09)"  size={350} top={height * 0.10} right={-90}            delay={500} duration={6400} />
+            <AmbientBlob color="rgba(212,175,55,0.05)"  size={260} top={height * 0.54} left={width * 0.28}   delay={800} duration={4600} />
+            <AmbientBlob color="rgba(40,90,210,0.07)"   size={300} top={height * 0.60} right={-60}           delay={300} duration={7800} />
+
+            {/* ── Starfield ── */}
+            <Particle x={width * 0.10} y={height * 0.18} r={2.5} delay={900}  />
+            <Particle x={width * 0.82} y={height * 0.12} r={3}   delay={1200} />
+            <Particle x={width * 0.64} y={height * 0.30} r={2}   delay={1500} />
+            <Particle x={width * 0.22} y={height * 0.40} r={3}   delay={1800} />
+            <Particle x={width * 0.90} y={height * 0.46} r={2}   delay={2100} />
+            <Particle x={width * 0.44} y={height * 0.70} r={2}   delay={2400} color="rgba(160,110,255,0.9)" />
+            <Particle x={width * 0.06} y={height * 0.58} r={2.5} delay={2700} color="rgba(160,110,255,0.9)" />
+            <Particle x={width * 0.94} y={height * 0.26} r={2}   delay={3000} />
+
+            {/* ── 2 + 3. Logo zone ── */}
+            <Animated.View style={[s.logoZone, logoStyle]}>
+
+                {/* 2. Gyroscope rings */}
+                <OrbitRing size={164} duration={8000}  delay={900}  />
+                <OrbitRing size={206} duration={13000} delay={1100} reverse />
+                <OrbitRing size={250} duration={19000} delay={1300} />
+
+                {/* Outer soft halo — large diffuse glow */}
+                <View style={s.logoBedOuter} />
+
+                {/* Inner glow bed */}
+                <View style={s.logoBed} />
+
+                {/* Inner static precision ring */}
+                <View style={s.logoRingStatic} />
+
+                {/* Cross hair accent — 4 tick marks at N/E/S/W */}
+                <View style={[s.logoTick, { top: -18, left: '50%', marginLeft: -0.5 }]} />
+                <View style={[s.logoTick, { bottom: -18, left: '50%', marginLeft: -0.5 }]} />
+                <View style={[s.logoTick, { left: -18, top: '50%', marginTop: -0.5, width: 8, height: 1 }]} />
+                <View style={[s.logoTick, { right: -18, top: '50%', marginTop: -0.5, width: 8, height: 1 }]} />
+
+                {/* 3. vinR wordmark */}
+                <View style={s.wordmarkWrap}>
+                    {/* Underline sweep */}
+                    <View style={s.uLineTrack} pointerEvents="none">
+                        <Animated.View style={[s.uLineBeam, uLineStyle]}>
+                            <LinearGradient
+                                colors={['transparent', GOLD_BRIGHT, GOLD, 'transparent']}
+                                start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+                                style={{ flex: 1, borderRadius: 1 }}
+                            />
+                        </Animated.View>
+                    </View>
+
+                    {/* "vin" */}
+                    <Animated.Text style={[s.logoVin, vinStyle]}>vin</Animated.Text>
+
+                    {/* "R" + comet streak (move together) */}
+                    <Animated.View style={[s.rContainer, rStyle]}>
+                        <Animated.View style={[s.cometStreak, streakStyle]} pointerEvents="none">
+                            <LinearGradient
+                                colors={[GOLD_BRIGHT, 'rgba(212,175,55,0.25)', 'transparent']}
+                                start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+                                style={{ flex: 1, borderRadius: 1 }}
+                            />
+                        </Animated.View>
+                        <Text style={s.logoR}>R</Text>
+                    </Animated.View>
+                </View>
+            </Animated.View>
+
+            {/* ── 4. Radar line ── */}
+            <RadarLine delay={1200} />
+
+            {/* ── 5. Headlines ── */}
+            <View style={s.headlineBlock}>
+                <Animated.View style={[s.eyebrowRow, eyeStyle]}>
+                    <View style={s.eyebrowDot} />
+                    <Text style={s.eyebrow}>EPIC COMEBACK</Text>
+                    <View style={s.eyebrowDot} />
                 </Animated.View>
+                <Animated.Text style={[s.h1, h1Style]}>Win your</Animated.Text>
+                <Animated.Text style={[s.h2, h2Style]}>life back.</Animated.Text>
+                <Animated.Text style={[s.sub, subStyle]}>
+                    The science-based system that rebuilds{'\n'}your habits, identity & momentum.
+                </Animated.Text>
             </View>
 
-            {/* ── Tagline ── */}
-            <Animated.View style={taglineAnimatedStyle}>
-                <Text style={styles.taglineEyebrow}>— est. your comeback —</Text>
-                <Text style={styles.taglineHero}>Win your{'\n'}life back.</Text>
-            </Animated.View>
+            <View style={s.spacer} />
 
-            <View style={styles.spacer} />
+            {/* ── 6. Liquid CTA ── */}
+            <LiquidCTA delay={2550} />
 
-            {/* ── CTA Button ── */}
-            <AnimatedPressable
-                style={[styles.ctaOuter, ctaAnimatedStyle]}
-                onPress={handleCTAPress}
-            >
-                {/* Rotating border */}
-                <RotatingBorderRing />
-
-                {/* Inner fill */}
-                <LinearGradient
-                    colors={['#F0C040', '#D4AF37', '#C49A20']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.ctaGradient}
-                >
-                    <ShimmerSweep />
-                    <Text style={styles.ctaText}>Begin your comeback</Text>
-                    <Text style={styles.ctaArrow}> →</Text>
-                </LinearGradient>
-            </AnimatedPressable>
-
-            {/* ── Social proof micro-pill ── */}
-            <Animated.View style={[styles.socialProof, subTextAnimatedStyle]}>
-                <View style={styles.proofDot} />
-                <Text style={styles.proofText}>12,400+ comebacks started this week</Text>
-            </Animated.View>
-
-            {/* ── Sign In ── */}
-            <Animated.View entering={FadeIn.delay(1600).duration(500)}>
-                <Pressable onPress={handleSignInPress} style={styles.signInButton}>
-                    <Text style={styles.signInLink}>Already winning?</Text>
-                    <Text style={styles.signInLinkAccent}> Sign in</Text>
+            {/* ── Sign in ── */}
+            <Animated.View style={signInStyle}>
+                <Pressable onPress={() => { haptics.light(); router.push('/(auth)/sign-in'); }}
+                    style={s.signInRow} hitSlop={12}>
+                    <Text style={s.signInBase}>Already winning?</Text>
+                    <Text style={s.signInAccent}> Sign in</Text>
                 </Pressable>
             </Animated.View>
 
-            {/* ── Bottom brand mark ── */}
-            <Animated.View
-                entering={FadeIn.delay(2000).duration(900)}
-                style={styles.bottomBrandRow}
-            >
-                <View style={styles.brandPill}>
-                    <Text style={styles.brandPillText}>Science-backed</Text>
-                </View>
-                <View style={styles.brandDivider} />
-                <View style={styles.brandPill}>
-                    <Text style={styles.brandPillText}>AI-powered</Text>
-                </View>
-                <View style={styles.brandDivider} />
-                <View style={styles.brandPill}>
-                    <Text style={styles.brandPillText}>21-day engine</Text>
-                </View>
+            {/* ── Trust bar ── */}
+            <Animated.View style={[s.trustBar, trustStyle]}>
+                <TrustPill icon="⚡" label="Science-backed" />
+                <View style={s.trustSep} />
+                <TrustPill icon="✦"  label="AI-powered" />
+                <View style={s.trustSep} />
+                <TrustPill icon="◎"  label="21-day engine" />
             </Animated.View>
+
         </View>
     );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-const GOLD = '#D4AF37';
-const GOLD_BRIGHT = '#F0C040';
-const VOID = '#08060F';
-
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
@@ -516,173 +644,266 @@ const styles = StyleSheet.create({
         paddingHorizontal: 28,
     },
 
-    // Grain — a very subtle dark overlay that adds paper-like texture
-    grainOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        opacity: 0.025,
-        backgroundColor: 'transparent',
-        // In production you'd use an SVG noise texture via expo-image or canvas
+    scanWrap: {
+        position: 'absolute',
+        left: 0, right: 0, top: 0,
+        zIndex: 0,
     },
 
-    // ── Logo ──
-    logoArea: {
+    hudFrame: {
+        position: 'absolute',
+        top:    Platform.OS === 'ios' ? 58 : 44,
+        left: 20, right: 20, bottom: 32,
+    },
+    hudCorner: {
+        position: 'absolute',
+        width: 16, height: 16,
+        borderColor: 'rgba(212,175,55,0.2)',
+    },
+
+    // Logo
+    logoZone: {
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 28,
     },
-    pulseRingContainer: {
+    logoBedOuter: {
         position: 'absolute',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 220, height: 220, borderRadius: 110,
+        backgroundColor: 'rgba(212,175,55,0.035)',
+        shadowColor: GOLD,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.18,
+        shadowRadius: 80,
     },
-    logoContainer: {
-        alignItems: 'center',
-    },
-
-    // ── Tagline ──
-    taglineEyebrow: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 11,
-        color: GOLD,
-        letterSpacing: 4,
-        textTransform: 'uppercase',
-        textAlign: 'center',
-        marginBottom: 10,
-        opacity: 0.7,
-    },
-    taglineHero: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 42,
-        lineHeight: 48,
-        color: '#EDE8FF',
-        textAlign: 'center',
-        letterSpacing: -0.5,
-    },
-
-    spacer: { height: 56 },
-
-    // ── CTA ──
-    ctaOuter: {
-        width: width - 56,
-        borderRadius: 18,
-        marginBottom: 14,
-        overflow: 'hidden',
-        // Extra glow around whole button
-        shadowColor: GOLD_BRIGHT,
+    logoBed: {
+        position: 'absolute',
+        width: 130, height: 130, borderRadius: 65,
+        backgroundColor: 'rgba(212,175,55,0.07)',
+        shadowColor: GOLD,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.45,
-        shadowRadius: 24,
-        elevation: 12,
+        shadowRadius: 44,
     },
-    ctaGradient: {
+    logoRingStatic: {
+        position: 'absolute',
+        width: 118, height: 118, borderRadius: 59,
+        borderWidth: 0.5,
+        borderColor: 'rgba(212,175,55,0.3)',
+    },
+    logoTick: {
+        position: 'absolute',
+        width: 1,
+        height: 8,
+        backgroundColor: 'rgba(212,175,55,0.4)',
+    },
+    wordmarkWrap: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        position: 'relative',
+    },
+    uLineTrack: {
+        position: 'absolute',
+        bottom: -6, left: -8, right: -8,
+        height: 1.5,
+        overflow: 'hidden',
+    },
+    uLineBeam: {
+        position: 'absolute',
+        top: 0, bottom: 0,
+        left: -60, width: 60,
+    },
+    logoVin: {
+        fontFamily: 'DMSans_300Light',
+        fontSize: 46,
+        color: TEXT_HI,
+        letterSpacing: -1,
+        lineHeight: 54,
+    },
+    rContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        position: 'relative',
+    },
+    logoR: {
+        fontFamily: 'DMSans_700Bold',
+        fontSize: 54,
+        color: GOLD,
+        letterSpacing: -1,
+        lineHeight: 60,
+        textShadowColor: 'rgba(212,175,55,0.55)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 16,
+    },
+    cometStreak: {
+        position: 'absolute',
+        left: '100%',
+        top: '42%',
+        width: 76, height: 2,
+        marginLeft: 4,
+    },
+
+    // Radar
+    radarWrap: {
+        width: width - 56,
+        height: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 28,
+        position: 'relative',
+    },
+    radarLineLeft: {
+        position: 'absolute',
+        right: HALF_W + 2,
+        top: 6.5, height: 0.5,
+        backgroundColor: 'rgba(212,175,55,0.28)',
+    },
+    radarLineRight: {
+        position: 'absolute',
+        left: HALF_W + 2,
+        top: 6.5, height: 0.5,
+        backgroundColor: 'rgba(212,175,55,0.28)',
+    },
+    radarNode: {
+        position: 'absolute',
+        left: HALF_W - 2, top: 5,
+        width: 4, height: 4, borderRadius: 2,
+        backgroundColor: GOLD,
+        shadowColor: GOLD,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1, shadowRadius: 6,
+    },
+    radarDot: {
+        position: 'absolute',
+        left: HALF_W + 2, top: 4,
+        width: 6, height: 6, borderRadius: 3,
+        backgroundColor: GOLD_BRIGHT,
+        shadowColor: GOLD_BRIGHT,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1, shadowRadius: 5,
+    },
+
+    // Headline
+    headlineBlock: { alignItems: 'center' },
+    eyebrowRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8, marginBottom: 16,
+    },
+    eyebrowDot: {
+        width: 3, height: 3, borderRadius: 1.5,
+        backgroundColor: 'rgba(212,175,55,0.4)',
+    },
+    eyebrow: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 9.5,
+        color: 'rgba(212,175,55,0.42)',
+        letterSpacing: 3.5,
+        textTransform: 'uppercase',
+    },
+    h1: {
+        fontFamily: 'DMSans_300Light',
+        fontSize: 52, lineHeight: 54,
+        color: 'rgba(236,234,246,0.5)',
+        textAlign: 'center',
+    },
+    h2: {
+        fontFamily: 'DMSans_600SemiBold',
+        fontSize: 58, lineHeight: 60,
+        color: TEXT_HI,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    sub: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 15, lineHeight: 23,
+        color: TEXT_MID,
+        textAlign: 'center',
+        letterSpacing: 0.1,
+    },
+
+    spacer: { height: 44 },
+
+    // CTA
+    ctaOuter: {
+        width: CTA_W, height: 58,
+        borderRadius: 16,
+        marginBottom: 16,
+    },
+    ctaGlow: {
+        borderRadius: 16,
+        shadowColor: GOLD_BRIGHT,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5, shadowRadius: 28,
+        backgroundColor: 'transparent',
+    },
+    ctaBorder: {
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(212,175,55,0.42)',
+    },
+    ctaLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 20,
-        paddingHorizontal: 32,
-        borderRadius: 18,
-        overflow: 'hidden',
-    },
-    shimmerTrack: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        width: 80,
-        overflow: 'hidden',
-    },
-    rotateBorderWrap: {
-        position: 'absolute',
-        top: -1,
-        left: -1,
-        right: -1,
-        bottom: -1,
-        borderRadius: 19,
-        overflow: 'hidden',
-    },
-    rotateBorderGradient: {
-        flex: 1,
-        opacity: 0.6,
+        paddingHorizontal: 24, gap: 12,
     },
     ctaText: {
         fontFamily: 'DMSans_600SemiBold',
-        fontSize: 18,
-        color: VOID,
-        letterSpacing: 0.3,
+        fontSize: 17, color: VOID,
+        letterSpacing: 0.1, flex: 1,
+    },
+    ctaArrowCircle: {
+        width: 30, height: 30, borderRadius: 15,
+        backgroundColor: 'rgba(0,0,0,0.13)',
+        alignItems: 'center', justifyContent: 'center',
     },
     ctaArrow: {
         fontFamily: 'DMSans_600SemiBold',
-        fontSize: 20,
-        color: VOID,
+        fontSize: 22, color: VOID,
+        lineHeight: 26, marginLeft: 1,
     },
 
-    // ── Social proof ──
-    socialProof: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        backgroundColor: 'rgba(212,175,55,0.07)',
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(212,175,55,0.15)',
+    // Sign in
+    signInRow: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: 10, paddingHorizontal: 16,
     },
-    proofDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: '#4ADE80',
-        marginRight: 7,
-        shadowColor: '#4ADE80',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 4,
-    },
-    proofText: {
+    signInBase: {
         fontFamily: 'DMSans_400Regular',
-        fontSize: 12,
-        color: 'rgba(237,232,255,0.55)',
-        letterSpacing: 0.2,
+        fontSize: 14.5, color: TEXT_LO,
     },
-
-    // ── Sign In ──
-    signInButton: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-    },
-    signInLink: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 15,
-        color: 'rgba(237,232,255,0.4)',
-    },
-    signInLinkAccent: {
+    signInAccent: {
         fontFamily: 'DMSans_500Medium',
-        fontSize: 15,
-        color: GOLD,
+        fontSize: 14.5, color: GOLD,
     },
 
-    // ── Bottom brand ──
-    bottomBrandRow: {
+    // Trust bar
+    trustBar: {
         position: 'absolute',
-        bottom: 44,
-        flexDirection: 'row',
-        alignItems: 'center',
+        bottom: Platform.OS === 'ios' ? 46 : 30,
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 18, paddingVertical: 9,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        borderRadius: 28, borderWidth: 0.5,
+        borderColor: 'rgba(236,234,246,0.07)',
     },
-    brandPill: {
-        paddingHorizontal: 10,
+    trustPill: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 8, gap: 5,
     },
-    brandPillText: {
+    trustIcon: {
+        fontSize: 9,
+        color: 'rgba(212,175,55,0.4)',
+    },
+    trustLabel: {
         fontFamily: 'DMSans_300Light',
-        fontSize: 10.5,
-        color: 'rgba(237,232,255,0.25)',
-        letterSpacing: 0.8,
+        fontSize: 10, color: TEXT_LO,
+        letterSpacing: 0.6,
         textTransform: 'uppercase',
     },
-    brandDivider: {
-        width: 1,
-        height: 10,
-        backgroundColor: 'rgba(212,175,55,0.2)',
+    trustSep: {
+        width: 0.5, height: 12,
+        backgroundColor: 'rgba(236,234,246,0.07)',
     },
 });
