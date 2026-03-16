@@ -94,11 +94,10 @@ export default function ProgressRing({
                     stroke={`url(#${gradientId})`}
                     strokeWidth={strokeWidth}
                     fill="none"
-                    strokeDasharray={circumference}
+                    strokeDasharray={`${circumference} ${circumference}`}
                     animatedProps={animatedProps}
                     strokeLinecap="round"
-                    rotation={-90}
-                    origin={`${size / 2}, ${size / 2}`}
+                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
                 />
             </Svg>
             {/* Center Label */}
