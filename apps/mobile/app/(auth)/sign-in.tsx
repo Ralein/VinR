@@ -284,16 +284,16 @@ export default function SignInScreen() {
                         </Pressable>
                     </Animated.View>
 
-                    {/* Logo wordmark */}
-                    <Animated.View style={[s.logoRow, logoStyle]}>
-                        <Text style={s.logoVin}>vin</Text>
-                        <Text style={s.logoR}>R</Text>
-                    </Animated.View>
-
                     {/* Header */}
                     <Animated.View style={headStyle}>
                         <Text style={s.title}>Welcome back</Text>
                         <Text style={s.subtitle}>Continue your journey</Text>
+                    </Animated.View>
+
+                    {/* Logo wordmark */}
+                    <Animated.View style={[s.logoRow, logoStyle]}>
+                        <Text style={s.logoVin}>vin</Text>
+                        <Text style={s.logoR}>R</Text>
                     </Animated.View>
 
                     {/* Card */}

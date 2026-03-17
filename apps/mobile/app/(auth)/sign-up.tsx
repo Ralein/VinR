@@ -271,16 +271,16 @@ export default function SignUpScreen() {
                         </Pressable>
                     </Animated.View>
 
-                    {/* Logo */}
-                    <Animated.View style={[s.logoRow, logoStyle]}>
-                        <Text style={s.logoVin}>vin</Text>
-                        <Text style={s.logoR}>R</Text>
-                    </Animated.View>
-
                     {/* Header */}
                     <Animated.View style={headStyle}>
                         <Text style={s.title}>Your comeback{'\n'}starts now.</Text>
                         <Text style={s.subtitle}>Create your account</Text>
+                    </Animated.View>
+
+                    {/* Logo */}
+                    <Animated.View style={[s.logoRow, logoStyle]}>
+                        <Text style={s.logoVin}>vin</Text>
+                        <Text style={s.logoR}>R</Text>
                     </Animated.View>
 
                     {/* Card */}

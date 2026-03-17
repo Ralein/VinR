@@ -4,16 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 
 export const AuthService = {
     async signIn(email: string, password: string) {
-        // FastAPI OAuth2PasswordRequestForm expects x-www-form-urlencoded
-        const formData = new FormData();
-        formData.append('username', email); // OAuth2 expects 'username' instead of 'email'
-        formData.append('password', password);
-        
-        const response = await api.post('/api/v1/auth/login/access-token', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            }
-        });
+        const response = await api.post('/auth/login', { email, password });
         const { access_token } = response.data;
         await SecureStore.setItemAsync('authToken', access_token);
         useAuthStore.getState().setToken(access_token);
@@ -25,13 +16,13 @@ export const AuthService = {
 
     async signUp(email: string, password: string, name?: string) {
         // Register user
-        await api.post('/api/v1/auth/register', { email, password, full_name: name });
+        await api.post('/auth/register', { email, password, name });
         // After signup, automatically sign in to get the token
         return await this.signIn(email, password);
     },
 
     async getMe() {
-        const response = await api.get('/api/v1/users/me');
+        const response = await api.get('/auth/me');
         const user = response.data;
         useAuthStore.getState().setUser(user);
         return user;
