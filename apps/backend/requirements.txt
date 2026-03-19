@@ -15,6 +15,7 @@ alembic==1.13.2
 # Auth
 pyjwt==2.9.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 
 # Redis
 redis==5.1.0

@@ -1,12 +1,12 @@
 import api from './api';
-import * as SecureStore from 'expo-secure-store';
+import { setItemAsync, getItemAsync, deleteItemAsync } from '../utils/storage';
 import { useAuthStore } from '../stores/authStore';
 
 export const AuthService = {
     async signIn(email: string, password: string) {
         const response = await api.post('/auth/login', { email, password });
         const { access_token } = response.data;
-        await SecureStore.setItemAsync('authToken', access_token);
+        await setItemAsync('authToken', access_token);
         useAuthStore.getState().setToken(access_token);
         
         // After getting token, we need to fetch user details
@@ -29,13 +29,13 @@ export const AuthService = {
     },
 
     async signOut() {
-        await SecureStore.deleteItemAsync('authToken');
+        await deleteItemAsync('authToken');
         useAuthStore.getState().signOut();
     },
 
     async initAuth() {
         try {
-            const token = await SecureStore.getItemAsync('authToken');
+            const token = await getItemAsync('authToken');
             if (token) {
                 useAuthStore.getState().setToken(token);
                 await this.getMe();
@@ -44,7 +44,7 @@ export const AuthService = {
             }
         } catch (error) {
             console.error('Failed to init auth:', error);
-            await SecureStore.deleteItemAsync('authToken');
+            await deleteItemAsync('authToken');
             useAuthStore.getState().signOut();
         } finally {
             useAuthStore.getState().setLoading(false);
