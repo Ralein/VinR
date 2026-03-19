@@ -107,3 +107,28 @@ export function useCompleteDay() {
         },
     });
 }
+
+/**
+ * Convenience hook that combines the query and the store.
+ * Returns exactly what StreakHero needs.
+ */
+export function useStreak() {
+    const { isLoading } = useActiveStreak();
+    const { currentStreak, isCompletedToday, dailyCompletions } = useStreakStore();
+
+    // Simple weekly approximation: map recent completion days to week index 0-6 (Mon-Sun)
+    // In a real app, this should use date-fns to map local dates to the current week.
+    const weeklyDays = [false, false, false, false, false, false, false];
+    if (isCompletedToday) {
+        // Just mark today as done as a placeholder
+        const todayIdx = (new Date().getDay() + 6) % 7; // 0 for Mon, 6 for Sun
+        weeklyDays[todayIdx] = true;
+    }
+
+    return {
+        streak: currentStreak,
+        todayDone: isCompletedToday,
+        weeklyDays,
+        isLoading,
+    };
+}

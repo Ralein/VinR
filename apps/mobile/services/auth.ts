@@ -1,9 +1,28 @@
 import api from './api';
 import { setItemAsync, getItemAsync, deleteItemAsync } from '../utils/storage';
 import { useAuthStore } from '../stores/authStore';
+import { useSettingsStore } from '../stores/settingsStore';
 
 export const AuthService = {
     async signIn(email: string, password: string) {
+        if (useSettingsStore.getState().isMockAuthEnabled) {
+            const mockToken = "mock_token_" + Date.now();
+            await setItemAsync('authToken', mockToken);
+            useAuthStore.getState().setToken(mockToken);
+            
+            const mockUser = {
+                id: "usr_mock_123",
+                email,
+                name: "Mock User",
+                avatarUrl: null,
+                onboardingComplete: true,
+                musicGenre: "electronic",
+                timezone: "UTC"
+            };
+            useAuthStore.getState().setUser(mockUser);
+            return mockUser;
+        }
+
         const response = await api.post('/auth/login', { email, password });
         const { access_token } = response.data;
         await setItemAsync('authToken', access_token);
@@ -15,6 +34,10 @@ export const AuthService = {
     },
 
     async signUp(email: string, password: string, name?: string) {
+        if (useSettingsStore.getState().isMockAuthEnabled) {
+            return await this.signIn(email, password);
+        }
+
         // Register user
         await api.post('/auth/register', { email, password, name });
         // After signup, automatically sign in to get the token
@@ -22,6 +45,20 @@ export const AuthService = {
     },
 
     async getMe() {
+        if (useSettingsStore.getState().isMockAuthEnabled) {
+            const mockUser = {
+                id: "usr_mock_123",
+                email: "mocked@example.com",
+                name: "Mock User",
+                avatarUrl: null,
+                onboardingComplete: true,
+                musicGenre: "electronic",
+                timezone: "UTC"
+            };
+            useAuthStore.getState().setUser(mockUser);
+            return mockUser;
+        }
+
         const response = await api.get('/auth/me');
         const user = response.data;
         useAuthStore.getState().setUser(user);
