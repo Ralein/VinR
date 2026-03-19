@@ -3,7 +3,7 @@
  */
 
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import { getItemAsync, deleteItemAsync } from '../utils/storage';
 import { config } from '../constants/config';
 import { useAuthStore } from '../stores/authStore';
 
@@ -18,7 +18,7 @@ const api = axios.create({
 // Request interceptor — attach auth token
 api.interceptors.request.use(
     async (config) => {
-        const token = await SecureStore.getItemAsync('authToken');
+        const token = await getItemAsync('authToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -32,7 +32,7 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            await SecureStore.deleteItemAsync('authToken');
+            await deleteItemAsync('authToken');
             useAuthStore.getState().signOut();
         }
         return Promise.reject(error);
