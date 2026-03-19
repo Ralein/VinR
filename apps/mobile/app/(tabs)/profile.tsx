@@ -15,8 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     MessageSquare, CalendarDays, Flame, BookText,
-    BarChart2, TrendingUp,
+    BarChart2, TrendingUp, Settings
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { colors, fonts, spacing, glass, borderRadius } from '../../constants/theme';
 import {
     useAnalyticsSummary,
@@ -207,6 +208,7 @@ export default function ProfileScreen() {
     const [period, setPeriod] = useState('30d');
     const { data: summary, isLoading: loadingSummary } = useAnalyticsSummary();
     const { data: trends, isLoading: loadingTrends } = useAnalyticsTrends(period);
+    const router = useRouter();
 
     const isLoading = loadingSummary || loadingTrends;
 
@@ -223,6 +225,12 @@ export default function ProfileScreen() {
                     </View>
                     <Text style={styles.title}>My Journey</Text>
                     <Text style={styles.subtitle}>Your wellness analytics</Text>
+                    <Pressable
+                        style={styles.settingsButton}
+                        onPress={() => router.push('/settings')}
+                    >
+                        <Settings size={26} color={colors.textMuted} />
+                    </Pressable>
                 </View>
 
                 {isLoading ? (
@@ -342,6 +350,12 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontFamily: fonts.body, fontSize: 14, color: colors.textMuted,
+    },
+    settingsButton: {
+        position: 'absolute',
+        top: spacing.xl,
+        right: spacing.lg,
+        padding: spacing.xs,
     },
     loadingContainer: {
         alignItems: 'center', justifyContent: 'center',

@@ -23,6 +23,7 @@ import {
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
+import { useStreak } from '../../hooks/useStreak';
 import { useAdaptiveHome } from '../../hooks/useAdaptive';
 import AudioCategoryCard from '../../components/media/AudioCategoryCard';
 import YouTubeCard from '../../components/media/YouTubeCard';
@@ -87,6 +88,7 @@ const AUDIO_CATEGORIES = [
 
 export default function HomeScreen() {
     const [showSleepMode, setShowSleepMode] = useState(false);
+    const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
     const { data: youtubeData } = useYouTubeSearch('Pop', 'music');
     const { data: motivationData } = useYouTubeSearch('Pop', 'motivation');
@@ -127,9 +129,9 @@ export default function HomeScreen() {
                 <Animated.View entering={FadeInDown.delay(240).duration(480)}>
                     <GlassCard accent="gold" elevated shimmer glow>
                         <StreakHero
-                            streak={0}
-                            todayDone={false}
-                            weeklyDays={[false,false,false,false,false,false,false]}
+                            streak={streak}
+                            todayDone={todayDone}
+                            weeklyDays={weeklyDays}
                         />
                     </GlassCard>
                 </Animated.View>

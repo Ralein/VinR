@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
-import { useNotificationSettings } from '../../hooks/useNotificationSettings';
+import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
+import { useNotificationSettings } from '../hooks/useNotificationSettings';
 
 const NOTIFICATION_TYPES = [
     {
