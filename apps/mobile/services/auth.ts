@@ -1,87 +1,124 @@
-import api from './api';
-import { setItemAsync, getItemAsync, deleteItemAsync } from '../utils/storage';
+import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
-import { useSettingsStore } from '../stores/settingsStore';
 
 export const AuthService = {
     async signIn(email: string, password: string) {
-        if (useSettingsStore.getState().isMockAuthEnabled) {
-            const mockToken = "mock_token_" + Date.now();
-            await setItemAsync('authToken', mockToken);
-            useAuthStore.getState().setToken(mockToken);
-            
-            const mockUser = {
-                id: "usr_mock_123",
-                email,
-                name: "Mock User",
-                avatarUrl: null,
-                onboardingComplete: true,
-                musicGenre: "electronic",
-                timezone: "UTC"
-            };
-            useAuthStore.getState().setUser(mockUser);
-            return mockUser;
+        useAuthStore.getState().setLoading(true);
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            useAuthStore.getState().setLoading(false);
+            throw error;
         }
 
-        const response = await api.post('/auth/login', { email, password });
-        const { access_token } = response.data;
-        await setItemAsync('authToken', access_token);
-        useAuthStore.getState().setToken(access_token);
-        
-        // After getting token, we need to fetch user details
-        const me = await this.getMe();
-        return me;
+        if (data.session) {
+            useAuthStore.getState().setToken(data.session.access_token);
+            useAuthStore.getState().setUser({
+                id: data.user.id,
+                email: data.user.email || '',
+                name: data.user.user_metadata?.name || null,
+                avatarUrl: data.user.user_metadata?.avatarUrl || null,
+                onboardingComplete: true,
+                musicGenre: null,
+                timezone: "UTC"
+            });
+        }
+        useAuthStore.getState().setLoading(false);
+        return data.user;
     },
 
     async signUp(email: string, password: string, name?: string) {
-        if (useSettingsStore.getState().isMockAuthEnabled) {
-            return await this.signIn(email, password);
+        useAuthStore.getState().setLoading(true);
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    name: name
+                }
+            }
+        });
+
+        if (error) {
+            useAuthStore.getState().setLoading(false);
+            throw error;
         }
 
-        // Register user
-        await api.post('/auth/register', { email, password, name });
-        // After signup, automatically sign in to get the token
-        return await this.signIn(email, password);
+        if (data.session) {
+            useAuthStore.getState().setToken(data.session.access_token);
+            useAuthStore.getState().setUser({
+                id: data.user!.id,
+                email: data.user!.email || '',
+                name: data.user!.user_metadata?.name || null,
+                avatarUrl: data.user!.user_metadata?.avatarUrl || null,
+                onboardingComplete: true,
+                musicGenre: null,
+                timezone: "UTC"
+            });
+        }
+        useAuthStore.getState().setLoading(false);
+        return data.user;
     },
 
     async getMe() {
-        if (useSettingsStore.getState().isMockAuthEnabled) {
-            const mockUser = {
-                id: "usr_mock_123",
-                email: "mocked@example.com",
-                name: "Mock User",
-                avatarUrl: null,
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const mappedUser = {
+                id: user.id,
+                email: user.email || '',
+                name: user.user_metadata?.name || null,
+                avatarUrl: user.user_metadata?.avatarUrl || null,
                 onboardingComplete: true,
-                musicGenre: "electronic",
+                musicGenre: null,
                 timezone: "UTC"
             };
-            useAuthStore.getState().setUser(mockUser);
-            return mockUser;
+            useAuthStore.getState().setUser(mappedUser);
+            return mappedUser;
         }
-
-        const response = await api.get('/auth/me');
-        const user = response.data;
-        useAuthStore.getState().setUser(user);
-        return user;
+        return null;
     },
 
     async signOut() {
-        await deleteItemAsync('authToken');
+        useAuthStore.getState().setLoading(true);
+        await supabase.auth.signOut();
         useAuthStore.getState().signOut();
+        useAuthStore.getState().setLoading(false);
     },
 
     async initAuth() {
+        useAuthStore.getState().setLoading(true);
         try {
-            const token = await getItemAsync('authToken');
-            if (token) {
-                useAuthStore.getState().setToken(token);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                useAuthStore.getState().setToken(session.access_token);
                 await this.getMe();
             } else {
-                useAuthStore.getState().setLoading(false);
+                useAuthStore.getState().signOut();
             }
+
+            // Listen for auth state changes
+            supabase.auth.onAuthStateChange(async (_event, newSession) => {
+                if (newSession) {
+                    useAuthStore.getState().setToken(newSession.access_token);
+                    const mappedUser = {
+                        id: newSession.user.id,
+                        email: newSession.user.email || '',
+                        name: newSession.user.user_metadata?.name || null,
+                        avatarUrl: newSession.user.user_metadata?.avatarUrl || null,
+                        onboardingComplete: true,
+                        musicGenre: null,
+                        timezone: "UTC"
+                    };
+                    useAuthStore.getState().setUser(mappedUser);
+                } else {
+                    useAuthStore.getState().signOut();
+                }
+            });
         } catch (error) {
             console.error('Failed to init auth:', error);
-            await deleteItemAsync('authToken');
             useAuthStore.getState().signOut();
         } finally {
             useAuthStore.getState().setLoading(false);

@@ -11,7 +11,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Optionally show a splash screen or loading state here
     if (isLoading) {
-        return null; // Return null so Expo Router doesn't mount the app until we know auth state
+        return <React.Fragment>{children}</React.Fragment>; 
     }
 
     return <>{children}</>;

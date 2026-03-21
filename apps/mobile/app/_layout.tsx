@@ -4,8 +4,12 @@
 import "../global.css";
 
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { LogBox } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+LogBox.ignoreLogs(['SafeAreaView']);
 import { useFonts } from 'expo-font';
 import {
     PlayfairDisplay_700Bold,
@@ -27,6 +31,18 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const router = useRouter();
+    const segments = useSegments();
+
+    useEffect(() => {
+        const inAuthGroup = segments[0] === '(auth)';
+        
+        if (!isAuthenticated && !inAuthGroup) {
+            router.replace('/(auth)/welcome');
+        } else if (isAuthenticated && inAuthGroup) {
+            router.replace('/(tabs)');
+        }
+    }, [isAuthenticated, segments]);
 
     return (
         <Stack
@@ -36,11 +52,17 @@ function RootNavigator() {
                 animation: 'slide_from_right',
             }}
         >
-            {!isAuthenticated ? (
-                <Stack.Screen name="(auth)" />
-            ) : (
-                <Stack.Screen name="(tabs)" />
-            )}
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="notification-settings" />
+            <Stack.Screen name="settings" />
+            <Stack.Screen name="therapist" />
+            <Stack.Screen name="breathing" />
+            <Stack.Screen name="yoga" />
+            <Stack.Screen name="morning" />
+            <Stack.Screen name="evening" />
+            <Stack.Screen name="grounding" />
         </Stack>
     );
 }
@@ -62,16 +84,18 @@ export default function RootLayout() {
         }
     }, [fontsLoaded, isLoadingAuth]);
 
-    if (!fontsLoaded) {
-        return null;
-    }
+    // if (!fontsLoaded) {
+    //     return null;
+    // }
 
     return (
-        <AuthProvider>
-            <QueryProvider>
-                <StatusBar style="light" />
-                <RootNavigator />
-            </QueryProvider>
-        </AuthProvider>
+        <SafeAreaProvider>
+            <AuthProvider>
+                <QueryProvider>
+                    <StatusBar style="light" />
+                    <RootNavigator />
+                </QueryProvider>
+            </AuthProvider>
+        </SafeAreaProvider>
     );
 }
