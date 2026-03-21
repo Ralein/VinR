@@ -1,6 +1,7 @@
 /**
  * Root Layout — App entry point with Clerk Auth + React Query + fonts
  */
+import "../global.css";
 
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
