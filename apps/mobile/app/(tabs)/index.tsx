@@ -18,8 +18,9 @@ import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-nati
 import {
     Music2, Zap, Headphones, Users, Moon, ChevronRight,
     Activity, Brain, Sparkles, Wind, Heart, Sun, Quote,
-    CalendarDays, TrendingUp,
+    CalendarDays, TrendingUp, LogOut
 } from 'lucide-react-native';
+import { useAuthStore } from '../../stores/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
@@ -114,8 +115,12 @@ export default function HomeScreen() {
                             Welcome to VinR
                         </Animated.Text>
                     </View>
-                    <Animated.View entering={FadeIn.delay(150).duration(400)}>
+                    <Animated.View entering={FadeIn.delay(150).duration(400)} style={{ alignItems: 'center' }}>
                         <AvatarRing initials="VR" size={48} pulse style={{ marginTop: 6 }} />
+                        <Pressable onPress={() => useAuthStore.getState().signOut()} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <LogOut size={12} color={colors.crimson} />
+                            <Text style={{ color: colors.crimson, fontSize: 10, fontFamily: fonts.bodySemiBold }}>Sign Out</Text>
+                        </Pressable>
                     </Animated.View>
                 </Animated.View>
 
