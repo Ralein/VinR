@@ -52,7 +52,7 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: UUID
+    id: str
     email: str
     name: str | None
     avatar_url: str | None
