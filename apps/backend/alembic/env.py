@@ -15,6 +15,10 @@ from app.models.user import User
 from app.models.checkin import Checkin, Plan
 from app.models.streak import Streak, DailyCompletion
 from app.models.push_token import PushToken
+from app.models.notification_preferences import NotificationPreferences
+from app.models.journal import JournalEntry
+from app.models.events import BookmarkedEvent
+from app.models.media import MediaSession
 
 settings = get_settings()
 
