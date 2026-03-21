@@ -57,7 +57,6 @@ class Settings(BaseSettings):
 
     # Events APIs
     EVENTBRITE_API_KEY: str = ""
-    MEETUP_API_KEY: str = ""
 
     # CORS
     CORS_ORIGINS: list[str] = [
