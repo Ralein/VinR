@@ -21,6 +21,7 @@ import Animated, {
     withRepeat, Easing, interpolate,
 } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -129,15 +130,17 @@ function GoldInput({
     secureTextEntry?: boolean;
     delay: number;
 }) {
-    const [focused, setFocused] = useState(false);
-    const borderOp  = useSharedValue(0);
-    const slideY    = useSharedValue(16);
-    const op        = useSharedValue(0);
+    const [focused,  setFocused]  = useState(false);
+    const [revealed, setRevealed] = useState(false);
+    const slideY      = useSharedValue(16);
+    const op          = useSharedValue(0);
     const focusBorder = useSharedValue(0);
+    const eyeOp       = useSharedValue(0);
 
     useEffect(() => {
-        op.value     = withDelay(d, withTiming(1,  { duration: 500 }));
-        slideY.value = withDelay(d, withSpring(0,  { stiffness: 90, damping: 18 }));
+        op.value     = withDelay(d, withTiming(1, { duration: 500 }));
+        slideY.value = withDelay(d, withSpring(0, { stiffness: 90, damping: 18 }));
+        if (secureTextEntry) eyeOp.value = withDelay(d + 200, withTiming(1, { duration: 400 }));
     }, []);
 
     useEffect(() => {
@@ -150,18 +153,18 @@ function GoldInput({
     }));
 
     const borderStyle = useAnimatedStyle(() => ({
-        borderColor: focusBorder.value === 1
-            ? BORDER_GOLD
-            : BORDER,
+        borderColor: focusBorder.value === 1 ? BORDER_GOLD : BORDER,
         shadowOpacity: focusBorder.value * 0.25,
     }));
+
+    const eyeStyle = useAnimatedStyle(() => ({ opacity: eyeOp.value }));
 
     return (
         <Animated.View style={[s.inputWrap, containerStyle]}>
             <Text style={s.inputLabel}>{label}</Text>
             <Animated.View style={[s.inputBox, borderStyle]}>
                 <TextInput
-                    style={s.input}
+                    style={[s.input, secureTextEntry && { paddingRight: 48 }]}
                     placeholder={placeholder}
                     placeholderTextColor={TEXT_LO}
                     value={value}
@@ -171,8 +174,21 @@ function GoldInput({
                     keyboardType={keyboardType}
                     autoCapitalize={autoCapitalize ?? 'none'}
                     autoComplete={autoComplete}
-                    secureTextEntry={secureTextEntry}
+                    secureTextEntry={secureTextEntry && !revealed}
                 />
+                {secureTextEntry && (
+                    <Animated.View style={[s.eyeBtn, eyeStyle]}>
+                        <Pressable
+                            onPress={() => { haptics.light(); setRevealed(r => !r); }}
+                            hitSlop={10}
+                        >
+                            {revealed
+                                ? <EyeOff size={18} color={TEXT_LO} strokeWidth={1.6} />
+                                : <Eye    size={18} color={TEXT_LO} strokeWidth={1.6} />
+                            }
+                        </Pressable>
+                    </Animated.View>
+                )}
             </Animated.View>
         </Animated.View>
     );
@@ -284,16 +300,16 @@ export default function SignInScreen() {
                         </Pressable>
                     </Animated.View>
 
-                    {/* Header */}
-                    <Animated.View style={headStyle}>
-                        <Text style={s.title}>Welcome back</Text>
-                        <Text style={s.subtitle}>Continue your journey</Text>
-                    </Animated.View>
-
                     {/* Logo wordmark */}
                     <Animated.View style={[s.logoRow, logoStyle]}>
                         <Text style={s.logoVin}>vin</Text>
                         <Text style={s.logoR}>R</Text>
+                    </Animated.View>
+
+                    {/* Header */}
+                    <Animated.View style={headStyle}>
+                        <Text style={s.title}>Welcome back</Text>
+                        <Text style={s.subtitle}>Continue your journey</Text>
                     </Animated.View>
 
                     {/* Card */}
@@ -455,6 +471,11 @@ const s = StyleSheet.create({
         shadowOffset: { width: 0, height: 0 },
         shadowRadius: 8,
         shadowOpacity: 0,
+    },
+    eyeBtn: {
+        position: 'absolute',
+        right: 14, top: 0, bottom: 0,
+        justifyContent: 'center',
     },
     input: {
         paddingHorizontal: 16,
