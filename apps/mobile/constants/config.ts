@@ -3,8 +3,16 @@
  */
 
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const getDevApiUrl = () => {
+    const debuggerHost = Constants.expoConfig?.hostUri;
+    
+    if (debuggerHost) {
+        const localhost = debuggerHost.split(':')[0];
+        return `http://${localhost}:8000/api/v1`;
+    }
+
     if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8000/api/v1';
     }

@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 from datetime import datetime, date
+from uuid import UUID
 
 
 class DayCompleteRequest(BaseModel):
@@ -10,7 +11,7 @@ class DayCompleteRequest(BaseModel):
 
 
 class DailyCompletionResponse(BaseModel):
-    id: str
+    id: UUID
     day_number: int
     completed_at: datetime
     habit_completed: bool | None
@@ -21,9 +22,9 @@ class DailyCompletionResponse(BaseModel):
 
 
 class StreakResponse(BaseModel):
-    id: str
-    user_id: str
-    plan_id: str
+    id: UUID
+    user_id: UUID
+    plan_id: UUID
     current_streak: int
     longest_streak: int
     total_days_completed: int
