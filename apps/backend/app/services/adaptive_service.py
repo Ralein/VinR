@@ -13,7 +13,7 @@ from app.services.analytics_service import mood_tag_to_score
 
 async def build_user_context(db: AsyncSession, user_id: str) -> str:
     """
-    Build a rich context string for Claude about this user.
+    Build a rich context string for Grok about this user.
 
     Includes recent emotions, streak status, habit preferences,
     and patterns to enable adaptive responses.

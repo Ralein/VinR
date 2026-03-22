@@ -1,11 +1,12 @@
-"""Journal Service — AI reflections and weekly insights via Claude."""
+"""Journal Service — AI reflections and weekly insights via Groq."""
 
 from datetime import date, timedelta
-from anthropic import AsyncAnthropic
+import openai
+from openai import AsyncOpenAI
 from app.core.config import get_settings
 
 settings = get_settings()
-client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+client = AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1") if settings.GROQ_API_KEY else None
 
 
 async def generate_journal_reflection(
@@ -43,12 +44,15 @@ Rules:
 - Write in second person ("you")"""
 
     try:
-        response = await client.messages.create(
-            model=settings.CLAUDE_MODEL,
+        if not client:
+            raise ValueError("GROQ_API_KEY not configured")
+        
+        response = await client.chat.completions.create(
+            model=settings.GROQ_MODEL,
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.content[0].text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"Journal reflection error: {e}")
         return "Thank you for sharing today. Every moment of gratitude builds the foundation for a brighter tomorrow."
@@ -91,12 +95,15 @@ Rules:
 - Be encouraging but honest"""
 
     try:
-        response = await client.messages.create(
-            model=settings.CLAUDE_MODEL,
+        if not client:
+            raise ValueError("GROQ_API_KEY not configured")
+        
+        response = await client.chat.completions.create(
+            model=settings.GROQ_MODEL,
             max_tokens=250,
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.content[0].text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"Weekly insight error: {e}")
         return "Keep journaling — your weekly insight will appear after a few more entries."

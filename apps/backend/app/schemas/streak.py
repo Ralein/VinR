@@ -1,6 +1,6 @@
 """Streak Pydantic schemas."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from datetime import datetime, date
 from uuid import UUID
 
@@ -11,7 +11,7 @@ class DayCompleteRequest(BaseModel):
 
 
 class DailyCompletionResponse(BaseModel):
-    id: UUID
+    id: str
     day_number: int
     completed_at: datetime
     habit_completed: bool | None
@@ -20,11 +20,16 @@ class DailyCompletionResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def cast_to_str(cls, v):
+        return str(v)
+
 
 class StreakResponse(BaseModel):
-    id: UUID
-    user_id: UUID
-    plan_id: UUID
+    id: str
+    user_id: str
+    plan_id: str
     current_streak: int
     longest_streak: int
     total_days_completed: int
@@ -34,6 +39,11 @@ class StreakResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("id", "user_id", "plan_id", mode="before")
+    @classmethod
+    def cast_to_str(cls, v):
+        return str(v)
 
 
 class StreakSummary(BaseModel):

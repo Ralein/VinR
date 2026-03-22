@@ -70,30 +70,9 @@ async def get_audio_library(category: str) -> list[dict]:
     Categories: sleep, breathing, meditation, affirmation
     
     Returns list of track dicts. In production, each would include
-    an S3 pre-signed URL. For now returns the hardcoded catalog.
+    a pre-signed URL from a storage provider. For now returns the hardcoded catalog.
     """
     tracks = AUDIO_CATALOG.get(category, [])
-    
-    # If AWS is configured, generate pre-signed URLs
-    if settings.AWS_ACCESS_KEY_ID and settings.AWS_S3_BUCKET:
-        try:
-            import boto3
-            s3 = boto3.client(
-                "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_REGION,
-            )
-            for track in tracks:
-                key = f"audio/{category}/{track['id']}.mp3"
-                track["url"] = s3.generate_presigned_url(
-                    "get_object",
-                    Params={"Bucket": settings.AWS_S3_BUCKET, "Key": key},
-                    ExpiresIn=3600,
-                )
-        except Exception as e:
-            print(f"S3 URL generation failed: {e}")
-            # Tracks will have url=None, frontend can handle gracefully
     
     return tracks
 

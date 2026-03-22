@@ -29,7 +29,7 @@ async def create_checkin(
     Flow:
     1. Retrieve relevant RAG context based on user's text
     2. Build adaptive user context from history
-    3. Call Claude API with system prompt + RAG context + user context
+    3. Call Grok API with system prompt + RAG context + user context
     4. Parse structured JSON response
     5. Store checkin + plan in DB
     6. Create/update streak record (upsert — never duplicate)
@@ -43,7 +43,7 @@ async def create_checkin(
     # Step 2: Build adaptive user context
     user_context = await build_user_context(db, user_id)
 
-    # Step 3-4: Call Claude with full context
+    # Step 3-4: Call Grok with full context
     ai_response = await analyze_emotions(
         mood_tag=request.mood_tag,
         raw_text=request.text or "",

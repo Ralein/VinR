@@ -36,21 +36,11 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAILS_FROM_EMAIL: str = "noreply@vinrmobile.com"
 
-    # Anthropic (Claude)
-    ANTHROPIC_API_KEY: str = ""
-    CLAUDE_MODEL: str = "claude-sonnet-4-20250514"
+    # Groq API
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
 
     # Expo Push Notifications
-    EXPO_PUSH_URL: str = "https://exp.host/--/api/v2/push/send"
-
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-
-    # AWS S3
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_S3_BUCKET: str = "vinr-media"
-    AWS_REGION: str = "us-east-1"
 
     # YouTube Data API v3
     YOUTUBE_API_KEY: str = ""

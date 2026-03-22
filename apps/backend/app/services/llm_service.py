@@ -1,20 +1,23 @@
-"""LLM Service — Claude API integration for emotional analysis."""
+"""LLM Service — Groq API integration for emotional analysis."""
 
 import json
-import anthropic
+import openai
+from openai import AsyncOpenAI
 from app.core.config import get_settings
 
 settings = get_settings()
 
-# Async Anthropic client
-_client: anthropic.AsyncAnthropic | None = None
+# Async OpenAI client
+_client: AsyncOpenAI | None = None
 
 
-def get_client() -> anthropic.AsyncAnthropic:
-    """Get or create cached Anthropic client."""
+def get_client() -> AsyncOpenAI:
+    """Get or create cached OpenAI client for xAI/Grok."""
     global _client
     if _client is None:
-        _client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY is not set.")
+        _client = AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
     return _client
 
 
@@ -80,7 +83,7 @@ async def analyze_emotions(
     user_context: str = "",
 ) -> dict:
     """
-    Call Claude API to analyze emotions and generate a rescue plan.
+    Call Groq API to analyze emotions and generate a rescue plan.
 
     Args:
         mood_tag: Selected mood (e.g. "anxious", "sad")
@@ -91,8 +94,6 @@ async def analyze_emotions(
     Returns:
         Parsed dict matching the PlanResponse schema
     """
-    client = get_client()
-
     # Build user message
     parts = [f"Mood: {mood_tag}"]
     if raw_text:
@@ -105,33 +106,38 @@ async def analyze_emotions(
     user_message = "\n\n".join(parts)
 
     try:
-        message = await client.messages.create(
-            model=settings.CLAUDE_MODEL,
+        client = get_client()
+        response = await client.chat.completions.create(
+            model=settings.GROQ_MODEL,
             max_tokens=2048,
-            system=VINR_SYSTEM_PROMPT,
+            temperature=0.7,
             messages=[
+                {"role": "system", "content": VINR_SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
             ],
         )
 
-        # Extract text content from Claude's response
-        response_text = message.content[0].text.strip()
+        # Extract text content from Groq's response
+        response_text = response.choices[0].message.content.strip()
 
         # Parse JSON - handle potential markdown code blocks
         if response_text.startswith("```"):
             # Strip markdown code fences
             lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])
+            if lines[-1].strip() == "```":
+                response_text = "\n".join(lines[1:-1])
+            else:
+                response_text = "\n".join(lines[1:])
 
         result = json.loads(response_text)
         return result
 
     except json.JSONDecodeError as e:
         # Fallback to mock if JSON parsing fails
-        print(f"⚠️ Failed to parse Claude response as JSON: {e}")
+        print(f"⚠️ Failed to parse Groq response as JSON: {e}\nResponse was: {response_text}")
         return _get_fallback_response(mood_tag, raw_text)
-    except anthropic.APIError as e:
-        print(f"⚠️ Anthropic API error: {e}")
+    except openai.APIError as e:
+        print(f"⚠️ Groq API error: {e}")
         return _get_fallback_response(mood_tag, raw_text)
     except Exception as e:
         print(f"⚠️ Unexpected error in analyze_emotions: {e}")
@@ -139,7 +145,7 @@ async def analyze_emotions(
 
 
 def _get_fallback_response(mood_tag: str, raw_text: str) -> dict:
-    """Fallback response when Claude API is unavailable."""
+    """Fallback response when Groq API is unavailable."""
     return {
         "isEmergency": False,
         "primaryEmotion": mood_tag,

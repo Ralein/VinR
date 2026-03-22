@@ -16,8 +16,10 @@ export const AuthService = {
                 // Get user profile
                 return await this.getMe();
             }
-        } catch (error) {
-            console.error('Sign in failed:', error);
+        } catch (error: any) {
+            if (error?.response?.status !== 401) {
+                console.error('Sign in failed:', error);
+            }
             throw error;
         } finally {
             useAuthStore.getState().setLoading(false);
@@ -37,8 +39,10 @@ export const AuthService = {
                 // Get user profile
                 return await this.getMe();
             }
-        } catch (error) {
-            console.error('Sign up failed:', error);
+        } catch (error: any) {
+            if (error?.response?.status !== 401) {
+                console.error('Sign up failed:', error);
+            }
             throw error;
         } finally {
             useAuthStore.getState().setLoading(false);
@@ -61,8 +65,10 @@ export const AuthService = {
                 useAuthStore.getState().setUser(mappedUser);
                 return mappedUser;
             }
-        } catch (error) {
-            console.error('Get me failed:', error);
+        } catch (error: any) {
+            if (error?.response?.status !== 401) {
+                console.error('Get me failed:', error);
+            }
             return null;
         }
         return null;
