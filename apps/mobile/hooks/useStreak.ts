@@ -51,10 +51,6 @@ export function useActiveStreak() {
         queryKey: ['streak', 'active'],
         queryFn: async (): Promise<StreakResponse | null> => {
             const { data } = await api.get<StreakResponse | null>('/streaks/active');
-            return data;
-        },
-        staleTime: 1000 * 60 * 5, // 5 min
-        select: (data) => {
             if (data) {
                 setActiveStreak({
                     id: data.id,
@@ -73,6 +69,7 @@ export function useActiveStreak() {
             }
             return data;
         },
+        staleTime: 1000 * 60 * 5, // 5 min
     });
 }
 
