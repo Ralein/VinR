@@ -22,6 +22,7 @@ import { colors, animation } from '../../../constants/theme';
 import { haptics } from '../../../services/haptics';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useAuthStore } from '../../../stores/authStore';
+import { AuthService } from '../../../services/auth';
 import { ProgressDots } from '../../../components/ui/ProgressDots';
 
 const TIMES = [
@@ -52,27 +53,32 @@ export default function Step4Notify() {
         setNotifyTime(time);
     };
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
         haptics.success();
         const state = useOnboardingStore.getState();
         // Mark onboarding complete in auth store
         if (user) {
-            setUser({ 
-                ...user, 
-                onboardingComplete: true, 
-                age: state.age,
-                primaryReason: state.primaryReason,
-                relaxationMethods: state.relaxationMethods,
-            });
+            try {
+                await AuthService.updateProfile({
+                    name: state.name || undefined,
+                    age: state.age || undefined,
+                    primaryReason: state.primaryReason || undefined,
+                    relaxationMethods: state.relaxationMethods || undefined,
+                    onboardingComplete: true,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                });
+            } catch (error) {
+                console.warn('Failed to save onboarding data', error);
+            }
         }
         // Navigate to main app
         router.replace('/(tabs)');
     };
 
-    const handleSkip = () => {
+    const handleSkip = async () => {
         haptics.light();
         setNotifyEnabled(false);
-        handleFinish();
+        await handleFinish();
     };
 
     return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
@@ -12,6 +12,7 @@ import Animated, {
     interpolate,
     FadeIn,
     FadeOut,
+    runOnJS,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { X, Play, Pause, Wind } from 'lucide-react-native';
@@ -23,9 +24,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-type Phase = 'inhale' | 'hold' | 'exhale' | 'idle';
+type Phase = 'inhale' | 'holdInhale' | 'exhale' | 'holdExhale' | 'idle';
 
 export default function BreathingScreen() {
+    const { name } = useLocalSearchParams();
+    const breathingType = name?.toString().toLowerCase() || 'relax';
+    
     const [isActive, setIsActive] = useState(false);
     const [phase, setPhase] = useState<Phase>('idle');
     const [timeRemaining, setTimeRemaining] = useState(60 * 3); // 3 minutes total
@@ -34,13 +38,15 @@ export default function BreathingScreen() {
     const progress = useSharedValue(0); // 0 to 1
     const pulse = useSharedValue(1);
 
-    // Box breathing config (4s inhale, 4s hold, 4s exhale, 4s hold... wait, classic box is 4-4-4-4, let's just do 4-in, 7-hold, 8-out or simpler relax 4-in, 6-out)
-    // We'll do a simple relax: 4s inhale, 2s hold, 6s exhale
-    const config = {
-        inhale: 4000,
-        hold: 2000,
-        exhale: 6000,
-    };
+    // Determine the configuration dynamically
+    const config = React.useMemo(() => {
+        if (breathingType.includes('box')) {
+            return { inhale: 4000, holdInhale: 4000, exhale: 4000, holdExhale: 4000 };
+        } else if (breathingType.includes('4-7-8') || breathingType.includes('478')) {
+            return { inhale: 4000, holdInhale: 7000, exhale: 8000, holdExhale: 0 };
+        }
+        return { inhale: 4000, holdInhale: 2000, exhale: 6000, holdExhale: 0 };
+    }, [breathingType]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -62,21 +68,42 @@ export default function BreathingScreen() {
         haptics.medium();
         progress.value = withTiming(1, { duration: config.inhale, easing: Easing.inOut(Easing.quad) }, (finished) => {
             if (finished && isActive) {
-                // Hold
-                setPhase('hold');
-                progress.value = withTiming(1, { duration: config.hold }, (holdFinished) => {
-                    if (holdFinished && isActive) {
-                        // Exhale
-                        setPhase('exhale');
-                        haptics.medium();
-                        progress.value = withTiming(0, { duration: config.exhale, easing: Easing.inOut(Easing.quad) }, (exhaleFinished) => {
-                            if (exhaleFinished && isActive) {
-                                // Loop
-                                runCycle();
+                
+                const startExhale = () => {
+                    if (!isActive) return;
+                    setPhase('exhale');
+                    haptics.medium();
+                    progress.value = withTiming(0, { duration: config.exhale, easing: Easing.inOut(Easing.quad) }, (exFinished) => {
+                        if (exFinished && isActive) {
+                            
+                            const startNextCycle = () => {
+                                if (isActive) runCycle();
+                            };
+
+                            if (config.holdExhale > 0) {
+                                setPhase('holdExhale');
+                                progress.value = withTiming(0, { duration: config.holdExhale }, (hkFinished) => {
+                                    if (hkFinished && isActive) {
+                                        runOnJS(startNextCycle)();
+                                    }
+                                });
+                            } else {
+                                runOnJS(startNextCycle)();
                             }
-                        });
-                    }
-                });
+                        }
+                    });
+                };
+
+                if (config.holdInhale > 0) {
+                    setPhase('holdInhale');
+                    progress.value = withTiming(1, { duration: config.holdInhale }, (holdFinished) => {
+                        if (holdFinished && isActive) {
+                            runOnJS(startExhale)();
+                        }
+                    });
+                } else {
+                    runOnJS(startExhale)();
+                }
             }
         });
     };
@@ -144,8 +171,9 @@ export default function BreathingScreen() {
     const getPhaseText = () => {
         switch (phase) {
             case 'inhale': return 'Breathe In...';
-            case 'hold': return 'Hold...';
+            case 'holdInhale': return 'Hold...';
             case 'exhale': return 'Breathe Out...';
+            case 'holdExhale': return 'Wait...';
             default: return 'Ready?';
         }
     };
@@ -161,7 +189,10 @@ export default function BreathingScreen() {
                 <Pressable onPress={() => router.back()} style={styles.closeButton}>
                     <X size={24} color={colors.textPrimary} />
                 </Pressable>
-                <Text style={styles.timer}>{formatTime(timeRemaining)}</Text>
+                <View style={{alignItems: 'center'}}>
+                    <Text style={styles.titleText}>{name || 'Breathing'}</Text>
+                    <Text style={styles.timer}>{formatTime(timeRemaining)}</Text>
+                </View>
                 <View style={styles.placeholder} />
             </View>
 
@@ -234,6 +265,13 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: colors.textPrimary,
         fontVariant: ['tabular-nums'],
+    },
+    titleText: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 14,
+        color: colors.textMuted,
+        marginBottom: 4,
+        textTransform: 'capitalize',
     },
     placeholder: {
         width: 44,

@@ -10,6 +10,7 @@ import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { colors } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
+import { router } from 'expo-router';
 
 interface ReliefItem {
     id: string;
@@ -68,6 +69,24 @@ export function InstructionSheet({ item, visible, onClose }: InstructionSheetPro
                         <Text style={styles.scienceText}>{item.scienceNote}</Text>
                         <Text style={styles.source}>Source: {item.source}</Text>
                     </View>
+
+                    {/* Start Action */}
+                    {item.category === 'breathing' && (
+                        <Pressable
+                            style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
+                            onPress={() => { haptics.light(); onClose(); router.push({ pathname: '/breathing', params: { name: item.name } }); }}
+                        >
+                            <Text style={styles.closeText}>Start Breathing</Text>
+                        </Pressable>
+                    )}
+                    {item.category === 'grounding' && (
+                        <Pressable
+                            style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
+                            onPress={() => { haptics.light(); onClose(); router.push('/grounding'); }}
+                        >
+                            <Text style={styles.closeText}>Start Grounding</Text>
+                        </Pressable>
+                    )}
 
                     {/* Close */}
                     <Pressable
