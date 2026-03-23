@@ -19,20 +19,18 @@ import { haptics } from '../../../services/haptics';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { ProgressDots } from '../../../components/ui/ProgressDots';
 
-const MOODS = [
-    { id: 'happy', emoji: '😊', label: 'Happy' },
-    { id: 'anxious', emoji: '😰', label: 'Anxious' },
-    { id: 'sad', emoji: '😢', label: 'Sad' },
-    { id: 'frustrated', emoji: '😤', label: 'Frustrated' },
-    { id: 'exhausted', emoji: '😴', label: 'Exhausted' },
-    { id: 'confused', emoji: '🤔', label: 'Confused' },
-    { id: 'calm', emoji: '😌', label: 'Calm' },
-    { id: 'motivated', emoji: '💪', label: 'Motivated' },
+const REASONS = [
+    { id: 'stress', emoji: '😫', label: 'Reduce Stress' },
+    { id: 'sleep', emoji: '😴', label: 'Better Sleep' },
+    { id: 'focus', emoji: '🎯', label: 'Improve Focus' },
+    { id: 'anxiety', emoji: '😰', label: 'Manage Anxiety' },
+    { id: 'growth', emoji: '🌱', label: 'Personal Growth' },
+    { id: 'healing', emoji: '❤️‍🩹', label: 'Healing' },
 ];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function MoodChip({ id, emoji, label, isSelected, onPress, index }: {
+function ReasonChip({ id, emoji, label, isSelected, onPress, index }: {
     id: string; emoji: string; label: string; isSelected: boolean; onPress: () => void; index: number;
 }) {
     const animatedStyle = useAnimatedStyle(() => ({
@@ -58,12 +56,12 @@ function MoodChip({ id, emoji, label, isSelected, onPress, index }: {
 }
 
 export default function Step2Mood() {
-    const { selectedMoods, toggleMood } = useOnboardingStore();
-    const canContinue = selectedMoods.length >= 1;
+    const { primaryReason, setPrimaryReason } = useOnboardingStore();
+    const canContinue = primaryReason !== null;
 
-    const handleToggle = (id: string) => {
+    const handleSelect = (id: string) => {
         haptics.selection();
-        toggleMood(id);
+        setPrimaryReason(id);
     };
 
     const handleContinue = () => {
@@ -87,34 +85,25 @@ export default function Step2Mood() {
 
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
                     <Text style={styles.step}>Step 2 of 4</Text>
-                    <Text style={styles.title}>How have you been feeling lately?</Text>
+                    <Text style={styles.title}>What's your primary reason for using VinR?</Text>
                     <Text style={styles.subtitle}>
-                        No pressure — this helps us personalize for you
+                        We will adapt the journey to your needs.
                     </Text>
                 </Animated.View>
 
-                {/* Mood Grid */}
+                {/* Reason Grid */}
                 <View style={styles.moodGrid}>
-                    {MOODS.map((mood, index) => (
-                        <MoodChip
-                            key={mood.id}
-                            {...mood}
+                    {REASONS.map((reason, index) => (
+                        <ReasonChip
+                            key={reason.id}
+                            {...reason}
                             index={index}
-                            isSelected={selectedMoods.includes(mood.id)}
-                            onPress={() => handleToggle(mood.id)}
+                            isSelected={primaryReason === reason.id}
+                            onPress={() => handleSelect(reason.id)}
                         />
                     ))}
                 </View>
 
-                {/* Selection count */}
-                <Animated.Text
-                    entering={FadeInDown.delay(900).duration(400)}
-                    style={styles.selectionHint}
-                >
-                    {selectedMoods.length === 0
-                        ? 'Tap all that apply'
-                        : `${selectedMoods.length} selected`}
-                </Animated.Text>
 
                 {/* Continue Button */}
                 <Animated.View entering={FadeInDown.delay(1000).duration(400)}>

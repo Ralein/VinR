@@ -45,10 +45,13 @@ class TokenResponse(BaseModel):
 class UserUpdate(BaseModel):
     name: str | None = None
     avatar_url: str | None = None
-    music_genre: str | None = None
     preferred_language: str | None = None
     timezone: str | None = None
     onboarding_complete: bool | None = None
+    age: str | None = None
+    primary_reason: str | None = None
+    relaxation_methods: list[str] | None = None
+    personalization_preferences: list | dict | None = None
 
 
 class UserResponse(BaseModel):
@@ -57,9 +60,12 @@ class UserResponse(BaseModel):
     name: str | None
     avatar_url: str | None
     onboarding_complete: bool
-    music_genre: str | None
     preferred_language: str
     timezone: str
+    age: str | None = None
+    primary_reason: str | None = None
+    relaxation_methods: list[str] | None = None
+    personalization_preferences: list | dict | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

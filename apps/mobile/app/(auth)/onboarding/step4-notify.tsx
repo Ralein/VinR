@@ -54,9 +54,16 @@ export default function Step4Notify() {
 
     const handleFinish = () => {
         haptics.success();
+        const state = useOnboardingStore.getState();
         // Mark onboarding complete in auth store
         if (user) {
-            setUser({ ...user, onboardingComplete: true, musicGenre: useOnboardingStore.getState().musicGenre });
+            setUser({ 
+                ...user, 
+                onboardingComplete: true, 
+                age: state.age,
+                primaryReason: state.primaryReason,
+                relaxationMethods: state.relaxationMethods,
+            });
         }
         // Navigate to main app
         router.replace('/(tabs)');

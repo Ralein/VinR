@@ -297,8 +297,8 @@ export default function SignUpScreen() {
 
                     {/* Header */}
                     <Animated.View style={headStyle}>
-                        <Text style={s.title}>Your comeback{'\n'}starts now.</Text>
-                        <Text style={s.subtitle}>Create your account</Text>
+                        <Text style={s.title}>You are a{'\n'}winner.</Text>
+                        <Text style={s.subtitle}>VinR is your growth partner</Text>
                     </Animated.View>
 
                     {/* Card */}

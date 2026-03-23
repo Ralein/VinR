@@ -58,8 +58,8 @@ function AvatarChip({ id, emoji, label, isSelected, onPress, index }: {
 }
 
 export default function Step1Name() {
-    const { name, setName, avatarId, setAvatarId } = useOnboardingStore();
-    const canContinue = name.trim().length >= 2 && avatarId !== null;
+    const { name, setName, age, setAge, avatarId, setAvatarId } = useOnboardingStore();
+    const canContinue = name.trim().length >= 2 && age.trim().length > 0 && avatarId !== null;
 
     const handleAvatarSelect = (id: string) => {
         haptics.selection();
@@ -106,6 +106,22 @@ export default function Step1Name() {
                         autoCapitalize="words"
                         maxLength={24}
                         autoFocus
+                    />
+                </Animated.View>
+
+                {/* Age Input */}
+                <Animated.View
+                    entering={FadeInDown.delay(300).duration(500)}
+                    style={styles.inputWrapper}
+                >
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Your age"
+                        placeholderTextColor={colors.textGhost}
+                        value={age}
+                        onChangeText={(text) => setAge(text.replace(/[^0-9]/g, ''))}
+                        keyboardType="numeric"
+                        maxLength={3}
                     />
                 </Animated.View>
 

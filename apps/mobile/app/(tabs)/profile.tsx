@@ -293,7 +293,7 @@ export default function ProfileScreen() {
 
                         {/* Emotion Distribution */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Emotion Breakdown</Text>
+                            <Text style={styles.sectionTitle}>Emotional Dashboard</Text>
                             <View style={styles.chartCard}>
                                 <EmotionDonut distribution={trends?.emotion_distribution || []} />
                             </View>

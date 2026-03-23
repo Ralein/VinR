@@ -1,8 +1,8 @@
-# VinR — Emotional Wellness & Comeback Platform
+# VinR — Emotional Wellness & Growth Platform
 
 "We don't just support you. We make you a WINNER."
 
-VinR is a science-backed, AI-powered emotional support companion that turns mental health management into a 21-day winning streak. 
+VinR is a science-backed, AI-powered emotional support companion that turns mental health management into a 21-day winning streak. We are focused on therapy customers who want to win their life, establishing VinR as their growth partner.
 
 ## Tech Stack
 * **Frontend:** React Native (Expo SDK 51+), Expo Router, NativeWind, Zustand, React Query

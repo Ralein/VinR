@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════════╗
-║          VINℛ — EMOTIONAL WELLNESS & COMEBACK PLATFORM          ║
+║          VINℛ — EMOTIONAL WELLNESS & GROWTH PLATFORM            ║
 ║     "We don't just support you. We make you a WINNER."          ║
 ╚══════════════════════════════════════════════════════════════════╝
 
@@ -131,7 +131,7 @@ SPRINT 1.2 — Auth + Onboarding (Days 4–7)
       VinR logo with entrance animation (scale + fade, spring)
       "vin" white + "ℛ" gold italic lettermark 64px
       Tagline reveal with letter-by-letter stagger
-      "Begin your comeback →" CTA button (gold, glow pulse)
+      "Begin your winning journey →" CTA button (gold, glow pulse)
       "Already winning? Sign in" secondary link
   □ Sign Up / Sign In:
       Glassmorphism card on dark background
@@ -556,7 +556,7 @@ SPRINT 4.2 — Referral & Community (Days 78–82)
 
 SPRINT 4.3 — App Store Launch Prep (Days 83–88)
   □ App Store screenshots (6 per platform):
-      Screen 1: Onboarding — "Your comeback starts here"
+      Screen 1: Onboarding — "Your growth & winning starts here"
       Screen 2: Check-in → AI response
       Screen 3: Two pathways (Immediate + 21-day)
       Screen 4: 21-day tracker with streak

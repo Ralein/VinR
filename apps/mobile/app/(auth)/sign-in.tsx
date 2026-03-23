@@ -308,8 +308,8 @@ export default function SignInScreen() {
 
                     {/* Header */}
                     <Animated.View style={headStyle}>
-                        <Text style={s.title}>Welcome back</Text>
-                        <Text style={s.subtitle}>Continue your journey</Text>
+                        <Text style={s.title}>Welcome winner</Text>
+                        <Text style={s.subtitle}>You showed up today, that already matters</Text>
                     </Animated.View>
 
                     {/* Card */}

@@ -509,7 +509,7 @@ function LiquidCTA({ delay: d }: { delay: number }) {
             </View>
             {/* Label */}
             <Animated.View style={[StyleSheet.absoluteFill, s.ctaLabelRow]}>
-                <Animated.Text style={[s.ctaText, labelStyle]}>Begin your comeback</Animated.Text>
+                <Animated.Text style={[s.ctaText, labelStyle]}>Begin your winning journey</Animated.Text>
                 <View style={s.ctaArrowCircle}>
                     <Text style={s.ctaArrow}>›</Text>
                 </View>

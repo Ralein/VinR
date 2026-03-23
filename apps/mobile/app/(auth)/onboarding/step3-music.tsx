@@ -19,22 +19,20 @@ import { haptics } from '../../../services/haptics';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { ProgressDots } from '../../../components/ui/ProgressDots';
 
-const GENRES = [
-    { id: 'pop', emoji: '🎤', label: 'Pop' },
-    { id: 'rnb', emoji: '🎵', label: 'R&B' },
-    { id: 'hiphop', emoji: '🎧', label: 'Hip-Hop' },
-    { id: 'classical', emoji: '🎻', label: 'Classical' },
-    { id: 'indie', emoji: '🎸', label: 'Indie' },
-    { id: 'electronic', emoji: '🎹', label: 'Electronic' },
-    { id: 'country', emoji: '🤠', label: 'Country' },
-    { id: 'kpop', emoji: '💜', label: 'K-Pop' },
-    { id: 'jazz', emoji: '🎷', label: 'Jazz' },
-    { id: 'rock', emoji: '🤘', label: 'Rock' },
+const METHODS = [
+    { id: 'meditation', emoji: '🧘', label: 'Meditation' },
+    { id: 'breathing', emoji: '🌬️', label: 'Breathing' },
+    { id: 'music', emoji: '🎵', label: 'Music' },
+    { id: 'nature', emoji: '🌿', label: 'Nature Sounds' },
+    { id: 'journaling', emoji: '📝', label: 'Journaling' },
+    { id: 'yoga', emoji: '🕉️', label: 'Yoga' },
+    { id: 'stretching', emoji: '🤸', label: 'Stretching' },
+    { id: 'reading', emoji: '📚', label: 'Reading' },
 ];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-function GenreChip({ id, emoji, label, isSelected, onPress, index }: {
+function MethodChip({ id, emoji, label, isSelected, onPress, index }: {
     id: string; emoji: string; label: string; isSelected: boolean; onPress: () => void; index: number;
 }) {
     const animatedStyle = useAnimatedStyle(() => ({
@@ -64,12 +62,12 @@ function GenreChip({ id, emoji, label, isSelected, onPress, index }: {
 }
 
 export default function Step3Music() {
-    const { musicGenre, setMusicGenre } = useOnboardingStore();
-    const canContinue = musicGenre !== null;
+    const { relaxationMethods, toggleRelaxationMethod } = useOnboardingStore();
+    const canContinue = relaxationMethods.length > 0;
 
-    const handleSelect = (id: string) => {
+    const handleToggle = (id: string) => {
         haptics.selection();
-        setMusicGenre(id);
+        toggleRelaxationMethod(id);
     };
 
     const handleContinue = () => {
@@ -93,24 +91,34 @@ export default function Step3Music() {
 
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
                     <Text style={styles.step}>Step 3 of 4</Text>
-                    <Text style={styles.title}>What music moves your soul?</Text>
+                    <Text style={styles.title}>What holds space for your relaxation?</Text>
                     <Text style={styles.subtitle}>
-                        We'll curate your personal vibe section
+                        Select the methods you'd like to try or already love.
                     </Text>
                 </Animated.View>
 
-                {/* Genre Grid */}
+                {/* Methods Grid */}
                 <View style={styles.genreGrid}>
-                    {GENRES.map((genre, index) => (
-                        <GenreChip
-                            key={genre.id}
-                            {...genre}
+                    {METHODS.map((method, index) => (
+                        <MethodChip
+                            key={method.id}
+                            {...method}
                             index={index}
-                            isSelected={musicGenre === genre.id}
-                            onPress={() => handleSelect(genre.id)}
+                            isSelected={relaxationMethods.includes(method.id)}
+                            onPress={() => handleToggle(method.id)}
                         />
                     ))}
                 </View>
+
+                {/* Selection count */}
+                <Animated.Text
+                    entering={FadeInDown.delay(900).duration(400)}
+                    style={styles.selectionHint}
+                >
+                    {relaxationMethods.length === 0
+                        ? 'Tap all that apply'
+                        : `${relaxationMethods.length} selected`}
+                </Animated.Text>
 
                 {/* Continue Button */}
                 <Animated.View entering={FadeInDown.delay(1000).duration(400)}>
@@ -186,6 +194,13 @@ const styles = StyleSheet.create({
     genreLabelActive: {
         color: colors.gold,
         fontFamily: 'DMSans_600SemiBold',
+    },
+    selectionHint: {
+        fontFamily: 'DMSans_300Light',
+        fontSize: 13,
+        color: colors.textGhost,
+        textAlign: 'center',
+        marginBottom: 32,
     },
     continueButton: {
         backgroundColor: colors.gold,
