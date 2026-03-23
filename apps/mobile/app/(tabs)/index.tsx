@@ -175,20 +175,22 @@ export default function HomeScreen() {
                 {/* ── Today's Habit ─────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
                     <SectionHeader title="Today's Habit" Icon={Activity} iconColor={colors.emerald} delay={0} />
-                    <GlassCard noAnimation>
-                        <View style={styles.habitRow}>
-                            <View style={styles.habitIconWrap}>
-                                <Brain size={22} color={colors.lavender} strokeWidth={1.8} />
+                    <Pressable onPress={() => router.push('/(tabs)/journey')}>
+                        <GlassCard noAnimation>
+                            <View style={styles.habitRow}>
+                                <View style={styles.habitIconWrap}>
+                                    <Activity size={22} color={colors.emerald} strokeWidth={1.8} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.habitTitle}>21-Day Daily Habit</Text>
+                                    <Text style={styles.habitText}>
+                                        Continue your 21-day journey to build lasting healthy habits.
+                                    </Text>
+                                </View>
+                                <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
                             </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.habitTitle}>Mind Check-In</Text>
-                                <Text style={styles.habitText}>
-                                    Complete a check-in to unlock your personalized daily plan.
-                                </Text>
-                            </View>
-                            <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
-                        </View>
-                    </GlassCard>
+                        </GlassCard>
+                    </Pressable>
                 </Animated.View>
 
                 {/* ── Your Vibe — YouTube ───────────────────── */}
