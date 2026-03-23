@@ -59,7 +59,9 @@ export const AuthService = {
                     name: user.name || null,
                     avatarUrl: user.avatar_url || null,
                     onboardingComplete: user.onboarding_complete ?? true,
-                    musicGenre: user.music_genre || null,
+                    age: user.age || null,
+                    primaryReason: user.primary_reason || null,
+                    relaxationMethods: user.relaxation_methods || [],
                     timezone: user.timezone || "UTC"
                 };
                 useAuthStore.getState().setUser(mappedUser);
@@ -72,6 +74,27 @@ export const AuthService = {
             return null;
         }
         return null;
+    },
+
+    async updateProfile(data: any) {
+        try {
+            // Map camelCase to snake_case for the API
+            const payload: any = {};
+            if (data.name !== undefined) payload.name = data.name;
+            if (data.age !== undefined) payload.age = data.age;
+            if (data.primaryReason !== undefined) payload.primary_reason = data.primaryReason;
+            if (data.relaxationMethods !== undefined) payload.relaxation_methods = data.relaxationMethods;
+            if (data.onboardingComplete !== undefined) payload.onboarding_complete = data.onboardingComplete;
+            if (data.timezone !== undefined) payload.timezone = data.timezone;
+            
+            const { data: user } = await api.patch('/auth/me', payload);
+            if (user) {
+                return await this.getMe();
+            }
+        } catch (error) {
+            console.error('Update profile failed:', error);
+            throw error;
+        }
     },
 
     async signOut() {

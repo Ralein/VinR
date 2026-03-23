@@ -153,19 +153,12 @@ async def get_evening_winddown(db: AsyncSession, user_id: str) -> dict:
     ]
     prompt_idx = today.toordinal() % len(evening_prompts)
 
-    # Get music genre preference
-    music_genre = user.music_genre if user and user.music_genre else "ambient"
-
     return {
         "greeting": f"Good evening, {name}.",
         "has_checked_in": has_checked_in,
         "habit_completed": habit_completed,
         "current_streak": streak.current_streak if streak else 0,
         "gratitude_prompt": evening_prompts[prompt_idx],
-        "sleep_suggestion": {
-            "genre": music_genre,
-            "message": f"Wind down with some {music_genre.lower()} tonight.",
-        },
         "breathing_suggestion": {
             "name": "4-7-8 Sleep Breath",
             "technique": "478",

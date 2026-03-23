@@ -131,6 +131,7 @@ export default function TabLayout() {
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />
+                <Tabs.Screen name="immediate-relief" options={{ href: null }} />
             </Tabs>
             {/* Persistent mini player above tab bar */}
             <MiniPlayer />
