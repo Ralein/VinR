@@ -10,8 +10,10 @@ interface User {
     name: string | null;
     avatarUrl: string | null;
     onboardingComplete: boolean;
-    musicGenre: string | null;
     timezone: string;
+    age: string | null;
+    primaryReason: string | null;
+    relaxationMethods: string[];
 }
 
 interface AuthState {

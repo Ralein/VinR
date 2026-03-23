@@ -1,7 +1,7 @@
 """User ORM model."""
 
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Text
+from sqlalchemy import String, Boolean, DateTime, Text, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -21,9 +21,12 @@ class User(Base):
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     onboarding_complete: Mapped[bool] = mapped_column(Boolean, default=False)
-    music_genre: Mapped[str | None] = mapped_column(String(50), nullable=True)
     preferred_language: Mapped[str] = mapped_column(String(10), default="en")
     timezone: Mapped[str] = mapped_column(String(50), default="UTC")
+    age: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    primary_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    relaxation_methods: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    personalization_preferences: Mapped[list | dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow
     )
