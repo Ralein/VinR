@@ -14,18 +14,12 @@ import Animated, {
     withTiming,
     Easing,
 } from 'react-native-reanimated';
-import { colors, fonts } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
+
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type RingVariant = 'gold' | 'emerald' | 'sapphire' | 'lavender';
-
-const VARIANT_COLORS: Record<RingVariant, [string, string]> = {
-    gold: [colors.goldLight, colors.gold],
-    emerald: ['#7EDFC0', colors.emerald],
-    sapphire: ['#7AB5E8', colors.sapphire],
-    lavender: ['#B0A8E0', colors.lavender],
-};
 
 interface ProgressRingProps {
     progress: number; // 0 to 1
@@ -48,6 +42,8 @@ export default function ProgressRing({
     showPercent = false,
     animationDuration = 1200,
 }: ProgressRingProps) {
+    const { colors, fonts } = useTheme();
+
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const clampedProgress = Math.min(1, Math.max(0, progress));
@@ -64,6 +60,13 @@ export default function ProgressRing({
     const animatedProps = useAnimatedProps(() => ({
         strokeDashoffset: circumference * (1 - animatedProgress.value),
     }));
+
+    const VARIANT_COLORS: Record<RingVariant, [string, string]> = {
+        gold: [colors.goldLight, colors.gold],
+        emerald: ['#7EDFC0', colors.emerald],
+        sapphire: ['#7AB5E8', colors.sapphire],
+        lavender: ['#B0A8E0', colors.lavender],
+    };
 
     const [colorLight, colorDark] = VARIANT_COLORS[variant];
     const gradientId = `ring-grad-${variant}`;
@@ -82,7 +85,7 @@ export default function ProgressRing({
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="rgba(255,255,255,0.06)"
+                    stroke={colors.border}
                     strokeWidth={strokeWidth}
                     fill="none"
                 />
@@ -103,12 +106,12 @@ export default function ProgressRing({
             {/* Center Label */}
             <View style={styles.centerLabel}>
                 {showPercent && (
-                    <Text style={[styles.percent, { color: VARIANT_COLORS[variant][1] }]}>
+                    <Text style={[styles.percent, { fontFamily: fonts.bodySemiBold, color: VARIANT_COLORS[variant][1] }]}>
                         {Math.round(clampedProgress * 100)}%
                     </Text>
                 )}
-                {label && <Text style={styles.label}>{label}</Text>}
-                {sublabel && <Text style={styles.sublabel}>{sublabel}</Text>}
+                {label && <Text style={[styles.label, { fontFamily: fonts.bodySemiBold, color: colors.textPrimary }]}>{label}</Text>}
+                {sublabel && <Text style={[styles.sublabel, { fontFamily: fonts.bodyLight, color: colors.textMuted }]}>{sublabel}</Text>}
             </View>
         </View>
     );
@@ -127,19 +130,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     percent: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 14,
     },
     label: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 13,
-        color: colors.textPrimary,
         textAlign: 'center',
     },
     sublabel: {
-        fontFamily: fonts.bodyLight,
         fontSize: 10,
-        color: colors.textMuted,
         textAlign: 'center',
     },
 });

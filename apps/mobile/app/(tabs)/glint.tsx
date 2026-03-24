@@ -14,9 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Film, Play, Pause, RefreshCw, X } from 'lucide-react-native';
-import { useGlint, Glint } from '../../hooks/useGlint';
+import { useReels, Reel } from '../../hooks/useReels';
 import { useAuthStore } from '../../stores/authStore';
-import { colors } from '../../constants/theme';
+import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -32,12 +32,12 @@ const TAB_BAR_HEIGHT = 80; // Estimated
 const GLINT_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
 interface GlintItemProps {
-  glint: Glint;
+  reel: Reel;
   isActive: boolean;
   index: number;
 }
 
-const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
+const GlintItem: React.FC<GlintItemProps> = ({ reel, isActive, index }) => {
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
@@ -100,7 +100,7 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
     };
   }, []);
 
-  const embedUrl = `https://www.youtube.com/embed/${glint.video_id}?autoplay=1&controls=0&modestbranding=1&loop=1&playlist=${glint.video_id}&rel=0&showinfo=0&mute=${isActive ? 0 : 1}`;
+  const embedUrl = `https://www.youtube.com/embed/${reel.video_id}?autoplay=1&controls=0&modestbranding=1&loop=1&playlist=${reel.video_id}&rel=0&showinfo=0&mute=${isActive ? 0 : 1}`;
 
   return (
     <Pressable onPress={handlePress} style={styles.glintContainer}>
@@ -141,7 +141,7 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
       {showControls && (
         <Animated.View entering={FadeIn.duration(200)} style={styles.controlsOverlay}>
           <TouchableOpacity 
-             onPress={() => Linking.openURL(`https://www.youtube.com/shorts/${glint.video_id}`)}
+             onPress={() => Linking.openURL(`https://www.youtube.com/shorts/${reel.video_id}`)}
              style={styles.externalButton}
           >
             <Play size={20} color={colors.gold} fill={colors.gold} />
@@ -156,8 +156,8 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
 
       {/* Info overlay */}
       <View style={styles.infoContainer}>
-        <Text style={styles.title} numberOfLines={2}>{glint.title}</Text>
-        <Text style={styles.channel}>{glint.channel}</Text>
+        <Text style={styles.title} numberOfLines={2}>{reel.title}</Text>
+        <Text style={styles.channel}>{reel.channel}</Text>
       </View>
     </Pressable>
   );
@@ -165,19 +165,19 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
 
 export default function GlintScreen() {
   const user = useAuthStore((s) => s.user);
-  const { glints, loading, error, fetchGlints } = useGlint();
+  const { reels, loading, error, fetchReels } = useReels();
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   const reason = user?.primaryReason || 'Stress Relief';
 
   useEffect(() => {
-    fetchGlints(reason);
+    fetchReels(reason);
   }, [reason]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchGlints(reason);
+    await fetchReels(reason);
     setRefreshing(false);
   }, [reason]);
 
@@ -191,7 +191,7 @@ export default function GlintScreen() {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  if (loading && glints.length === 0) {
+  if (loading && reels.length === 0) {
     return (
       <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" color={colors.gold} />
@@ -200,7 +200,7 @@ export default function GlintScreen() {
     );
   }
 
-  if (error && glints.length === 0) {
+  if (error && reels.length === 0) {
     return (
       <SafeAreaView style={styles.centered}>
         <Film size={48} color={colors.textGhost} />
@@ -208,7 +208,7 @@ export default function GlintScreen() {
         <Text style={styles.errorSubtitle}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
-          onPress={() => fetchGlints(reason)}
+          onPress={() => fetchReels(reason)}
         >
           <RefreshCw size={16} color={colors.void} />
           <Text style={styles.retryText}>Retry</Text>
@@ -228,9 +228,9 @@ export default function GlintScreen() {
       </SafeAreaView>
 
       <FlatList
-        data={glints}
+        data={reels}
         renderItem={({ item, index }) => (
-          <GlintItem glint={item} isActive={index === activeIndex} index={index} />
+          <GlintItem reel={item} isActive={index === activeIndex} index={index} />
         )}
         keyExtractor={(item) => item.video_id}
         pagingEnabled
@@ -315,9 +315,9 @@ const styles = StyleSheet.create({
   },
   channel: {
     color: colors.gold,
-    fontSize: 14,
-    fontFamily: 'Inter_400Regular',
-    opacity: 0.9,
+    fontWeight: 'bold',
+    fontFamily: fonts.bodySemiBold,
+    marginLeft: spacing.xs,
   },
   gradientTop: {
     position: 'absolute',
@@ -367,18 +367,22 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     alignItems: 'center',
-    padding: 24,
+    padding: spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
   },
   errorTitle: {
     color: colors.textPrimary,
     fontSize: 18,
-    fontFamily: 'Inter_600SemiBold',
-    marginTop: 16,
+    fontFamily: fonts.bodySemiBold,
+    marginBottom: spacing.xs,
   },
   errorSubtitle: {
     color: colors.textSecondary,
     fontSize: 14,
-    fontFamily: 'Inter_400Regular',
+    fontFamily: fonts.bodySemiBold,
+    opacity: 0.9,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 24,

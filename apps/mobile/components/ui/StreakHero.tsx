@@ -18,20 +18,20 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { Flame, CheckCircle2, Circle } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
+import GlassCard from './GlassCard';
 import ProgressRing from './ProgressRing';
 
 interface StreakHeroProps {
     streak: number;
-    todayDone?: boolean;
-    weeklyDays?: boolean[]; // 7 items — which days completed this week
+    todayDone: boolean;
+    weeklyDays: boolean[];
 }
 
-export default function StreakHero({
-    streak,
-    todayDone = false,
-    weeklyDays = [false, false, false, false, false, false, false],
-}: StreakHeroProps) {
+export default function StreakHero({ streak, todayDone, weeklyDays }: StreakHeroProps) {
+    const { colors } = useTheme();
+    
     // Flame scale pulse
     const flamePulse = useSharedValue(1);
 
@@ -45,6 +45,8 @@ export default function StreakHero({
                 -1,
                 false
             );
+        } else {
+            flamePulse.value = 1;
         }
     }, [streak]);
 
@@ -52,146 +54,133 @@ export default function StreakHero({
         transform: [{ scale: flamePulse.value }],
     }));
 
-    const weeklyProgress = weeklyDays.filter(Boolean).length / 7;
+    const weeklyProgress = (weeklyDays?.filter(Boolean).length || 0) / 7;
     const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return (
         <View style={styles.container}>
-            {/* Streak Number + Flame */}
-            <Animated.View
-                entering={FadeInDown.delay(150).duration(500).springify()}
-                style={styles.heroRow}
-            >
-                <View style={styles.numberBlock}>
-                    <Text style={styles.streakNumber}>{streak}</Text>
-                    <Text style={styles.streakUnit}>day{streak !== 1 ? 's' : ''}</Text>
+            <View style={styles.header}>
+                <View style={[styles.iconWrap, { backgroundColor: `${colors.gold}15` }]}>
+                    <Animated.View style={flameStyle}>
+                        <Flame size={32} color={colors.gold} fill={streak > 0 ? colors.gold : 'transparent'} />
+                    </Animated.View>
                 </View>
-
-                <Animated.View style={[styles.flameWrap, flameStyle]}>
-                    <Flame
-                        size={48}
-                        color={streak > 0 ? colors.gold : colors.textGhost}
-                        fill={streak > 0 ? `${colors.gold}40` : 'none'}
-                        strokeWidth={1.5}
-                    />
-                </Animated.View>
-
-                <View style={styles.ringBlock}>
-                    <ProgressRing
-                        progress={weeklyProgress}
-                        size={68}
-                        strokeWidth={5}
+                <View style={styles.countContainer}>
+                    <Text style={[styles.count, { color: colors.textPrimary }]}>{streak}</Text>
+                    <Text style={[styles.label, { color: colors.textMuted }]}>DAY STREAK</Text>
+                </View>
+                <View style={styles.weeklyRing}>
+                    <ProgressRing 
+                        progress={weeklyProgress} 
+                        size={60} 
+                        strokeWidth={6} 
                         variant="gold"
-                        label={`${weeklyDays.filter(Boolean).length}/7`}
-                        sublabel="this week"
                     />
+                    <View style={styles.ringCenter}>
+                        {todayDone ? (
+                            <CheckCircle2 size={20} color={colors.gold} />
+                        ) : (
+                            <Text style={[styles.miniLabel, { color: colors.gold }]}>
+                                {Math.round(weeklyProgress * 7)}/7
+                            </Text>
+                        )}
+                    </View>
                 </View>
-            </Animated.View>
+            </View>
 
-            {/* Today's status */}
-            <Animated.View
-                entering={FadeInDown.delay(300).duration(400)}
-                style={styles.todayRow}
-            >
-                {todayDone ? (
-                    <CheckCircle2 size={14} color={colors.emerald} strokeWidth={2} />
-                ) : (
-                    <Circle size={14} color={colors.textGhost} strokeWidth={1.5} />
-                )}
-                <Text style={[styles.todayText, todayDone && { color: colors.emerald }]}>
-                    {todayDone ? "Today's check-in complete" : 'Complete a check-in to continue'}
-                </Text>
-            </Animated.View>
-
-            {/* Weekly day dots */}
-            <Animated.View
-                entering={FadeInDown.delay(400).duration(400)}
-                style={styles.weekRow}
-            >
+            <View style={styles.daysRow}>
                 {DAY_LABELS.map((day, i) => (
-                    <View key={i} style={styles.dayItem}>
-                        <View
-                            style={[
-                                styles.dayDot,
-                                weeklyDays[i]
-                                    ? { backgroundColor: colors.gold, shadowColor: colors.gold, shadowOpacity: 0.5, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } }
-                                    : { backgroundColor: colors.elevated, borderWidth: 1, borderColor: colors.border },
-                            ]}
-                        />
-                        <Text style={styles.dayLabel}>{day}</Text>
+                    <View key={i} style={styles.dayCol}>
+                        <View style={[
+                            styles.dayIndicator, 
+                            { 
+                                backgroundColor: weeklyDays[i] ? colors.gold : `${colors.gold}10`,
+                                borderColor: weeklyDays[i] ? colors.gold : `${colors.gold}30`,
+                            }
+                        ]}>
+                            {weeklyDays[i] && <CheckCircle2 size={10} color={colors.surface} />}
+                        </View>
+                        <Text style={[
+                            styles.dayText, 
+                            { color: weeklyDays[i] ? colors.gold : colors.textMuted }
+                        ]}>
+                            {day}
+                        </Text>
                     </View>
                 ))}
-            </Animated.View>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        gap: spacing.md,
-        paddingVertical: spacing.sm,
+        width: '100%',
     },
-    heroRow: {
+    header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        paddingBottom: spacing.lg,
     },
-    numberBlock: {
-        alignItems: 'flex-start',
-        flex: 1,
-    },
-    streakNumber: {
-        fontFamily: fonts.displayBlack,
-        fontSize: 64,
-        color: colors.gold,
-        lineHeight: 68,
-        letterSpacing: -2,
-    },
-    streakUnit: {
-        fontFamily: fonts.bodyLight,
-        fontSize: 14,
-        color: colors.textMuted,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-        marginTop: -4,
-    },
-    flameWrap: {
+    iconWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    ringBlock: {
+    countContainer: {
         flex: 1,
-        alignItems: 'flex-end',
+        marginLeft: spacing.md,
     },
-    todayRow: {
-        flexDirection: 'row',
+    count: {
+        fontFamily: fonts.display,
+        fontSize: 36,
+        lineHeight: 40,
+    },
+    label: {
+        fontFamily: fonts.mono,
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    weeklyRing: {
+        width: 64,
+        height: 64,
         alignItems: 'center',
-        gap: 6,
+        justifyContent: 'center',
     },
-    todayText: {
-        fontFamily: fonts.body,
-        fontSize: 13,
-        color: colors.textMuted,
+    ringCenter: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    weekRow: {
+    miniLabel: {
+        fontFamily: fonts.mono,
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    daysRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingTop: spacing.xs,
+        paddingTop: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.05)',
     },
-    dayItem: {
+    dayCol: {
         alignItems: 'center',
-        gap: 5,
+        gap: spacing.xs,
     },
-    dayDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        elevation: 3,
+    dayIndicator: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    dayLabel: {
-        fontFamily: fonts.bodyLight,
+    dayText: {
+        fontFamily: fonts.bodySemiBold,
         fontSize: 10,
-        color: colors.textGhost,
-        letterSpacing: 0.5,
     },
 });

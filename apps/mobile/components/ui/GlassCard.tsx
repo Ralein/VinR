@@ -17,18 +17,10 @@ import Animated, {
     withSpring,
     Easing,
 } from 'react-native-reanimated';
-import { glass, borderRadius, spacing, shadows, colors } from '../../constants/theme';
+import { glass, borderRadius, spacing, shadows, colors as darkColors } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 type AccentColor = 'gold' | 'emerald' | 'sapphire' | 'crimson' | 'lavender' | 'none';
-
-const ACCENT_COLORS: Record<AccentColor, string> = {
-    gold: colors.gold,
-    emerald: colors.emerald,
-    sapphire: colors.sapphire,
-    crimson: colors.crimson,
-    lavender: colors.lavender,
-    none: 'rgba(255,255,255,0.07)',
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -65,6 +57,17 @@ export default function GlassCard({
     onPress,
     glow = false,
 }: GlassCardProps) {
+    const { colors, glass: themeGlass } = useTheme();
+    
+    const ACCENT_COLORS: Record<AccentColor, string> = {
+        gold: colors.gold,
+        emerald: colors.emerald,
+        sapphire: colors.sapphire,
+        crimson: colors.crimson,
+        lavender: colors.lavender,
+        none: colors.border,
+    };
+
     const accentHex = ACCENT_COLORS[accent];
     const shimmerOpacity = useSharedValue(0.1);
     const pressScale = useSharedValue(1);
@@ -85,7 +88,7 @@ export default function GlassCard({
     const shimmerStyle = useAnimatedStyle(() => ({
         borderColor: accent !== 'none'
             ? `${accentHex}${Math.round(shimmerOpacity.value * 255).toString(16).padStart(2, '0')}`
-            : glass.border,
+            : themeGlass.border,
     }));
 
     const pressStyle = useAnimatedStyle(() => ({
@@ -111,10 +114,10 @@ export default function GlassCard({
 
     const staticBorderColor = accent !== 'none'
         ? `${accentHex}40`
-        : glass.border;
+        : themeGlass.border;
 
     const cardBaseStyle: ViewStyle = {
-        backgroundColor: accent !== 'none' ? `${accentHex}06` : glass.background,
+        backgroundColor: accent !== 'none' ? `${accentHex}06` : themeGlass.background,
         borderRadius: borderRadius.lg,
         padding: spacing.md,
         borderWidth: 1,

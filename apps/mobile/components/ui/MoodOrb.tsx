@@ -15,7 +15,8 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { type LucideIcon } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius, animation, glass } from '../../constants/theme';
+import { fonts, spacing, borderRadius, animation, glass as darkGlass } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 
 export interface MoodOption {
@@ -43,6 +44,7 @@ function OrbItem({
     onPress: () => void;
     index: number;
 }) {
+    const { colors, glass } = useTheme();
     const scale = useSharedValue(1);
     const { Icon, color = colors.gold } = mood;
 
@@ -81,7 +83,7 @@ function OrbItem({
                             strokeWidth={isSelected ? 2.2 : 1.8}
                         />
                     </View>
-                    <Text style={[styles.label, isSelected && { color, fontFamily: fonts.bodySemiBold }]}>
+                    <Text style={[styles.label, { color: colors.textMuted }, isSelected && { color, fontFamily: fonts.bodySemiBold }]}>
                         {mood.label}
                     </Text>
                     {/* Gold dot indicator on selected */}
@@ -146,7 +148,6 @@ const styles = StyleSheet.create({
     label: {
         fontFamily: fonts.bodyLight,
         fontSize: 11,
-        color: colors.textMuted,
         textAlign: 'center',
         letterSpacing: 0.2,
     },

@@ -1,17 +1,11 @@
-/**
- * ProgressDots — Animated step progress indicator
- *
- * Active step = gold pill, completed = gold circle, future = dim circle
- * Used across all 4 onboarding steps.
- */
-
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
 } from 'react-native-reanimated';
-import { colors, animation } from '../../constants/theme';
+import { animation, spacing } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ProgressDotsProps {
     currentStep: number;
@@ -29,6 +23,8 @@ export function ProgressDots({ currentStep, totalSteps = 4 }: ProgressDotsProps)
 }
 
 function Dot({ index, isActive, isCompleted }: { index: number; isActive: boolean; isCompleted: boolean }) {
+    const { colors } = useTheme();
+
     const animatedStyle = useAnimatedStyle(() => ({
         width: withSpring(isActive ? 28 : 8, animation.spring),
         backgroundColor: isActive || isCompleted ? colors.gold : colors.textGhost,
@@ -44,7 +40,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        marginBottom: 32,
+        marginBottom: spacing.xl,
     },
     dot: {
         height: 8,
