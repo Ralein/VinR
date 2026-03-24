@@ -17,7 +17,32 @@ const THEME = {
     border: '#334155'
 };
 
-import { Audio } from 'expo-av';
+const SafeBlurView = (props: any) => {
+    try {
+        // We use a internal check to see if BlurView is actually a valid component
+        if (BlurView) {
+            return <BlurView {...props} />;
+        }
+    } catch (e) {
+        // Fallback
+    }
+    return <View {...props} style={[props.style, { backgroundColor: THEME.surface, opacity: 0.9 }]} />;
+};
+
+const SafeAudio = {
+    Sound: {
+        createAsync: async (source: any, initialStatus?: any, onPlaybackStatusUpdate?: any, downloadFirst?: boolean) => {
+            try {
+                const { Audio } = await import('expo-av');
+                return await Audio.Sound.createAsync(source, initialStatus, onPlaybackStatusUpdate, downloadFirst);
+            } catch (e) {
+                console.warn("Audio not available in this environment", e);
+                return { sound: { unloadAsync: async () => {}, playAsync: async () => {}, setStatusAsync: async () => {} } };
+            }
+        }
+    }
+};
+
 
 interface Message {
     id: string;
@@ -39,7 +64,7 @@ export default function ChatScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const [audioEnabled, setAudioEnabled] = useState(true);
-    const audioRef = useRef<Audio.Sound | null>(null);
+    const audioRef = useRef<any>(null);
 
     // Cleanup audio on unmount
     useEffect(() => {
@@ -55,9 +80,9 @@ export default function ChatScreen() {
             if (audioRef.current) {
                 await audioRef.current.unloadAsync();
             }
-            const { sound } = await Audio.Sound.createAsync({ uri });
+            const { sound } = await SafeAudio.Sound.createAsync({ uri });
             audioRef.current = sound;
-            await sound.playAsync();
+            await (sound as any).playAsync();
         } catch (error) {
             console.error('Error playing audio:', error);
         }
@@ -166,7 +191,7 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
                 style={styles.keyboardAvoid}
             >
-                <BlurView intensity={80} tint="dark" style={[styles.inputContainer, { paddingBottom: insets.bottom || 20 }]}>
+                <SafeBlurView intensity={80} tint="dark" style={[styles.inputContainer, { paddingBottom: insets.bottom || 20 }]}>
                     <View style={styles.inputInner}>
                         <TextInput
                             style={styles.input}
@@ -195,7 +220,7 @@ export default function ChatScreen() {
                             </Pressable>
                         )}
                     </View>
-                </BlurView>
+                </SafeBlurView>
             </KeyboardAvoidingView>
         </View>
     );

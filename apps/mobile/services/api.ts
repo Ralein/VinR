@@ -8,7 +8,7 @@ import { config } from '../constants/config';
 import { useAuthStore } from '../stores/authStore';
 
 const api = axios.create({
-    baseURL: config.API_BASE_URL,
+    baseURL: config.API_BASE_URL.endsWith('/') ? config.API_BASE_URL : `${config.API_BASE_URL}/`,
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json',

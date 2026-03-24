@@ -10,20 +10,20 @@ const getDevApiUrl = () => {
     
     if (debuggerHost) {
         const localhost = debuggerHost.split(':')[0];
-        return `http://${localhost}:8000/api/v1`;
+        return `http://${localhost}:8000/api/v1/`;
     }
 
     if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8000/api/v1';
+        return 'http://10.0.2.2:8000/api/v1/';
     }
-    return 'http://127.0.0.1:8000/api/v1';
+    return 'http://127.0.0.1:8000/api/v1/';
 };
 
 export const config = {
     // API
     API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || (__DEV__
         ? getDevApiUrl()
-        : 'https://api.vinr.app/api/v1'),
+        : 'https://api.vinr.app/api/v1/'),
 
     // Limits
     CHECKIN_TEXT_MAX_LENGTH: 500,

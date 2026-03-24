@@ -17,7 +17,7 @@ export const useReels = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/api/v1/media/reels', {
+      const response = await api.get('/media/reels', {
         params: { primary_reason: primaryReason },
       });
       if (response.data && response.data.reels) {
