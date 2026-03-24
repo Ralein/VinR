@@ -2,7 +2,7 @@
  * Tab Layout v5 — 5-tab bar + floating Buddy FAB
  *
  * Tabs: Home · Check-in · Journey · Journal · Profile
- * Glint (previously Glint tab) moved to hidden — accessible from Profile
+ * Reels (previously Glint tab) moved to hidden — accessible from Profile
  * Journal elevated to main tab with BookOpen icon
  *
  * Theme-aware: reads useTheme() for dark/light color tokens
@@ -176,7 +176,7 @@ export default function TabLayout() {
                     }}
                 />
                 {/* Hidden screens — accessible via navigation, not tab bar */}
-                <Tabs.Screen name="glint" options={{ href: null }} />
+                <Tabs.Screen name="reels" options={{ href: null }} />
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />

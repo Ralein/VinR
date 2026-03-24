@@ -29,15 +29,15 @@ import Animated, {
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const TAB_BAR_HEIGHT = 80; // Estimated
-const GLINT_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
+const REELS_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
-interface GlintItemProps {
+interface ReelItemProps {
   reel: Reel;
   isActive: boolean;
   index: number;
 }
 
-const GlintItem: React.FC<GlintItemProps> = ({ reel, isActive, index }) => {
+const ReelItem: React.FC<ReelItemProps> = ({ reel, isActive, index }) => {
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
@@ -103,7 +103,7 @@ const GlintItem: React.FC<GlintItemProps> = ({ reel, isActive, index }) => {
   const embedUrl = `https://www.youtube.com/embed/${reel.video_id}?autoplay=1&controls=0&modestbranding=1&loop=1&playlist=${reel.video_id}&rel=0&showinfo=0&mute=${isActive ? 0 : 1}`;
 
   return (
-    <Pressable onPress={handlePress} style={styles.glintContainer}>
+    <Pressable onPress={handlePress} style={styles.reelContainer}>
       {/* Thumbnail / Placeholder */}
       {!isActive && (
          <View style={StyleSheet.absoluteFill}>
@@ -163,7 +163,7 @@ const GlintItem: React.FC<GlintItemProps> = ({ reel, isActive, index }) => {
   );
 };
 
-export default function GlintScreen() {
+export default function ReelsScreen() {
   const user = useAuthStore((s) => s.user);
   const { reels, loading, error, fetchReels } = useReels();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -195,7 +195,7 @@ export default function GlintScreen() {
     return (
       <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" color={colors.gold} />
-        <Text style={styles.loadingText}>Curating Glints…</Text>
+        <Text style={styles.loadingText}>Curating Reels…</Text>
       </SafeAreaView>
     );
   }
@@ -204,7 +204,7 @@ export default function GlintScreen() {
     return (
       <SafeAreaView style={styles.centered}>
         <Film size={48} color={colors.textGhost} />
-        <Text style={styles.errorTitle}>Couldn't load Glint</Text>
+        <Text style={styles.errorTitle}>Couldn't load Reels</Text>
         <Text style={styles.errorSubtitle}>{error}</Text>
         <TouchableOpacity
           style={styles.retryButton}
@@ -223,19 +223,19 @@ export default function GlintScreen() {
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
         <View style={styles.header}>
           <Film size={18} color={colors.gold} />
-          <Text style={styles.headerTitle}>Glint</Text>
+          <Text style={styles.headerTitle}>Reels</Text>
         </View>
       </SafeAreaView>
 
       <FlatList
         data={reels}
         renderItem={({ item, index }) => (
-          <GlintItem reel={item} isActive={index === activeIndex} index={index} />
+          <ReelItem reel={item} isActive={index === activeIndex} index={index} />
         )}
         keyExtractor={(item) => item.video_id}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        snapToInterval={GLINT_HEIGHT}
+        snapToInterval={REELS_HEIGHT}
         snapToAlignment="start"
         decelerationRate="fast"
         onViewableItemsChanged={handleViewableItemsChanged}
@@ -256,9 +256,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.void,
   },
-  glintContainer: {
+  reelContainer: {
     width: SCREEN_WIDTH,
-    height: GLINT_HEIGHT,
+    height: REELS_HEIGHT,
     backgroundColor: colors.surface,
   },
   webview: {

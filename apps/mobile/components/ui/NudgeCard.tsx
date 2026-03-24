@@ -142,8 +142,8 @@ const styles = StyleSheet.create({
         gap: 3,
     },
     title: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 14,
+        fontFamily: fonts.display,
+        fontSize: 16,
         letterSpacing: 0.1,
     },
     message: {
