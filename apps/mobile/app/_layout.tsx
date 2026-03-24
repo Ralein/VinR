@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 /**
  * Root Layout — App entry point with Clerk Auth + React Query + fonts
  */
