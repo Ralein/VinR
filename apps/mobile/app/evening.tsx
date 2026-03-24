@@ -23,11 +23,11 @@ import Animated, {
 import {
     ChevronLeft, Moon, Frown, Meh, Smile, SmilePlus, Star,
     Wind, Brain, Headphones, CheckCircle, RefreshCw,
-    Quote, Flame, Sparkles, AlarmClock, Music,
+    Quote, Flame, Sparkles, AlarmClock,
 } from 'lucide-react-native';
 import { colors, fonts, spacing, borderRadius } from '../constants/theme';
 import { useEveningWindDown } from '../hooks/useRituals';
-import AudioCategoryCard from '../components/media/AudioCategoryCard';
+
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -48,11 +48,7 @@ const MOOD_OPTIONS: MoodOption[] = [
     { score: 5, Icon: Star,      label: 'Great',  color: '#B07FE0' },
 ];
 
-const WIND_DOWN_CATEGORIES = [
-    { category: 'sleep',      Icon: Moon,      iconColor: colors.sapphire,  label: 'Sleep Sounds'      },
-    { category: 'breathing',  Icon: Wind,      iconColor: '#4DB6A9',        label: 'Guided Breathing'  },
-    { category: 'meditation', Icon: Brain,     iconColor: colors.lavender,  label: 'Meditations'       },
-];
+
 
 // ── Mood chip with spring animation ─────────────────────────
 
@@ -207,22 +203,8 @@ export default function EveningScreen() {
                     </View>
                 </Animated.View>
 
-                {/* ── Audio categories ─────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(320).duration(500)} style={styles.section}>
-                    <View style={styles.sectionLabelRow}>
-                        <Music size={13} color={colors.gold} strokeWidth={2} />
-                        <Text style={styles.sectionLabel}>WIND-DOWN AUDIO</Text>
-                    </View>
-                    {WIND_DOWN_CATEGORIES.map((cat) => (
-                        <AudioCategoryCard
-                            key={cat.category}
-                            category={cat.category}
-                            Icon={cat.Icon}
-                            iconColor={cat.iconColor}
-                            label={cat.label}
-                        />
-                    ))}
-                </Animated.View>
+
+
 
                 {/* ── Breathing Exercise ───────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(420).duration(500)} style={styles.section}>
