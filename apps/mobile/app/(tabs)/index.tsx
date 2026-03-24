@@ -161,19 +161,40 @@ export default function HomeScreen() {
                     </Animated.View>
                 )}
 
-                {/* ── How are you feeling? ──────────────────── */}
+                {/* ── VinR Buddy Promo ──────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
+                    <SectionHeader title="Your AI Companion" Icon={MessageCircle} iconColor={colors.lavender} delay={0} />
+                    <Pressable onPress={() => router.push('/buddy/chat')}>
+                        <GlassCard noAnimation accent="lavender">
+                            <View style={styles.habitRow}>
+                                <View style={[styles.habitIconWrap, { backgroundColor: `${colors.lavender}15` }]}>
+                                    <Sparkles size={22} color={colors.lavender} strokeWidth={1.8} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.habitTitle}>Talk to VinR Buddy</Text>
+                                    <Text style={styles.habitText}>
+                                        I'm always here to listen. Share what's on your mind.
+                                    </Text>
+                                </View>
+                                <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
+                            </View>
+                        </GlassCard>
+                    </Pressable>
+                </Animated.View>
+
+                {/* ── How are you feeling? ──────────────────── */}
+                <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
                     <SectionHeader title="How Are You Feeling?" Icon={Heart} iconColor={colors.crimson} delay={0} />
                     <GoldButton label="Start a Check-In" onPress={() => router.push('/(tabs)/checkin')} />
                 </Animated.View>
 
                 {/* ── Today's Habit ─────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
+                <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
                     <SectionHeader title="Today's Habit" Icon={Activity} iconColor={colors.emerald} delay={0} />
                     <Pressable onPress={() => router.push('/(tabs)/journey')}>
                         <GlassCard noAnimation>
                             <View style={styles.habitRow}>
-                                <View style={styles.habitIconWrap}>
+                                <View style={[styles.habitIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
                                     <Activity size={22} color={colors.emerald} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -190,7 +211,7 @@ export default function HomeScreen() {
 
                 {/* ── Your Vibe — YouTube ───────────────────── */}
                 {youtubeData && youtubeData.results.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
+                    <Animated.View entering={FadeInDown.delay(640).duration(400)} style={styles.section}>
                         <SectionHeader title="Your Vibe" Icon={Music2} iconColor={colors.sapphire} delay={0} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {youtubeData.results.map((video: any) => (
@@ -208,7 +229,7 @@ export default function HomeScreen() {
 
                 {/* ── Get Fired Up — Motivation ─────────────── */}
                 {motivationData && motivationData.results.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(640).duration(400)} style={styles.section}>
+                    <Animated.View entering={FadeInDown.delay(720).duration(400)} style={styles.section}>
                         <SectionHeader title="Get Fired Up" Icon={Zap} iconColor={colors.gold} delay={0} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {motivationData.results.map((video: any) => (
@@ -340,7 +361,6 @@ const styles = StyleSheet.create({
     },
     habitIconWrap: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: `${colors.lavender}15`,
         alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
     },

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { ChevronLeft, Send, Mic, Sparkles } from 'lucide-react-native';
@@ -17,10 +17,13 @@ const THEME = {
     border: '#334155'
 };
 
+import { Audio } from 'expo-av';
+
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    audioUrl?: string;
 }
 
 export default function ChatScreen() {
@@ -35,6 +38,30 @@ export default function ChatScreen() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+    const [audioEnabled, setAudioEnabled] = useState(true);
+    const audioRef = useRef<Audio.Sound | null>(null);
+
+    // Cleanup audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.unloadAsync();
+            }
+        };
+    }, []);
+
+    const playAudio = async (uri: string) => {
+        try {
+            if (audioRef.current) {
+                await audioRef.current.unloadAsync();
+            }
+            const { sound } = await Audio.Sound.createAsync({ uri });
+            audioRef.current = sound;
+            await sound.playAsync();
+        } catch (error) {
+            console.error('Error playing audio:', error);
+        }
+    };
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -47,13 +74,23 @@ export default function ChatScreen() {
         setIsLoading(true);
 
         try {
-            const res = await api.post('/buddy/chat', { message: userText });
+            const res = await api.post('/chat/message', { 
+                text: userText,
+                voice_enabled: audioEnabled 
+            });
+
             const aiMsg: Message = {
-                id: (Date.now() + 1).toString(),
+                id: res.data.buddy_message.id || Date.now().toString(),
                 role: 'assistant',
-                content: res.data.data.response
+                content: res.data.buddy_message.content,
+                audioUrl: res.data.buddy_message.audio_url
             };
+
             setMessages(prev => [...prev, aiMsg]);
+
+            if (aiMsg.audioUrl) {
+                playAudio(aiMsg.audioUrl);
+            }
         } catch (error) {
             console.error('Chat error:', error);
             setMessages(prev => [...prev, {
@@ -82,6 +119,12 @@ export default function ChatScreen() {
                     <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAi]}>
                         {item.content}
                     </Text>
+                    {!isUser && item.audioUrl && (
+                        <Pressable onPress={() => playAudio(item.audioUrl!)} style={styles.playBtn}>
+                            <Mic size={14} color={THEME.gold} />
+                            <Text style={styles.playText}>Listen</Text>
+                        </Pressable>
+                    )}
                 </View>
             </Animated.View>
         );
@@ -100,7 +143,12 @@ export default function ChatScreen() {
                     <Text style={styles.headerTitle}>VinR Buddy</Text>
                     <View style={styles.onlineStatus} />
                 </View>
-                <View style={{ width: 40 }} />
+                <Pressable 
+                    onPress={() => setAudioEnabled(!audioEnabled)} 
+                    style={[styles.audioToggle, !audioEnabled && styles.audioDisabled]}
+                >
+                    <Mic size={20} color={audioEnabled ? THEME.gold : THEME.textMuted} />
+                </Pressable>
             </View>
 
             <FlatList
@@ -139,8 +187,11 @@ export default function ChatScreen() {
                                 <Send size={20} color="#FFF" style={{ marginLeft: 2 }} />
                             </Pressable>
                         ) : (
-                            <Pressable style={[styles.sendBtn, { backgroundColor: 'transparent' }]}>
-                                <Mic size={24} color={THEME.textMuted} />
+                            <Pressable 
+                                onPress={() => setAudioEnabled(!audioEnabled)}
+                                style={[styles.sendBtn, { backgroundColor: audioEnabled ? `${THEME.gold}20` : 'transparent' }]}
+                            >
+                                <Mic size={24} color={audioEnabled ? THEME.gold : THEME.textMuted} />
                             </Pressable>
                         )}
                     </View>
@@ -284,5 +335,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 2,
+    },
+    audioToggle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: THEME.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: THEME.border,
+    },
+    audioDisabled: {
+        opacity: 0.5,
+    },
+    playBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.05)',
+    },
+    playText: {
+        color: THEME.gold,
+        fontSize: 12,
+        fontWeight: '600',
     }
 });
