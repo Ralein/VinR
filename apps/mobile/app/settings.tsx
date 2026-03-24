@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Shield, Moon, Droplets, Laptop, LogOut, Bell } from 'lucide-react-native';
+import { ArrowLeft, User, Shield, Moon, Droplets, Laptop, LogOut, Bell, ChevronRight, Trash2 } from 'lucide-react-native';
 import { colors, fonts, spacing, borderRadius } from '../constants/theme';
 import { useSettingsStore } from '../store/useSettingsStore';
 
@@ -77,6 +77,23 @@ export default function SettingsScreen() {
                     )}
                 </View>
 
+                {/* My Profile Link */}
+                <Pressable
+                    style={[styles.card, { marginTop: spacing.md }]}
+                    onPress={() => router.push('/profile-settings' as any)}
+                >
+                    <View style={styles.row}>
+                        <View style={styles.rowIcon}>
+                            <User size={20} color={colors.gold} />
+                        </View>
+                        <View style={styles.rowTextContainer}>
+                            <Text style={styles.rowTitle}>My Profile</Text>
+                            <Text style={styles.rowSubtitle}>View your info and manage account</Text>
+                        </View>
+                        <ChevronRight size={18} color={colors.textGhost} />
+                    </View>
+                </Pressable>
+
                 {/* Preferences Section */}
                 <Text style={styles.sectionTitle}>App Preferences</Text>
                 <View style={styles.card}>
@@ -144,6 +161,24 @@ export default function SettingsScreen() {
                         />
                     </View>
                 </View>
+
+                {/* Danger Zone */}
+                <Text style={[styles.sectionTitle, { color: colors.crimson }]}>Danger Zone</Text>
+                <Pressable
+                    style={[styles.card, { borderColor: `${colors.crimson}30` }]}
+                    onPress={() => router.push('/profile-settings' as any)}
+                >
+                    <View style={styles.row}>
+                        <View style={[styles.rowIcon, { backgroundColor: `${colors.crimson}15` }]}>
+                            <Trash2 size={20} color={colors.crimson} />
+                        </View>
+                        <View style={styles.rowTextContainer}>
+                            <Text style={[styles.rowTitle, { color: colors.crimson }]}>Delete Account</Text>
+                            <Text style={styles.rowSubtitle}>Permanently remove your data</Text>
+                        </View>
+                        <ChevronRight size={18} color={colors.crimson} />
+                    </View>
+                </Pressable>
                 
                 <Text style={styles.versionText}>VinR v1.0.0 (Alpha)</Text>
             </ScrollView>

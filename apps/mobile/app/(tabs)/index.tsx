@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import {
-    Music2, Zap, Headphones, Users, Moon, ChevronRight,
+    Music2, Zap, Users, Moon, ChevronRight,
     Activity, Brain, Sparkles, Wind, Heart, Sun, Quote,
     CalendarDays, TrendingUp, LogOut
 } from 'lucide-react-native';
@@ -26,7 +26,7 @@ import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
 import { useStreak } from '../../hooks/useStreak';
 import { useAdaptiveHome } from '../../hooks/useAdaptive';
-import AudioCategoryCard from '../../components/media/AudioCategoryCard';
+
 import YouTubeCard from '../../components/media/YouTubeCard';
 import SleepMode from '../../components/media/SleepMode';
 import EventsList from '../../components/events/EventsList';
@@ -76,14 +76,7 @@ const NUDGE_ICON_MAP: Record<string, any> = {
     default: Heart,
 };
 
-// ── Audio category config (Icon + color) ───────────────────
 
-const AUDIO_CATEGORIES = [
-    { category: 'breathing',  Icon: Wind,      iconColor: colors.sapphire,  label: 'Guided Breathing'     },
-    { category: 'meditation', Icon: Brain,      iconColor: colors.lavender,  label: 'Meditations'          },
-    { category: 'sleep',      Icon: Moon,       iconColor: colors.emerald,   label: 'Sleep Sounds'         },
-    { category: 'affirmation',Icon: Sun,        iconColor: colors.gold,      label: 'Morning Affirmations' },
-];
 
 // ── Main Component ─────────────────────────────────────────
 
@@ -229,19 +222,7 @@ export default function HomeScreen() {
                     </Animated.View>
                 )}
 
-                {/* ── Tonight's Wind-down ───────────────────── */}
-                <Animated.View entering={FadeInDown.delay(720).duration(400)} style={styles.section}>
-                    <SectionHeader title="Tonight's Wind-Down" Icon={Headphones} iconColor={colors.lavender} delay={0} />
-                    {AUDIO_CATEGORIES.map((cat) => (
-                        <AudioCategoryCard
-                            key={cat.category}
-                            category={cat.category}
-                            Icon={cat.Icon}
-                            iconColor={cat.iconColor}
-                            label={cat.label}
-                        />
-                    ))}
-                </Animated.View>
+
 
                 {/* ── Get Out & Connect ─────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(800).duration(400)} style={styles.section}>
