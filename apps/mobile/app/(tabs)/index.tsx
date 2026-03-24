@@ -18,7 +18,7 @@ import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-nati
 import {
     Music2, Zap, Users, Moon, ChevronRight,
     Activity, Brain, Sparkles, Wind, Heart, Sun, Quote,
-    CalendarDays, TrendingUp, LogOut
+    CalendarDays, TrendingUp, LogOut, MessageCircle
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
@@ -73,6 +73,7 @@ const NUDGE_ICON_MAP: Record<string, any> = {
     journey: Activity,
     breathing: Wind,
     affirmation: Sparkles,
+    buddy: MessageCircle,
     default: Heart,
 };
 
@@ -152,6 +153,7 @@ export default function HomeScreen() {
                                     onPress={() => {
                                         if (card.action === 'therapist_directory') router.push('/therapist');
                                         else if (card.action === 'journey') router.push('/(tabs)/journey');
+                                        else if (card.action === 'buddy') router.push('/buddy/chat');
                                     }}
                                 />
                             );
