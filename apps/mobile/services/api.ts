@@ -15,6 +15,17 @@ const api = axios.create({
     },
 });
 
+// Interceptor to strip leading slashes from URLs to ensure they are relative to baseURL path
+api.interceptors.request.use(
+    (config) => {
+        if (config.url?.startsWith('/')) {
+            config.url = config.url.substring(1);
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
 // Request interceptor — attach auth token
 api.interceptors.request.use(
     async (config) => {
