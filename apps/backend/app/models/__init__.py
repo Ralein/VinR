@@ -6,6 +6,7 @@ from .media import MediaSession
 from .user import User
 from .notification_preferences import NotificationPreferences
 from .journal import JournalEntry
+from .chat import ChatMessage
 
 __all__ = [
     "BookmarkedEvent",
@@ -18,4 +19,5 @@ __all__ = [
     "User",
     "NotificationPreferences",
     "JournalEntry",
+    "ChatMessage",
 ]
