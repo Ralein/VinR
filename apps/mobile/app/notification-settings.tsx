@@ -10,33 +10,47 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import {
+    Clock, AlertTriangle, Trophy, Heart, Moon,
+} from 'lucide-react-native';
 import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 import { useNotificationSettings } from '../hooks/useNotificationSettings';
+import type { LucideIcon } from 'lucide-react-native';
 
-const NOTIFICATION_TYPES = [
+const NOTIFICATION_TYPES: {
+    key: 'daily_reminder_enabled' | 'streak_at_risk_enabled' | 'milestone_enabled' | 're_engagement_enabled';
+    title: string;
+    description: string;
+    Icon: LucideIcon;
+    iconColor: string;
+}[] = [
     {
-        key: 'daily_reminder_enabled' as const,
+        key: 'daily_reminder_enabled',
         title: 'Daily Reminder',
         description: 'Gentle nudge at your chosen time to check in',
-        emoji: '⏰',
+        Icon: Clock,
+        iconColor: colors.gold,
     },
     {
-        key: 'streak_at_risk_enabled' as const,
+        key: 'streak_at_risk_enabled',
         title: 'Streak at Risk',
         description: 'Warning at 11 PM if you haven\'t completed today',
-        emoji: '⚠️',
+        Icon: AlertTriangle,
+        iconColor: '#E8A85D',
     },
     {
-        key: 'milestone_enabled' as const,
+        key: 'milestone_enabled',
         title: 'Milestone Celebrations',
         description: 'Celebrate when you hit 5, 10, 15, and 21 days',
-        emoji: '🏆',
+        Icon: Trophy,
+        iconColor: colors.gold,
     },
     {
-        key: 're_engagement_enabled' as const,
+        key: 're_engagement_enabled',
         title: 'Come Back Nudge',
         description: 'If we haven\'t heard from you in a few days',
-        emoji: '💙',
+        Icon: Heart,
+        iconColor: colors.sapphire,
     },
 ];
 
@@ -97,7 +111,9 @@ export default function NotificationSettingsScreen() {
                 {/* Snooze Banner */}
                 {preferences?.snooze_until && new Date(preferences.snooze_until) > new Date() && (
                     <View style={styles.snoozeBanner}>
-                        <Text style={styles.snoozeEmoji}>😴</Text>
+                        <View style={styles.snoozeIconWrap}>
+                            <Moon size={20} color={colors.gold} strokeWidth={1.8} />
+                        </View>
                         <Text style={styles.snoozeText}>
                             Notifications snoozed until{' '}
                             {new Date(preferences.snooze_until).toLocaleTimeString([], {
@@ -114,7 +130,9 @@ export default function NotificationSettingsScreen() {
                     {NOTIFICATION_TYPES.map((type) => (
                         <View key={type.key} style={styles.toggleRow}>
                             <View style={styles.toggleInfo}>
-                                <Text style={styles.toggleEmoji}>{type.emoji}</Text>
+                                <View style={[styles.toggleIconWrap, { backgroundColor: `${type.iconColor}15` }]}>
+                                    <type.Icon size={18} color={type.iconColor} strokeWidth={1.8} />
+                                </View>
                                 <View style={styles.toggleText}>
                                     <Text style={styles.toggleTitle}>{type.title}</Text>
                                     <Text style={styles.toggleDescription}>
@@ -182,8 +200,8 @@ export default function NotificationSettingsScreen() {
                         onPress={() => snooze(2)}
                         disabled={isSnoozeing}
                     >
-                        <Text style={styles.snoozeButtonEmoji}>😴</Text>
-                        <Text style={styles.snoozeButtonText}>
+                        <Moon size={18} color={colors.textPrimary} strokeWidth={1.8} />
+                        <Text style={[styles.snoozeButtonText, { marginLeft: spacing.sm }]}>
                             Snooze for 2 hours
                         </Text>
                     </Pressable>
@@ -219,7 +237,7 @@ const styles = StyleSheet.create({
         padding: spacing.md, marginBottom: spacing.lg,
         borderWidth: 1, borderColor: colors.gold + '30',
     },
-    snoozeEmoji: { fontSize: 24, marginRight: spacing.sm },
+    snoozeIconWrap: { marginRight: spacing.sm },
     snoozeText: {
         fontFamily: fonts.body, fontSize: 14,
         color: colors.textMuted, flex: 1,
@@ -241,7 +259,11 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.border,
     },
     toggleInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.md },
-    toggleEmoji: { fontSize: 24, marginRight: spacing.sm },
+    toggleIconWrap: {
+        width: 36, height: 36, borderRadius: 18,
+        alignItems: 'center', justifyContent: 'center',
+        marginRight: spacing.sm,
+    },
     toggleText: { flex: 1 },
     toggleTitle: {
         fontFamily: fonts.bodySemiBold, fontSize: 16,
@@ -289,7 +311,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface, borderRadius: borderRadius.md,
         padding: spacing.md, borderWidth: 1, borderColor: colors.border,
     },
-    snoozeButtonEmoji: { fontSize: 20, marginRight: spacing.sm },
+
     snoozeButtonText: {
         fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.textPrimary,
     },

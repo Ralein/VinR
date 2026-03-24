@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Flame, Target, Wind, Sun, ChevronRight } from 'lucide-react-native';
 import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 import { useMorningRitual } from '../hooks/useRituals';
 
@@ -48,7 +49,7 @@ export default function MorningScreen() {
 
                 {/* Greeting */}
                 <Text style={styles.greeting}>{data?.greeting || 'Good morning.'}</Text>
-                <Text style={styles.subtitle}>Let's set the tone for today ☀️</Text>
+                <Text style={styles.subtitle}>Let's set the tone for today</Text>
 
                 {/* Affirmation */}
                 <View style={styles.affirmationCard}>
@@ -64,7 +65,9 @@ export default function MorningScreen() {
                 {/* Streak Status */}
                 {data?.streak_status && (
                     <View style={styles.streakCard}>
-                        <Text style={styles.streakEmoji}>🔥</Text>
+                        <View style={styles.streakIconWrap}>
+                            <Flame size={22} color={colors.emerald} fill={colors.emerald} strokeWidth={1.5} />
+                        </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.streakTitle}>
                                 Day {data.streak_status.current_streak}
@@ -81,9 +84,9 @@ export default function MorningScreen() {
                     <View style={styles.habitCard}>
                         <Text style={styles.sectionTitle}>Today's Habit</Text>
                         <View style={styles.habitContent}>
-                            <Text style={styles.habitEmoji}>
-                                {data.daily_habit.emoji || '🎯'}
-                            </Text>
+                            <View style={styles.habitIconWrap}>
+                                <Target size={22} color={colors.gold} strokeWidth={1.8} />
+                            </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.habitName}>
                                     {data.daily_habit.name}
@@ -119,7 +122,9 @@ export default function MorningScreen() {
                         style={styles.breathingCard}
                         onPress={() => router.push('/breathing')}
                     >
-                        <Text style={styles.breathingEmoji}>🫁</Text>
+                        <View style={styles.breathingIconWrap}>
+                            <Wind size={22} color={colors.sapphire} strokeWidth={1.8} />
+                        </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.breathingName}>
                                 {data?.breathing_suggestion?.name || 'Morning Energizer'}
@@ -128,7 +133,7 @@ export default function MorningScreen() {
                                 {data?.breathing_suggestion?.instructions}
                             </Text>
                         </View>
-                        <Text style={styles.breathingArrow}>→</Text>
+                        <ChevronRight size={18} color={colors.gold} strokeWidth={2} />
                     </Pressable>
                 </View>
             </ScrollView>
@@ -191,7 +196,11 @@ const styles = StyleSheet.create({
         padding: spacing.md, gap: spacing.sm,
         borderWidth: 1, borderColor: colors.emerald + '30',
     },
-    streakEmoji: { fontSize: 28 },
+    streakIconWrap: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: `${colors.emerald}15`,
+        alignItems: 'center', justifyContent: 'center',
+    },
     streakTitle: {
         fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.emerald,
     },
@@ -211,7 +220,11 @@ const styles = StyleSheet.create({
         padding: spacing.md, gap: spacing.sm,
         borderWidth: 1, borderColor: colors.border,
     },
-    habitEmoji: { fontSize: 28 },
+    habitIconWrap: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: `${colors.gold}15`,
+        alignItems: 'center', justifyContent: 'center',
+    },
     habitName: {
         fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.textPrimary,
     },
@@ -238,14 +251,16 @@ const styles = StyleSheet.create({
         padding: spacing.md, gap: spacing.sm,
         borderWidth: 1, borderColor: colors.sapphire + '30',
     },
-    breathingEmoji: { fontSize: 28 },
+    breathingIconWrap: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: `${colors.sapphire}15`,
+        alignItems: 'center', justifyContent: 'center',
+    },
     breathingName: {
         fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.textPrimary,
     },
     breathingDesc: {
         fontFamily: fonts.body, fontSize: 13, color: colors.textMuted,
     },
-    breathingArrow: {
-        fontFamily: fonts.bodySemiBold, fontSize: 18, color: colors.gold,
-    },
+
 });

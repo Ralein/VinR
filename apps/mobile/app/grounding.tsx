@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Leaf } from 'lucide-react-native';
 import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
 
 interface GroundingStep {
@@ -76,7 +77,9 @@ export default function GroundingScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 <ScrollView contentContainerStyle={styles.completeContainer}>
-                    <Text style={styles.completeEmoji}>🌿</Text>
+                    <View style={styles.completeIconWrap}>
+                        <Leaf size={36} color={colors.emerald} strokeWidth={1.5} />
+                    </View>
                     <Text style={styles.completeTitle}>You're grounded.</Text>
                     <View style={styles.reflectionCard}>
                         <Text style={styles.reflectionText}>
@@ -220,7 +223,12 @@ const styles = StyleSheet.create({
         alignItems: 'center', paddingHorizontal: spacing.xl,
         paddingTop: spacing['2xl'],
     },
-    completeEmoji: { fontSize: 56, marginBottom: spacing.md },
+    completeIconWrap: {
+        width: 80, height: 80, borderRadius: 40,
+        backgroundColor: `${colors.emerald}15`,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: spacing.md,
+    },
     completeTitle: {
         fontFamily: fonts.display, fontSize: 28,
         color: colors.textPrimary, marginBottom: spacing.lg,

@@ -5,13 +5,13 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, Pressable,
-    Alert, TextInput, ActivityIndicator,
+    Alert, TextInput, ActivityIndicator, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
     ArrowLeft, User, Mail, Calendar, Target, Leaf,
-    Trash2, AlertTriangle,
+    Trash2, AlertTriangle, X,
 } from 'lucide-react-native';
 import { colors, fonts, spacing, borderRadius } from '../constants/theme';
 import { useAuthStore } from '../stores/authStore';
@@ -23,6 +23,8 @@ export default function ProfileSettingsScreen() {
     const user = useAuthStore((s) => s.user);
     const signOut = useAuthStore((s) => s.signOut);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
     const handleDeleteAccount = () => {
         Alert.alert(
@@ -33,37 +35,22 @@ export default function ProfileSettingsScreen() {
                 {
                     text: 'Delete Forever',
                     style: 'destructive',
-                    onPress: confirmDelete,
+                    onPress: () => {
+                        setDeleteConfirmText('');
+                        setShowDeleteModal(true);
+                    },
                 },
             ]
         );
     };
 
-    const confirmDelete = () => {
-        Alert.prompt(
-            'Type DELETE to confirm',
-            'Please type "DELETE" to permanently delete your account.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Confirm',
-                    style: 'destructive',
-                    onPress: async (text?: string) => {
-                        if (text?.trim().toUpperCase() !== 'DELETE') {
-                            Alert.alert('Cancelled', 'You did not type DELETE. Account was not deleted.');
-                            return;
-                        }
-                        await executeDelete();
-                    },
-                },
-            ],
-            'plain-text',
-            '',
-        );
-    };
-
     const executeDelete = async () => {
+        if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
+            Alert.alert('Cancelled', 'You did not type DELETE. Account was not deleted.');
+            return;
+        }
         try {
+            setShowDeleteModal(false);
             setIsDeleting(true);
             await api.delete('/auth/me');
             await deleteItemAsync('authToken');
@@ -179,6 +166,57 @@ export default function ProfileSettingsScreen() {
                     <View style={{ height: 60 }} />
                 </ScrollView>
             )}
+
+            {/* Cross-platform DELETE confirmation modal */}
+            <Modal
+                visible={showDeleteModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowDeleteModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <AlertTriangle size={24} color={colors.crimson} />
+                            <Text style={styles.modalTitle}>Confirm Deletion</Text>
+                            <Pressable onPress={() => setShowDeleteModal(false)} style={styles.modalClose}>
+                                <X size={20} color={colors.textMuted} />
+                            </Pressable>
+                        </View>
+                        <Text style={styles.modalDesc}>
+                            Type <Text style={{ fontFamily: fonts.bodySemiBold, color: colors.crimson }}>DELETE</Text> to permanently delete your account.
+                        </Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            placeholder="Type DELETE"
+                            placeholderTextColor={colors.textGhost}
+                            value={deleteConfirmText}
+                            onChangeText={setDeleteConfirmText}
+                            autoCapitalize="characters"
+                            autoFocus
+                        />
+                        <View style={styles.modalActions}>
+                            <Pressable
+                                style={styles.modalCancelBtn}
+                                onPress={() => setShowDeleteModal(false)}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[
+                                    styles.modalDeleteBtn,
+                                    deleteConfirmText.trim().toUpperCase() !== 'DELETE' && { opacity: 0.4 },
+                                ]}
+                                onPress={executeDelete}
+                                disabled={deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
+                            >
+                                <Trash2 size={16} color="#fff" />
+                                <Text style={styles.modalDeleteText}>Delete Forever</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -320,6 +358,92 @@ const styles = StyleSheet.create({
     },
     deleteButtonText: {
         fontFamily: fonts.bodySemiBold, fontSize: 16,
+        color: '#ffffff',
+    },
+    // Modal styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.lg,
+    },
+    modalContent: {
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
+        width: '100%',
+        maxWidth: 400,
+        borderWidth: 1,
+        borderColor: `${colors.crimson}30`,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+    },
+    modalTitle: {
+        fontFamily: fonts.display,
+        fontSize: 18,
+        color: colors.textPrimary,
+        flex: 1,
+    },
+    modalClose: {
+        width: 32, height: 32, borderRadius: 16,
+        backgroundColor: colors.border,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    modalDesc: {
+        fontFamily: fonts.body,
+        fontSize: 14,
+        color: colors.textMuted,
+        lineHeight: 20,
+        marginBottom: spacing.md,
+    },
+    modalInput: {
+        backgroundColor: colors.void,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        paddingHorizontal: spacing.md,
+        paddingVertical: 14,
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 16,
+        color: colors.textPrimary,
+        letterSpacing: 2,
+        textAlign: 'center',
+        marginBottom: spacing.lg,
+    },
+    modalActions: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+    },
+    modalCancelBtn: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: borderRadius.md,
+        backgroundColor: colors.border,
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 15,
+        color: colors.textPrimary,
+    },
+    modalDeleteBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        paddingVertical: 14,
+        borderRadius: borderRadius.md,
+        backgroundColor: colors.crimson,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    modalDeleteText: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 15,
         color: '#ffffff',
     },
 });
