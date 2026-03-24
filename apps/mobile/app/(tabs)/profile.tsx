@@ -54,7 +54,7 @@ function MoodLineChart({ trends }: { trends: MoodTrendPoint[] }) {
         return (
             <View style={chartStyles.empty}>
                 <Text style={chartStyles.emptyText}>
-                    Check in a few more times to see your mood trend ✨
+                    Check in a few more times to see your mood trend
                 </Text>
             </View>
         );

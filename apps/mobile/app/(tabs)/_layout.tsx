@@ -1,24 +1,24 @@
 /**
- * Tab Layout v3 — Floating glass pill tab bar
+ * Tab Layout v4 — Clean 5-tab bar + floating Buddy FAB
  *
  * Premium animated tab bar with:
  * - Frosted glass floating pill container
  * - Animated active icon: scale spring + gold glow halo
  * - Ink-dot indicator below active icon
- * - Morphing icon color with Reanimated derived values
+ * - 5 tabs: Home, Check-in, Journey, Reels, Profile
+ * - Journal hidden (accessible from Profile)
+ * - Floating VinR Buddy chat button
  */
 
-import { Tabs } from 'expo-router';
-import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Heart, Map, BookOpen, User, Film } from 'lucide-react-native';
+import { Tabs, useRouter } from 'expo-router';
+import { View, StyleSheet, Platform, Pressable } from 'react-native';
+import { Home, Heart, Map, User, Film, MessageCircle } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
     withTiming,
-    interpolateColor,
     useDerivedValue,
-    useSharedValue,
-    useAnimatedProps,
+    FadeIn,
 } from 'react-native-reanimated';
 import { colors, fonts, spacing } from '../../constants/theme';
 import MiniPlayer from '../../components/media/MiniPlayer';
@@ -31,13 +31,7 @@ type TabIconProps = {
     Icon: typeof Home;
 };
 
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 function TabIcon({ Icon, label, focused }: TabIconProps) {
-    const progress = useDerivedValue(() =>
-        withTiming(focused ? 1 : 0, { duration: 220 })
-    );
-
     const animatedWrapStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: withSpring(focused ? 1.08 : 1, { stiffness: 260, damping: 20 }) },
@@ -71,6 +65,23 @@ function TabIcon({ Icon, label, focused }: TabIconProps) {
             <Animated.Text style={[styles.tabLabel, labelStyle]}>{label}</Animated.Text>
             <Animated.View style={[styles.activeDot, dotStyle]} />
         </View>
+    );
+}
+
+// ──────────────────── Floating Buddy FAB ────────────────────
+
+function BuddyFAB() {
+    const router = useRouter();
+
+    return (
+        <Pressable
+            style={styles.fab}
+            onPress={() => router.push('/buddy/chat')}
+        >
+            <View style={styles.fabInner}>
+                <MessageCircle size={22} color="#FFFFFF" fill={colors.gold} strokeWidth={2} />
+            </View>
+        </Pressable>
     );
 }
 
@@ -120,14 +131,6 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="journal"
-                    options={{
-                        tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={BookOpen} label="Journal" focused={focused} />
-                        ),
-                    }}
-                />
-                <Tabs.Screen
                     name="profile"
                     options={{
                         tabBarIcon: ({ focused }) => (
@@ -135,7 +138,8 @@ export default function TabLayout() {
                         ),
                     }}
                 />
-                {/* Flow-only screens — hidden from tab bar */}
+                {/* Hidden screens — accessible via navigation, not tab bar */}
+                <Tabs.Screen name="journal" options={{ href: null }} />
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />
@@ -143,6 +147,8 @@ export default function TabLayout() {
             </Tabs>
             {/* Persistent mini player above tab bar */}
             <MiniPlayer />
+            {/* Floating VinR Buddy chat button */}
+            <BuddyFAB />
         </View>
     );
 }
@@ -170,7 +176,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(9,12,22,0.96)',
         borderTopWidth: 1,
         borderTopColor: 'rgba(212,168,83,0.10)',
-        // Subtle top glow line
         shadowColor: colors.gold,
         shadowOffset: { width: 0, height: -1 },
         shadowOpacity: 0.08,
@@ -208,5 +213,27 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 6,
         elevation: 3,
+    },
+    // Floating Buddy FAB
+    fab: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 100 : 80,
+        right: 20,
+        zIndex: 100,
+    },
+    fabInner: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: colors.gold,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: colors.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
+        borderWidth: 2,
+        borderColor: `${colors.goldLight}`,
     },
 });
