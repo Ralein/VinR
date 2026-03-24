@@ -25,7 +25,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '../stores/authStore';
 import { AuthProvider } from '../providers/AuthProvider';
 import { QueryProvider } from '../providers/QueryProvider';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
+import { colors } from '../constants/theme';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 
 // Keep splash screen visible while loading fonts
 SplashScreen.preventAutoHideAsync();
@@ -47,11 +48,12 @@ function RootNavigator() {
 
     return (
         <Stack
-            screenOptions={{
+            screenOptions={({
+            }) => ({
                 headerShown: false,
                 contentStyle: { backgroundColor: colors.void },
                 animation: 'slide_from_right',
-            }}
+            })}
         >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" />
@@ -91,12 +93,14 @@ export default function RootLayout() {
 
     return (
         <SafeAreaProvider>
-            <AuthProvider>
-                <QueryProvider>
-                    <StatusBar style="light" />
-                    <RootNavigator />
-                </QueryProvider>
-            </AuthProvider>
+            <ThemeProvider>
+                <AuthProvider>
+                    <QueryProvider>
+                        <StatusBar style="auto" />
+                        <RootNavigator />
+                    </QueryProvider>
+                </AuthProvider>
+            </ThemeProvider>
         </SafeAreaProvider>
     );
 }

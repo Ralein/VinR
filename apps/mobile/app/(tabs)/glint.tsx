@@ -16,7 +16,7 @@ import { WebView } from 'react-native-webview';
 import { Film, Play, Pause, RefreshCw, X } from 'lucide-react-native';
 import { useGlint, Glint } from '../../hooks/useGlint';
 import { useAuthStore } from '../../stores/authStore';
-import { colors } from '../../constants/Colors';
+import { colors } from '../../constants/theme';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: colors.text,
+    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.5,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   title: {
-    color: colors.text,
+    color: colors.textPrimary,
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   errorTitle: {
-    color: colors.text,
+    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     marginTop: 16,

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, ScrollView } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { colors } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
@@ -45,56 +45,58 @@ export function InstructionSheet({ item, visible, onClose }: InstructionSheetPro
                     {/* Handle */}
                     <View style={styles.handle} />
 
-                    {/* Header */}
-                    <Text style={styles.emoji}>{item.emoji}</Text>
-                    <Text style={styles.name}>{item.name}</Text>
-                    <View style={styles.metaRow}>
-                        <Text style={styles.duration}>⏱ {item.duration}</Text>
-                        <Text style={styles.category}>{item.category}</Text>
-                    </View>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                        {/* Header */}
+                        <Text style={styles.emoji}>{item.emoji}</Text>
+                        <Text style={styles.name}>{item.name}</Text>
+                        <View style={styles.metaRow}>
+                            <Text style={styles.duration}>⏱ {item.duration}</Text>
+                            <Text style={styles.category}>{item.category}</Text>
+                        </View>
 
-                    {/* Instructions */}
-                    <View style={styles.instructionsWrap}>
-                        {item.instructions.map((step, index) => (
-                            <View key={index} style={styles.stepRow}>
-                                <Text style={styles.stepNumber}>{index + 1}</Text>
-                                <Text style={styles.stepText}>{step}</Text>
-                            </View>
-                        ))}
-                    </View>
+                        {/* Instructions */}
+                        <View style={styles.instructionsWrap}>
+                            {item.instructions.map((step, index) => (
+                                <View key={index} style={styles.stepRow}>
+                                    <Text style={styles.stepNumber}>{index + 1}</Text>
+                                    <Text style={styles.stepText}>{step}</Text>
+                                </View>
+                            ))}
+                        </View>
 
-                    {/* Science Note */}
-                    <View style={styles.scienceCard}>
-                        <Text style={styles.scienceLabel}>🧬 Why this works</Text>
-                        <Text style={styles.scienceText}>{item.scienceNote}</Text>
-                        <Text style={styles.source}>Source: {item.source}</Text>
-                    </View>
+                        {/* Science Note */}
+                        <View style={styles.scienceCard}>
+                            <Text style={styles.scienceLabel}>🧬 Why this works</Text>
+                            <Text style={styles.scienceText}>{item.scienceNote}</Text>
+                            <Text style={styles.source}>Source: {item.source}</Text>
+                        </View>
 
-                    {/* Start Action */}
-                    {item.category === 'breathing' && (
+                        {/* Start Action */}
+                        {item.category === 'breathing' && (
+                            <Pressable
+                                style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
+                                onPress={() => { haptics.light(); onClose(); router.push({ pathname: '/breathing', params: { name: item.name } }); }}
+                            >
+                                <Text style={styles.closeText}>Start Breathing</Text>
+                            </Pressable>
+                        )}
+                        {item.category === 'grounding' && (
+                            <Pressable
+                                style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
+                                onPress={() => { haptics.light(); onClose(); router.push('/grounding'); }}
+                            >
+                                <Text style={styles.closeText}>Start Grounding</Text>
+                            </Pressable>
+                        )}
+
+                        {/* Close */}
                         <Pressable
-                            style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
-                            onPress={() => { haptics.light(); onClose(); router.push({ pathname: '/breathing', params: { name: item.name } }); }}
+                            style={styles.closeButton}
+                            onPress={() => { haptics.light(); onClose(); }}
                         >
-                            <Text style={styles.closeText}>Start Breathing</Text>
+                            <Text style={styles.closeText}>Got it</Text>
                         </Pressable>
-                    )}
-                    {item.category === 'grounding' && (
-                        <Pressable
-                            style={[styles.closeButton, { backgroundColor: colors.sapphire, marginBottom: 12 }]}
-                            onPress={() => { haptics.light(); onClose(); router.push('/grounding'); }}
-                        >
-                            <Text style={styles.closeText}>Start Grounding</Text>
-                        </Pressable>
-                    )}
-
-                    {/* Close */}
-                    <Pressable
-                        style={styles.closeButton}
-                        onPress={() => { haptics.light(); onClose(); }}
-                    >
-                        <Text style={styles.closeText}>Got it</Text>
-                    </Pressable>
+                    </ScrollView>
                 </Animated.View>
             </Animated.View>
         </Modal>
@@ -117,6 +119,9 @@ const styles = StyleSheet.create({
         padding: 24,
         paddingBottom: 40,
         maxHeight: '80%',
+    },
+    scrollContent: {
+        paddingBottom: 24,
     },
     handle: {
         width: 40,

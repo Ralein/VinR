@@ -1,27 +1,24 @@
 /**
- * Tab Layout v4 — Clean 5-tab bar + floating Buddy FAB
+ * Tab Layout v5 — 5-tab bar + floating Buddy FAB
  *
- * Premium animated tab bar with:
- * - Frosted glass floating pill container
- * - Animated active icon: scale spring + gold glow halo
- * - Ink-dot indicator below active icon
- * - 5 tabs: Home, Check-in, Journey, Glint, Profile
- * - Journal hidden (accessible from Profile)
- * - Floating VinR Buddy chat button
+ * Tabs: Home · Check-in · Journey · Journal · Profile
+ * Glint (previously Glint tab) moved to hidden — accessible from Profile
+ * Journal elevated to main tab with BookOpen icon
+ *
+ * Theme-aware: reads useTheme() for dark/light color tokens
  */
 
 import { Tabs, useRouter } from 'expo-router';
-import { View, StyleSheet, Platform, Pressable } from 'react-native';
-import { Home, Heart, Map, User, Film, MessageCircle } from 'lucide-react-native';
+import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
+import { Home, Heart, Map, User, BookOpen, MessageCircle } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
     withTiming,
-    useDerivedValue,
-    FadeIn,
 } from 'react-native-reanimated';
-import { colors, fonts, spacing } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import MiniPlayer from '../../components/media/MiniPlayer';
+import { fonts } from '../../constants/theme';
 
 // ──────────────────── Animated Icon wrapper ────────────────────
 
@@ -32,6 +29,8 @@ type TabIconProps = {
 };
 
 function TabIcon({ Icon, label, focused }: TabIconProps) {
+    const { colors } = useTheme();
+
     const animatedWrapStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: withSpring(focused ? 1.08 : 1, { stiffness: 260, damping: 20 }) },
@@ -48,22 +47,32 @@ function TabIcon({ Icon, label, focused }: TabIconProps) {
         transform: [{ scaleX: withSpring(focused ? 1 : 0, { stiffness: 280, damping: 22 }) }],
     }));
 
-    const labelStyle = useAnimatedStyle(() => ({
-        opacity: withTiming(focused ? 1 : 0.45, { duration: 200 }),
-        color: focused ? colors.gold : colors.textGhost,
-    }));
-
     const color = focused ? colors.gold : colors.textGhost;
     const strokeWidth = focused ? 2.2 : 1.6;
 
     return (
         <View style={styles.tabItem}>
-            <Animated.View style={[styles.halo, haloStyle]} />
+            <Animated.View style={[styles.halo, haloStyle, { backgroundColor: `${colors.gold}12` }]} />
             <Animated.View style={animatedWrapStyle}>
                 <Icon size={22} color={color} strokeWidth={strokeWidth} />
             </Animated.View>
-            <Animated.Text style={[styles.tabLabel, labelStyle]}>{label}</Animated.Text>
-            <Animated.View style={[styles.activeDot, dotStyle]} />
+            <Animated.Text style={[
+                styles.tabLabel,
+                {
+                    opacity: focused ? 1 : 0.45,
+                    color: focused ? colors.gold : colors.textGhost,
+                }
+            ]}>
+                {label}
+            </Animated.Text>
+            <Animated.View style={[
+                styles.activeDot,
+                dotStyle,
+                {
+                    backgroundColor: colors.gold,
+                    shadowColor: colors.gold,
+                }
+            ]} />
         </View>
     );
 }
@@ -72,13 +81,21 @@ function TabIcon({ Icon, label, focused }: TabIconProps) {
 
 function BuddyFAB() {
     const router = useRouter();
+    const { colors } = useTheme();
 
     return (
         <Pressable
             style={styles.fab}
             onPress={() => router.push('/buddy/chat')}
         >
-            <View style={styles.fabInner}>
+            <View style={[
+                styles.fabInner,
+                {
+                    backgroundColor: colors.gold,
+                    shadowColor: colors.gold,
+                    borderColor: colors.goldLight,
+                }
+            ]}>
                 <MessageCircle size={22} color="#FFFFFF" fill={colors.gold} strokeWidth={2} />
             </View>
         </Pressable>
@@ -88,14 +105,34 @@ function BuddyFAB() {
 // ──────────────────────── Layout ─────────────────────────────
 
 export default function TabLayout() {
+    const { colors, tabBarBg, isDark } = useTheme();
+
+    const tabBarStyle = {
+        backgroundColor: 'transparent',
+        borderTopWidth: 0,
+        elevation: 0,
+        height: tabBarHeight,
+        paddingTop: 8,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+        shadowColor: 'transparent',
+    } as const;
+
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, { backgroundColor: colors.void }]}>
             <Tabs
                 screenOptions={{
                     headerShown: false,
                     tabBarStyle: tabBarStyle,
                     tabBarShowLabel: false,
-                    tabBarBackground: () => <View style={styles.tabBarBg} />,
+                    tabBarBackground: () => (
+                        <View style={[
+                            styles.tabBarBg,
+                            {
+                                backgroundColor: tabBarBg,
+                                borderTopColor: `${colors.gold}${isDark ? '1A' : '22'}`,
+                            }
+                        ]} />
+                    ),
                 }}
             >
                 <Tabs.Screen
@@ -123,10 +160,10 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="glint"
+                    name="journal"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={Film} label="Glint" focused={focused} />
+                            <TabIcon Icon={BookOpen} label="Journal" focused={focused} />
                         ),
                     }}
                 />
@@ -139,7 +176,7 @@ export default function TabLayout() {
                     }}
                 />
                 {/* Hidden screens — accessible via navigation, not tab bar */}
-                <Tabs.Screen name="journal" options={{ href: null }} />
+                <Tabs.Screen name="glint" options={{ href: null }} />
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />
@@ -155,28 +192,15 @@ export default function TabLayout() {
 
 const tabBarHeight = Platform.OS === 'ios' ? 84 : 68;
 
-const tabBarStyle = {
-    backgroundColor: 'transparent',
-    borderTopWidth: 0,
-    elevation: 0,
-    height: tabBarHeight,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    shadowColor: 'transparent',
-} as const;
-
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: colors.void,
     },
     tabBarBg: {
         position: 'absolute',
         inset: 0,
-        backgroundColor: 'rgba(9,12,22,0.96)',
         borderTopWidth: 1,
-        borderTopColor: 'rgba(212,168,83,0.10)',
-        shadowColor: colors.gold,
+        shadowColor: '#D4A853',
         shadowOffset: { width: 0, height: -1 },
         shadowOpacity: 0.08,
         shadowRadius: 6,
@@ -194,12 +218,11 @@ const styles = StyleSheet.create({
         width: 42,
         height: 42,
         borderRadius: 21,
-        backgroundColor: `${colors.gold}12`,
         zIndex: 0,
     },
     tabLabel: {
         fontFamily: fonts.bodySemiBold,
-        fontSize: 9.5,
+        fontSize: 9,
         letterSpacing: 0.5,
         textTransform: 'uppercase',
     },
@@ -207,8 +230,6 @@ const styles = StyleSheet.create({
         width: 18,
         height: 3,
         borderRadius: 2,
-        backgroundColor: colors.gold,
-        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
         shadowRadius: 6,
@@ -225,15 +246,12 @@ const styles = StyleSheet.create({
         width: 52,
         height: 52,
         borderRadius: 26,
-        backgroundColor: colors.gold,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 12,
         elevation: 8,
         borderWidth: 2,
-        borderColor: `${colors.goldLight}`,
     },
 });
