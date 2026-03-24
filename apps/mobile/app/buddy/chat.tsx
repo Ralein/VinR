@@ -1,391 +1,173 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { ChevronLeft, Send, Mic, Sparkles } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import api from '../../services/api';
+import React, { useState, useRef } from 'react';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    ScrollView, 
+    TextInput, 
+    Pressable, 
+    KeyboardAvoidingView, 
+    Platform 
+} from 'react-native';
+import Animated, { FadeInUp, FadeOut, LinearTransition } from 'react-native-reanimated';
+import { ArrowUp } from 'lucide-react-native';
+import { Layout } from '../../components/Layout';
+import { useTheme } from '../../context/ThemeContext';
+import { spacing, fonts, borderRadius } from '../../constants/theme';
 
-const THEME = {
-    bg: '#0F172A',
-    surface: '#1E293B',
-    primary: '#6366F1',
-    gold: '#FBBF24',
-    text: '#F8FAFC',
-    textMuted: '#94A3B8',
-    border: '#334155'
-};
+const INITIAL_MESSAGES = [
+    { id: '1', text: "Hello! I'm your VinR Buddy. How are you feeling today?", sender: 'ai' }
+];
 
-const SafeBlurView = (props: any) => {
-    try {
-        // We use a internal check to see if BlurView is actually a valid component
-        if (BlurView) {
-            return <BlurView {...props} />;
-        }
-    } catch (e) {
-        // Fallback
-    }
-    return <View {...props} style={[props.style, { backgroundColor: THEME.surface, opacity: 0.9 }]} />;
-};
+const BuddyChat = () => {
+    const { colors } = useTheme();
+    const [messages, setMessages] = useState(INITIAL_MESSAGES);
+    const [inputText, setInputText] = useState('');
+    const scrollViewRef = useRef<ScrollView>(null);
 
-const SafeAudio = {
-    Sound: {
-        createAsync: async (source: any, initialStatus?: any, onPlaybackStatusUpdate?: any, downloadFirst?: boolean) => {
-            try {
-                const { Audio } = await import('expo-av');
-                return await Audio.Sound.createAsync(source, initialStatus, onPlaybackStatusUpdate, downloadFirst);
-            } catch (e) {
-                console.warn("Audio not available in this environment", e);
-                return { sound: { unloadAsync: async () => {}, playAsync: async () => {}, setStatusAsync: async () => {} } };
-            }
-        }
-    }
-};
+    const handleSend = () => {
+        if (inputText.trim() === '') return;
 
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    audioUrl?: string;
-}
-
-export default function ChatScreen() {
-    const insets = useSafeAreaInsets();
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: 'welcome',
-            role: 'assistant',
-            content: "Hi! I'm VinR, your personal growth companion. How are you feeling today?"
-        }
-    ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const flatListRef = useRef<FlatList>(null);
-    const [audioEnabled, setAudioEnabled] = useState(true);
-    const audioRef = useRef<any>(null);
-
-    // Cleanup audio on unmount
-    useEffect(() => {
-        return () => {
-            if (audioRef.current) {
-                audioRef.current.unloadAsync();
-            }
+        const newUserMessage = {
+            id: Date.now().toString(),
+            text: inputText,
+            sender: 'user'
         };
-    }, []);
 
-    const playAudio = async (uri: string) => {
-        try {
-            if (audioRef.current) {
-                await audioRef.current.unloadAsync();
-            }
-            const { sound } = await SafeAudio.Sound.createAsync({ uri });
-            audioRef.current = sound;
-            await (sound as any).playAsync();
-        } catch (error) {
-            console.error('Error playing audio:', error);
-        }
-    };
+        setMessages([...messages, newUserMessage]);
+        setInputText('');
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
-        
-        const userText = input.trim();
-        setInput('');
-        
-        const userMsg: Message = { id: Date.now().toString(), role: 'user', content: userText };
-        setMessages(prev => [...prev, userMsg]);
-        setIsLoading(true);
-
-        try {
-            const res = await api.post('/chat/message', { 
-                text: userText,
-                voice_enabled: audioEnabled 
-            });
-
-            const aiMsg: Message = {
-                id: res.data.buddy_message.id || Date.now().toString(),
-                role: 'assistant',
-                content: res.data.buddy_message.content,
-                audioUrl: res.data.buddy_message.audio_url
-            };
-
-            setMessages(prev => [...prev, aiMsg]);
-
-            if (aiMsg.audioUrl) {
-                playAudio(aiMsg.audioUrl);
-            }
-        } catch (error) {
-            console.error('Chat error:', error);
-            setMessages(prev => [...prev, {
+        // Simulate AI response
+        setTimeout(() => {
+            const aiResponse = {
                 id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: "Sorry, I'm having trouble connecting to my brain right now. Please try again."
-            }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const renderMessage = ({ item, index }: { item: Message, index: number }) => {
-        const isUser = item.role === 'user';
-        return (
-            <Animated.View 
-                entering={FadeInDown.delay(index * 100).duration(400)}
-                style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperAi]}
-            >
-                {!isUser && (
-                    <View style={styles.aiAvatar}>
-                        <Sparkles size={16} color={THEME.gold} />
-                    </View>
-                )}
-                <View style={[styles.msgBubble, isUser ? styles.msgBubbleUser : styles.msgBubbleAi]}>
-                    <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAi]}>
-                        {item.content}
-                    </Text>
-                    {!isUser && item.audioUrl && (
-                        <Pressable onPress={() => playAudio(item.audioUrl!)} style={styles.playBtn}>
-                            <Mic size={14} color={THEME.gold} />
-                            <Text style={styles.playText}>Listen</Text>
-                        </Pressable>
-                    )}
-                </View>
-            </Animated.View>
-        );
+                text: "I hear you. Let's take a moment together. Would you like to try a quick breathing exercise?",
+                sender: 'ai'
+            };
+            setMessages(prev => [...prev, aiResponse]);
+        }, 1000);
     };
 
     return (
-        <View style={styles.container}>
-            <Stack.Screen options={{ headerShown: false }} />
-            
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-                <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                    <ChevronLeft size={24} color={THEME.text} />
-                </Pressable>
-                <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>VinR Buddy</Text>
-                    <View style={styles.onlineStatus} />
-                </View>
-                <Pressable 
-                    onPress={() => setAudioEnabled(!audioEnabled)} 
-                    style={[styles.audioToggle, !audioEnabled && styles.audioDisabled]}
-                >
-                    <Mic size={20} color={audioEnabled ? THEME.gold : THEME.textMuted} />
-                </Pressable>
-            </View>
-
-            <FlatList
-                ref={flatListRef}
-                data={messages}
-                keyExtractor={item => item.id}
-                renderItem={renderMessage}
-                contentContainerStyle={[styles.chatContent, { paddingBottom: insets.bottom + 100 }]}
-                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
-
-            {/* Input Area */}
+        <Layout title="Your Buddy" screenPadding={false}>
             <KeyboardAvoidingView 
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-                style={styles.keyboardAvoid}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                <SafeBlurView intensity={80} tint="dark" style={[styles.inputContainer, { paddingBottom: insets.bottom || 20 }]}>
-                    <View style={styles.inputInner}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Message VinR..."
-                            placeholderTextColor={THEME.textMuted}
-                            value={input}
-                            onChangeText={setInput}
+                <ScrollView 
+                    ref={scrollViewRef}
+                    style={styles.messagesContainer}
+                    contentContainerStyle={styles.messagesContent}
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                >
+                    {messages.map((msg, index) => (
+                        <Animated.View 
+                            key={msg.id}
+                            entering={FadeInUp.delay(index * 50).duration(400)}
+                            layout={LinearTransition}
+                            style={[
+                                styles.messageBubble,
+                                msg.sender === 'user' ? styles.userBubble : styles.aiBubble,
+                                { 
+                                    backgroundColor: msg.sender === 'user' ? colors.gold + '15' : colors.surface,
+                                    borderColor: msg.sender === 'user' ? colors.gold + '40' : colors.border 
+                                }
+                            ]}
+                        >
+                            <Text style={[
+                                styles.messageText, 
+                                { color: msg.sender === 'user' ? colors.gold : colors.textPrimary }
+                            ]}>
+                                {msg.text}
+                            </Text>
+                        </Animated.View>
+                    ))}
+                </ScrollView>
+
+                <View style={[styles.inputWrapper, { backgroundColor: colors.void, borderTopColor: colors.border }]}>
+                    <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <TextInput 
+                            style={[styles.input, { color: colors.textPrimary }]}
+                            placeholder="Type a message..."
+                            placeholderTextColor={colors.textMuted}
+                            value={inputText}
+                            onChangeText={setInputText}
                             multiline
-                            maxLength={500}
-                            onSubmitEditing={handleSend}
                         />
-                        {isLoading ? (
-                            <View style={styles.sendBtn}>
-                                <ActivityIndicator size="small" color={THEME.gold} />
-                            </View>
-                        ) : input.trim() ? (
-                            <Pressable onPress={handleSend} style={[styles.sendBtn, { backgroundColor: THEME.primary }]}>
-                                <Send size={20} color="#FFF" style={{ marginLeft: 2 }} />
-                            </Pressable>
-                        ) : (
-                            <Pressable 
-                                onPress={() => setAudioEnabled(!audioEnabled)}
-                                style={[styles.sendBtn, { backgroundColor: audioEnabled ? `${THEME.gold}20` : 'transparent' }]}
-                            >
-                                <Mic size={24} color={audioEnabled ? THEME.gold : THEME.textMuted} />
-                            </Pressable>
-                        )}
+                        <Pressable 
+                            style={[styles.sendButton, { backgroundColor: inputText ? colors.gold : colors.textMuted + '40' }]}
+                            onPress={handleSend}
+                            disabled={!inputText}
+                        >
+                            <ArrowUp size={20} color={colors.void} strokeWidth={3} />
+                        </Pressable>
                     </View>
-                </SafeBlurView>
+                </View>
             </KeyboardAvoidingView>
-        </View>
+        </Layout>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: THEME.bg,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 20,
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        borderBottomWidth: 1,
-        borderBottomColor: THEME.border,
-        zIndex: 10,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitleContainer: {
+    messagesContainer: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
     },
-    headerTitle: {
-        color: THEME.text,
-        fontSize: 18,
-        fontWeight: '600',
+    messagesContent: {
+        padding: spacing.lg,
+        paddingBottom: spacing.xl,
     },
-    onlineStatus: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#10B981',
-        marginTop: 2,
-    },
-    chatContent: {
-        padding: 20,
-        gap: 16,
-    },
-    msgWrapper: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: 8,
-    },
-    msgWrapperUser: {
-        justifyContent: 'flex-end',
-    },
-    msgWrapperAi: {
-        justifyContent: 'flex-start',
-    },
-    aiAvatar: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: `${THEME.gold}20`,
-        alignItems: 'center',
-        justifyContent: 'center',
+    messageBubble: {
+        padding: spacing.md,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.md,
+        maxWidth: '85%',
         borderWidth: 1,
-        borderColor: `${THEME.gold}40`,
-        marginBottom: 4,
+        borderColor: 'rgba(255,255,255,0.05)',
     },
-    msgBubble: {
-        maxWidth: '80%',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 20,
+    aiBubble: {
+        alignSelf: 'flex-start',
+        borderBottomLeftRadius: borderRadius.xs,
     },
-    msgBubbleUser: {
-        backgroundColor: THEME.primary,
-        borderBottomRightRadius: 4,
+    userBubble: {
+        alignSelf: 'flex-end',
+        borderBottomRightRadius: borderRadius.xs,
     },
-    msgBubbleAi: {
-        backgroundColor: THEME.surface,
-        borderBottomLeftRadius: 4,
-        borderWidth: 1,
-        borderColor: THEME.border,
-    },
-    msgText: {
+    messageText: {
+        fontFamily: fonts.body,
         fontSize: 16,
-        lineHeight: 24,
+        lineHeight: 22,
     },
-    msgTextUser: {
-        color: '#FFFFFF',
-    },
-    msgTextAi: {
-        color: THEME.text,
-    },
-    keyboardAvoid: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
+    inputWrapper: {
+        padding: spacing.md,
+        paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.md,
     },
     inputContainer: {
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.05)',
-    },
-    inputInner: {
         flexDirection: 'row',
-        alignItems: 'flex-end',
-        backgroundColor: THEME.surface,
-        borderRadius: 24,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
+        borderRadius: borderRadius.pill,
         borderWidth: 1,
-        borderColor: THEME.border,
-        minHeight: 52,
     },
     input: {
         flex: 1,
-        color: THEME.text,
+        fontFamily: fonts.body,
         fontSize: 16,
-        maxHeight: 120,
-        paddingTop: 8,
-        paddingBottom: 8,
-        marginRight: 12,
+        maxHeight: 100,
+        paddingVertical: spacing.sm,
     },
-    sendBtn: {
+    sendButton: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 2,
-    },
-    audioToggle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.surface,
         alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: THEME.border,
+        marginLeft: spacing.sm,
     },
-    audioDisabled: {
-        opacity: 0.5,
-    },
-    playBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginTop: 8,
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.05)',
-    },
-    playText: {
-        color: THEME.gold,
-        fontSize: 12,
-        fontWeight: '600',
-    }
 });
+
+export default BuddyChat;

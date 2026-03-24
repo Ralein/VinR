@@ -8,9 +8,15 @@ interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   showBack?: boolean;
+  screenPadding?: boolean;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, title, showBack = true }) => {
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  title, 
+  showBack = true, 
+  screenPadding = false 
+}) => {
   const router = useRouter();
   const { colors, fonts, gradients, isDark } = useTheme();
 
@@ -34,7 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, showBack = true
             <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>{title}</Text>
           )}
         </View>
-        <View style={styles.content}>
+        <View style={[styles.content, screenPadding && styles.screenPadding]}>
           {children}
         </View>
       </SafeAreaView>
@@ -69,5 +75,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  screenPadding: {
+    paddingHorizontal: 20,
   },
 });
