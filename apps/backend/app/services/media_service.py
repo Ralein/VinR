@@ -1,5 +1,6 @@
 """Media Service — S3 audio files and YouTube integration."""
 
+import random
 import httpx
 from app.core.config import get_settings
 
@@ -181,6 +182,7 @@ async def search_youtube_reels(primary_reason: str, max_results: int = 10) -> li
                     "channel": snippet.get("channelTitle", ""),
                     "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url", ""),
                 })
+            random.shuffle(results)
             return results
 
     except Exception as e:

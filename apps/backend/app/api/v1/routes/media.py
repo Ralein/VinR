@@ -45,8 +45,8 @@ async def youtube_search(
     return YouTubeSearchResponse(genre=genre, content_type=type, results=youtube_results)
 
 
-@router.get("/reels")
-async def get_reels(
+@router.get("/glint")
+async def get_glint(
     primary_reason: str = Query("Stress Relief", description="User's primary reason for using VinR"),
     current_user: dict = Depends(get_current_user),
 ):
@@ -57,7 +57,7 @@ async def get_reels(
     
     # Format the results to match what we need in the feed (we can reuse YouTubeResult or return a raw structure)
     # We will just return a dict with a list of reels
-    return {"reels": results}
+    return {"glints": results}
 
 
 @router.post("/session", response_model=MediaSessionResponse)
