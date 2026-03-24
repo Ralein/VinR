@@ -5,7 +5,7 @@
  * - Frosted glass floating pill container
  * - Animated active icon: scale spring + gold glow halo
  * - Ink-dot indicator below active icon
- * - 5 tabs: Home, Check-in, Journey, Reels, Profile
+ * - 5 tabs: Home, Check-in, Journey, Glint, Profile
  * - Journal hidden (accessible from Profile)
  * - Floating VinR Buddy chat button
  */
@@ -123,10 +123,10 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="reels"
+                    name="glint"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={Film} label="Reels" focused={focused} />
+                            <TabIcon Icon={Film} label="Glint" focused={focused} />
                         ),
                     }}
                 />
