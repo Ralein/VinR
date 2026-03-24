@@ -1,71 +1,151 @@
 /**
- * Results Screen — AI analysis results with two-pathway cards
+ * Results Screen v2 — AI analysis results, icon-only (no emoji)
  *
- * VinR reflection card, therapist nudge, immediate relief techniques,
- * daily habits, and "Start my 21-day journey" CTA.
+ * Improvements:
+ * - All emoji removed, replaced with Lucide icons
+ * - Category icons with colored glow rings
+ * - Difficulty chips (easy/medium/deep)
+ * - Clock duration badge
+ * - Staggered FadeInRight entrance animations
+ * - Theme-aware via useTheme()
  */
 
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import {
     Wind, Layers, Activity, Moon, Heart, Star,
-    Zap, ChevronRight, Leaf, Sparkles,
+    Zap, Leaf, Sparkles, Clock, ChevronRight,
+    Flame, Play, RotateCcw,
 } from 'lucide-react-native';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import { InstructionSheet } from '../../components/checkin/InstructionSheet';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface ReliefItem {
     id: string;
     name: string;
-    emoji: string;
+    emoji?: string;
     category: string;
     duration: string;
+    difficulty?: 'easy' | 'medium' | 'deep';
     instructions: string[];
     scienceNote: string;
     source: string;
 }
 
-// Map category strings → Lucide icon components
-const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
-    breathing:    Wind,
-    grounding:    Layers,
-    movement:     Activity,
-    sleep:        Moon,
-    mindfulness:  Sparkles,
-    gratitude:    Heart,
-    habit:        Leaf,
-    meditation:   Star,
+// ─── Category → icon + color map ─────────────────────────────────────────────
+
+const CATEGORY_META: Record<string, { Icon: React.ElementType; color: string }> = {
+    breathing:   { Icon: Wind,      color: '#4A90D9' },
+    grounding:   { Icon: Layers,    color: '#4ECBA0' },
+    movement:    { Icon: Activity,  color: '#D4A853' },
+    sleep:       { Icon: Moon,      color: '#8B7EC8' },
+    mindfulness: { Icon: Sparkles,  color: '#D4A853' },
+    gratitude:   { Icon: Heart,     color: '#E85D5D' },
+    habit:       { Icon: Leaf,      color: '#4ECBA0' },
+    meditation:  { Icon: Star,      color: '#8B7EC8' },
 };
-function getCategoryIcon(category: string): React.ElementType {
-    return CATEGORY_ICON_MAP[category.toLowerCase()] ?? Zap;
+
+function getCategoryMeta(category: string) {
+    return CATEGORY_META[category.toLowerCase()] ?? { Icon: Zap, color: '#D4A853' };
 }
 
-function TechniqueCard({ item, onPress, index }: {
-    item: ReliefItem; onPress: () => void; index: number;
+// ─── Difficulty chip ──────────────────────────────────────────────────────────
+
+const DIFFICULTY_LABEL: Record<string, string> = {
+    easy:   'Easy',
+    medium: 'Medium',
+    deep:   'Deep',
+};
+
+// ─── TechniqueCard ────────────────────────────────────────────────────────────
+
+function TechniqueCard({
+    item,
+    onPress,
+    index,
+    accentColor,
+}: {
+    item: ReliefItem;
+    onPress: () => void;
+    index: number;
+    accentColor: string;
 }) {
-    const Icon = getCategoryIcon(item.category);
+    const { colors } = useTheme();
+    const { Icon, color: catColor } = getCategoryMeta(item.category);
+    const difficulty = item.difficulty ?? 'easy';
+    const difficultyColor =
+        difficulty === 'easy' ? colors.emerald :
+        difficulty === 'medium' ? colors.gold :
+        colors.crimson;
+
     return (
-        <Animated.View entering={FadeInDown.delay(200 + index * 100).duration(400)}>
-            <Pressable style={styles.techniqueCard} onPress={onPress}>
-                <View style={styles.techniqueIconWrap}>
-                    <Icon size={20} color={colors.gold} strokeWidth={1.8} />
+        <Animated.View entering={FadeInRight.delay(200 + index * 120).duration(400)}>
+            <Pressable
+                style={[styles.techniqueCard, {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                }]}
+                onPress={onPress}
+            >
+                {/* Icon with glow ring */}
+                <View style={[styles.techniqueIconWrap, {
+                    backgroundColor: `${catColor}14`,
+                    borderColor: `${catColor}30`,
+                }]}>
+                    <Icon size={22} color={catColor} strokeWidth={1.8} />
                 </View>
+
+                {/* Info block */}
                 <View style={styles.techniqueInfo}>
-                    <Text style={styles.techniqueName}>{item.name}</Text>
-                    <Text style={styles.techniqueDuration}>{item.duration} • {item.category}</Text>
+                    <Text style={[styles.techniqueName, { color: colors.textPrimary }]}
+                          numberOfLines={1}>
+                        {item.name}
+                    </Text>
+
+                    {/* Meta row: clock + difficulty chip */}
+                    <View style={styles.techMeta}>
+                        <View style={styles.techMetaRow}>
+                            <Clock size={11} color={colors.textMuted} strokeWidth={2} />
+                            <Text style={[styles.techMetaText, { color: colors.textMuted }]}>
+                                {item.duration}
+                            </Text>
+                        </View>
+                        <View style={[styles.difficultyChip, {
+                            backgroundColor: `${difficultyColor}18`,
+                            borderColor: `${difficultyColor}35`,
+                        }]}>
+                            <Flame size={10} color={difficultyColor} fill={difficultyColor} strokeWidth={2} />
+                            <Text style={[styles.difficultyLabel, { color: difficultyColor }]}>
+                                {DIFFICULTY_LABEL[difficulty]}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
-                <ChevronRight size={18} color={colors.textGhost} strokeWidth={1.5} />
+
+                {/* Play button */}
+                <View style={[styles.playButton, {
+                    backgroundColor: `${accentColor}15`,
+                    borderColor: `${accentColor}30`,
+                }]}>
+                    <Play size={14} color={accentColor} fill={accentColor} strokeWidth={0} />
+                </View>
             </Pressable>
         </Animated.View>
     );
 }
 
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
 export default function ResultsScreen() {
+    const { colors } = useTheme();
     const plan = useCheckinStore((s) => s.plan);
     const reset = useCheckinStore((s) => s.reset);
     const [selectedItem, setSelectedItem] = useState<ReliefItem | null>(null);
@@ -91,11 +171,16 @@ export default function ResultsScreen() {
 
     if (!plan) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }}>
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyText}>No results yet</Text>
+                    <RotateCcw size={40} color={colors.textGhost} strokeWidth={1.5} />
+                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                        No results yet
+                    </Text>
                     <Pressable onPress={() => router.replace('/(tabs)/checkin')}>
-                        <Text style={styles.emptyLink}>Start a check-in →</Text>
+                        <Text style={[styles.emptyLink, { color: colors.gold }]}>
+                            Start a check-in →
+                        </Text>
                     </Pressable>
                 </View>
             </SafeAreaView>
@@ -103,42 +188,82 @@ export default function ResultsScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }} edges={['top']}>
             <ScrollView
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Reflection Card */}
-                <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.reflectionCard}>
-                    <Text style={styles.reflectionQuote}>"{plan.emotionSummary}"</Text>
-                    <Text style={styles.reflectionSupport}>{plan.supportMessage}</Text>
+                <Animated.View
+                    entering={FadeInDown.delay(100).duration(500)}
+                    style={[styles.reflectionCard, {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                    }]}
+                >
+                    <Text style={[styles.reflectionQuote, { color: colors.textPrimary }]}>
+                        "{plan.emotionSummary}"
+                    </Text>
+                    <Text style={[styles.reflectionSupport, { color: colors.gold }]}>
+                        {plan.supportMessage}
+                    </Text>
                 </Animated.View>
 
                 {/* Affirmation */}
-                <Animated.View entering={FadeIn.delay(400).duration(500)} style={styles.affirmationWrap}>
-                    <Text style={styles.affirmationLabel}>Today's affirmation</Text>
-                    <Text style={styles.affirmation}>"{plan.affirmation}"</Text>
+                <Animated.View
+                    entering={FadeIn.delay(400).duration(500)}
+                    style={styles.affirmationWrap}
+                >
+                    <Text style={[styles.affirmationLabel, { color: colors.textGhost }]}>
+                        Today's affirmation
+                    </Text>
+                    <Text style={[styles.affirmation, { color: colors.gold }]}>
+                        "{plan.affirmation}"
+                    </Text>
                 </Animated.View>
 
                 {/* Therapist Nudge */}
-                <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.therapistBanner}>
+                <Animated.View
+                    entering={FadeInDown.delay(500).duration(400)}
+                    style={[styles.therapistBanner, {
+                        backgroundColor: colors.sapphireGlow,
+                        borderColor: `${colors.sapphire}30`,
+                    }]}
+                >
                     <Heart size={18} color={colors.sapphire} strokeWidth={1.8} />
-                    <Text style={styles.therapistText}>{plan.therapistNote}</Text>
+                    <Text style={[styles.therapistText, { color: colors.sapphire }]}>
+                        {plan.therapistNote}
+                    </Text>
                 </Animated.View>
 
                 {/* Immediate Relief Pathway */}
                 <Animated.View entering={FadeInDown.delay(600).duration(400)}>
                     <View style={styles.pathwayHeader}>
                         <View style={[styles.pathwayDot, { backgroundColor: colors.gold }]} />
-                        <Zap size={15} color={colors.gold} strokeWidth={2} style={{ marginRight: 4 }} />
-                        <Text style={styles.pathwayTitle}>Immediate Relief</Text>
+                        <Zap size={15} color={colors.gold} strokeWidth={2} />
+                        <Text style={[styles.pathwayTitle, { color: colors.textPrimary }]}>
+                            Immediate Relief
+                        </Text>
+                        <View style={[styles.countBadge, {
+                            backgroundColor: colors.goldMuted,
+                            borderColor: colors.borderGold,
+                        }]}>
+                            <Text style={[styles.countText, { color: colors.gold }]}>
+                                {plan.immediateRelief.length}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={[styles.pathwayCard, styles.goldBorder]}>
+                    <View style={[styles.pathwayCard, {
+                        backgroundColor: colors.elevated,
+                        borderColor: colors.borderGold,
+                        borderTopColor: colors.gold,
+                    }]}>
                         {plan.immediateRelief.map((item, index) => (
                             <TechniqueCard
                                 key={item.id}
                                 item={item}
                                 index={index}
+                                accentColor={colors.gold}
                                 onPress={() => handleItemPress(item)}
                             />
                         ))}
@@ -149,35 +274,70 @@ export default function ResultsScreen() {
                 <Animated.View entering={FadeInDown.delay(800).duration(400)}>
                     <View style={styles.pathwayHeader}>
                         <View style={[styles.pathwayDot, { backgroundColor: colors.emerald }]} />
-                        <Leaf size={15} color={colors.emerald} strokeWidth={2} style={{ marginRight: 4 }} />
-                        <Text style={styles.pathwayTitle}>21-Day Daily Habits</Text>
+                        <Leaf size={15} color={colors.emerald} strokeWidth={2} />
+                        <Text style={[styles.pathwayTitle, { color: colors.textPrimary }]}>
+                            21-Day Daily Habits
+                        </Text>
+                        <View style={[styles.countBadge, {
+                            backgroundColor: colors.emeraldGlow,
+                            borderColor: `${colors.emerald}30`,
+                        }]}>
+                            <Text style={[styles.countText, { color: colors.emerald }]}>
+                                {plan.dailyHabits.length}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={[styles.pathwayCard, styles.emeraldBorder]}>
+                    <View style={[styles.pathwayCard, {
+                        backgroundColor: colors.elevated,
+                        borderColor: `${colors.emerald}25`,
+                        borderTopColor: colors.emerald,
+                    }]}>
                         {plan.dailyHabits.map((item, index) => (
                             <TechniqueCard
                                 key={item.id}
                                 item={item}
                                 index={index + 3}
+                                accentColor={colors.emerald}
                                 onPress={() => handleItemPress(item)}
                             />
                         ))}
                     </View>
                 </Animated.View>
 
-                {/* Gratitude Prompt */}
-                <Animated.View entering={FadeIn.delay(1000).duration(400)} style={styles.gratitudeWrap}>
-                    <Text style={styles.gratitudeLabel}>Tonight's reflection</Text>
-                    <Text style={styles.gratitudeText}>{plan.gratitudePrompt}</Text>
+                {/* Tonight's Reflection */}
+                <Animated.View
+                    entering={FadeIn.delay(1000).duration(400)}
+                    style={styles.gratitudeWrap}
+                >
+                    <Text style={[styles.gratitudeLabel, { color: colors.textGhost }]}>
+                        Tonight's reflection
+                    </Text>
+                    <Text style={[styles.gratitudeText, { color: colors.textMuted }]}>
+                        {plan.gratitudePrompt}
+                    </Text>
                 </Animated.View>
 
-                {/* Start Journey CTA */}
-                <Animated.View entering={FadeInDown.delay(1100).duration(400)} style={styles.ctaGroup}>
-                    <Pressable style={styles.journeyButton} onPress={handleStartJourney}>
-                        <Text style={styles.journeyButtonText}>Start my 21-day journey →</Text>
+                {/* CTAs */}
+                <Animated.View
+                    entering={FadeInDown.delay(1100).duration(400)}
+                    style={styles.ctaGroup}
+                >
+                    <Pressable
+                        style={[styles.journeyButton, {
+                            backgroundColor: colors.gold,
+                            shadowColor: colors.gold,
+                        }]}
+                        onPress={handleStartJourney}
+                    >
+                        <Text style={[styles.journeyButtonText, { color: colors.void }]}>
+                            Start my 21-day journey →
+                        </Text>
                     </Pressable>
 
                     <Pressable style={styles.doneButton} onPress={handleDone}>
-                        <Text style={styles.doneText}>Save for later</Text>
+                        <Text style={[styles.doneText, { color: colors.textMuted }]}>
+                            Save for later
+                        </Text>
                     </Pressable>
                 </Animated.View>
             </ScrollView>
@@ -193,90 +353,84 @@ export default function ResultsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
     content: {
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 48,
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.lg,
+        paddingBottom: spacing['2xl'],
+        gap: spacing.md,
     },
     emptyState: {
-        flex: 1, justifyContent: 'center', alignItems: 'center',
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: spacing.md,
     },
     emptyText: {
-        fontFamily: 'DMSans_400Regular', fontSize: 16,
-        color: colors.textMuted, marginBottom: 12,
+        fontFamily: fonts.body,
+        fontSize: 16,
+        marginTop: spacing.sm,
     },
     emptyLink: {
-        fontFamily: 'DMSans_600SemiBold', fontSize: 16, color: colors.gold,
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 16,
     },
     // Reflection
     reflectionCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 20,
-        padding: 24,
+        borderRadius: borderRadius.xl,
+        padding: spacing.lg,
         borderWidth: 1,
-        borderColor: colors.border,
-        marginBottom: 20,
     },
     reflectionQuote: {
-        fontFamily: 'DMSans_300Light',
+        fontFamily: fonts.bodyLight,
         fontSize: 18,
-        color: colors.textPrimary,
         fontStyle: 'italic',
         lineHeight: 28,
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     reflectionSupport: {
-        fontFamily: 'DMSans_400Regular',
+        fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.gold,
         lineHeight: 22,
     },
     // Affirmation
     affirmationWrap: {
-        marginBottom: 20,
         alignItems: 'center',
+        paddingVertical: spacing.sm,
     },
     affirmationLabel: {
-        fontFamily: 'DMSans_300Light',
+        fontFamily: fonts.bodyLight,
         fontSize: 11,
-        color: colors.textGhost,
         textTransform: 'uppercase',
         letterSpacing: 1.5,
         marginBottom: 6,
     },
     affirmation: {
-        fontFamily: 'DMSans_600SemiBold',
+        fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.gold,
         textAlign: 'center',
         fontStyle: 'italic',
     },
-    // Therapist
+    // Therapist banner
     therapistBanner: {
-        backgroundColor: 'rgba(74,144,217,0.1)',
-        borderRadius: 14,
-        padding: 16,
+        borderRadius: borderRadius.md,
+        padding: spacing.md,
         flexDirection: 'row',
-        gap: 12,
+        gap: spacing.md,
         alignItems: 'flex-start',
         borderWidth: 1,
-        borderColor: 'rgba(74,144,217,0.2)',
-        marginBottom: 28,
     },
     therapistText: {
-        fontFamily: 'DMSans_400Regular',
+        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.sapphire,
         flex: 1,
         lineHeight: 20,
     },
-    // Pathways
+    // Pathway
     pathwayHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        marginBottom: 12,
+        marginBottom: spacing.md,
     },
     pathwayDot: {
         width: 8,
@@ -284,111 +438,133 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     pathwayTitle: {
-        fontFamily: 'DMSans_600SemiBold',
+        fontFamily: fonts.bodySemiBold,
         fontSize: 17,
-        color: colors.textPrimary,
         flex: 1,
+        marginLeft: 2,
+    },
+    countBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+    },
+    countText: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 12,
     },
     pathwayCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        padding: 8,
+        borderRadius: borderRadius.lg,
+        padding: spacing.xs,
         borderWidth: 1,
-        borderColor: colors.border,
-        marginBottom: 24,
         borderTopWidth: 3,
+        gap: 2,
     },
-    goldBorder: {
-        borderTopColor: colors.gold,
-    },
-    emeraldBorder: {
-        borderTopColor: colors.emerald,
-    },
+    // Technique Card
     techniqueCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
-        gap: 14,
+        padding: spacing.md,
+        gap: spacing.md,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
     },
     techniqueIconWrap: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: `${colors.gold}14`,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: `${colors.gold}22`,
     },
     techniqueInfo: {
         flex: 1,
+        gap: 5,
     },
     techniqueName: {
-        fontFamily: 'DMSans_600SemiBold',
+        fontFamily: fonts.bodySemiBold,
         fontSize: 15,
-        color: colors.textPrimary,
     },
-    techniqueDuration: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 13,
-        color: colors.textMuted,
-        marginTop: 2,
-        textTransform: 'capitalize',
+    techMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
     },
-    techniqueArrow: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 16,
-        color: colors.textGhost,
+    techMetaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    techMetaText: {
+        fontFamily: fonts.body,
+        fontSize: 12,
+    },
+    difficultyChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+    },
+    difficultyLabel: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 11,
+    },
+    playButton: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        paddingLeft: 2,
     },
     // Gratitude
     gratitudeWrap: {
         alignItems: 'center',
-        marginBottom: 28,
+        paddingVertical: spacing.sm,
     },
     gratitudeLabel: {
-        fontFamily: 'DMSans_300Light',
+        fontFamily: fonts.bodyLight,
         fontSize: 11,
-        color: colors.textGhost,
         textTransform: 'uppercase',
         letterSpacing: 1.5,
         marginBottom: 6,
     },
     gratitudeText: {
-        fontFamily: 'DMSans_400Regular',
+        fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textMuted,
         textAlign: 'center',
         fontStyle: 'italic',
         lineHeight: 22,
     },
     // CTAs
     ctaGroup: {
-        gap: 12,
+        gap: spacing.md,
+        marginTop: spacing.md,
     },
     journeyButton: {
-        backgroundColor: colors.gold,
-        borderRadius: 14,
+        borderRadius: borderRadius.lg,
         paddingVertical: 18,
         alignItems: 'center',
-        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 16,
         elevation: 8,
     },
     journeyButtonText: {
-        fontFamily: 'DMSans_600SemiBold',
+        fontFamily: fonts.bodySemiBold,
         fontSize: 17,
-        color: colors.void,
         letterSpacing: 0.3,
     },
     doneButton: {
         alignItems: 'center',
-        paddingVertical: 14,
+        paddingVertical: spacing.md,
     },
     doneText: {
-        fontFamily: 'DMSans_400Regular',
+        fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textMuted,
     },
 });
