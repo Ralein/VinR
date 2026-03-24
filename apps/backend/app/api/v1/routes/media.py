@@ -14,7 +14,7 @@ from app.schemas.media import (
     MediaSessionCreate,
     MediaSessionResponse,
 )
-from app.services.media_service import get_audio_library, search_youtube
+from app.services.media_service import get_audio_library, search_youtube, search_youtube_reels
 
 router = APIRouter(prefix="/media", tags=["media"])
 
@@ -43,6 +43,21 @@ async def youtube_search(
     results = await search_youtube(genre, type)
     youtube_results = [YouTubeResult(**r) for r in results]
     return YouTubeSearchResponse(genre=genre, content_type=type, results=youtube_results)
+
+
+@router.get("/reels")
+async def get_reels(
+    primary_reason: str = Query("Stress Relief", description="User's primary reason for using VinR"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Get curated YouTube shorts/reels based on user's primary wellness reason."""
+    # We could also use user.primaryReason if we load user from DB. 
+    # Passing it via query param is simpler for now, similar to how /youtube takes genre.
+    results = await search_youtube_reels(primary_reason, max_results=10)
+    
+    # Format the results to match what we need in the feed (we can reuse YouTubeResult or return a raw structure)
+    # We will just return a dict with a list of reels
+    return {"reels": results}
 
 
 @router.post("/session", response_model=MediaSessionResponse)

@@ -10,7 +10,7 @@
 
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Home, Heart, Map, BookOpen, User } from 'lucide-react-native';
+import { Home, Heart, Map, BookOpen, User, Film } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
@@ -108,6 +108,14 @@ export default function TabLayout() {
                     options={{
                         tabBarIcon: ({ focused }) => (
                             <TabIcon Icon={Map} label="Journey" focused={focused} />
+                        ),
+                    }}
+                />
+                <Tabs.Screen
+                    name="reels"
+                    options={{
+                        tabBarIcon: ({ focused }) => (
+                            <TabIcon Icon={Film} label="Reels" focused={focused} />
                         ),
                     }}
                 />

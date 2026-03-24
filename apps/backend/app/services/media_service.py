@@ -126,3 +126,63 @@ async def search_youtube(genre: str, content_type: str = "music") -> list[dict]:
     except Exception as e:
         print(f"YouTube search error: {e}")
         return []
+
+async def search_youtube_reels(primary_reason: str, max_results: int = 10) -> list[dict]:
+    """
+    Search YouTube for short-form content (reels/shorts) related to user's primary wellness reason.
+    
+    Args:
+        primary_reason: User's primary reason (e.g., "Stress Relief", "Better Sleep")
+        max_results: Max number of videos to return.
+    
+    Returns list of video dicts with video_id, title, channel, thumbnail_url
+    """
+    if not settings.YOUTUBE_API_KEY:
+        # Return empty list if no API key configured
+        return []
+
+    # Map the broad reason to something specific for shorts
+    # e.g. "Stress Relief" -> "stress relief breathing exercise shorts"
+    query = f"{primary_reason} tips shorts"
+    
+    if "sleep" in primary_reason.lower():
+        query = "fall asleep fast tips shorts"
+    elif "stress" in primary_reason.lower() or "anxiety" in primary_reason.lower():
+        query = "anxiety relief breathing shorts"
+    elif "focus" in primary_reason.lower():
+        query = "productivity focus tips shorts"
+    elif "energy" in primary_reason.lower():
+        query = "morning energy boost tips shorts"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://www.googleapis.com/youtube/v3/search",
+                params={
+                    "key": settings.YOUTUBE_API_KEY,
+                    "q": query,
+                    "part": "snippet",
+                    "type": "video",
+                    "videoDuration": "short", # IMPORTANT: This ensures we get shorts < 4 mins
+                    "maxResults": max_results,
+                    "order": "relevance",
+                    "safeSearch": "strict",
+                },
+                timeout=10.0,
+            )
+            data = response.json()
+
+            results = []
+            for item in data.get("items", []):
+                snippet = item.get("snippet", {})
+                results.append({
+                    "video_id": item["id"]["videoId"],
+                    "title": snippet.get("title", ""),
+                    "channel": snippet.get("channelTitle", ""),
+                    "thumbnail_url": snippet.get("thumbnails", {}).get("high", {}).get("url", ""),
+                })
+            return results
+
+    except Exception as e:
+        print(f"YouTube Reels search error: {e}")
+        return []
