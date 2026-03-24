@@ -43,6 +43,8 @@ export interface ThemeContextValue {
     tabBarBg: string;
     /** Card background for light/dark — slightly different from surface */
     cardBg: string;
+    /** Toggle between light and dark themes */
+    toggleTheme: () => void;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -61,6 +63,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return systemScheme === 'dark'; // 'system'
     }, [themeSetting, systemScheme]);
 
+    const toggleTheme = React.useCallback(() => {
+        const next = isDark ? 'light' : 'dark';
+        useSettingsStore.getState().updateSettings({ theme: next });
+    }, [isDark]);
+
     const value = useMemo<ThemeContextValue>(() => ({
         isDark,
         colors: isDark ? darkColors : (lightColors as unknown as ThemeColors),
@@ -75,7 +82,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             ? 'rgba(9,12,22,0.96)'
             : 'rgba(245,242,236,0.96)',
         cardBg: isDark ? darkColors.surface : '#FFFFFF',
-    }), [isDark]);
+        toggleTheme,
+    }), [isDark, toggleTheme]);
 
     return (
         <ThemeContext.Provider value={value}>
@@ -102,6 +110,7 @@ export function useTheme(): ThemeContextValue {
             shadows,
             tabBarBg: 'rgba(9,12,22,0.96)',
             cardBg: darkColors.surface,
+            toggleTheme: () => {},
         };
     }
     return ctx;

@@ -30,23 +30,26 @@ export default function SectionHeader({
     iconColor = colors.gold,
 }: SectionHeaderProps) {
     return (
-        <Animated.View entering={FadeInDown.delay(delay).duration(400)} style={styles.row}>
+        <Animated.View
+            entering={FadeInDown.delay(delay).duration(400)}
+            style={styles.container}
+        >
             <View style={styles.left}>
-                {Icon && (
-                    <View style={[styles.iconBox, { backgroundColor: `${iconColor}18` }]}>
-                        <Icon size={14} color={iconColor} strokeWidth={2.2} />
-                    </View>
-                )}
-                <Text style={styles.title}>{title}</Text>
+                {Icon && <Icon size={20} color={iconColor} style={styles.icon} />}
+                <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
                 {badge !== undefined && (
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{badge}</Text>
+                    <View style={[styles.badge, { backgroundColor: colors.goldMuted }]}>
+                        <Text style={[styles.badgeText, { color: colors.gold }]}>{badge}</Text>
                     </View>
                 )}
             </View>
+
             {onSeeAll && (
-                <Pressable onPress={onSeeAll} hitSlop={8}>
-                    <Text style={styles.seeAll}>See all</Text>
+                <Pressable onPress={onSeeAll} style={({ pressed }) => [
+                    styles.seeAll,
+                    pressed && { opacity: 0.7 }
+                ]}>
+                    <Text style={[styles.seeAllText, { color: colors.gold }]}>See all</Text>
                 </Pressable>
             )}
         </Animated.View>
@@ -54,44 +57,41 @@ export default function SectionHeader({
 }
 
 const styles = StyleSheet.create({
-    row: {
+    container: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: spacing.md,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
     },
     left: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
     },
-    iconBox: {
-        width: 24,
-        height: 24,
-        borderRadius: 6,
-        alignItems: 'center',
-        justifyContent: 'center',
+    icon: {
+        marginRight: spacing.sm,
     },
     title: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 18,
-        color: colors.textPrimary,
-        letterSpacing: -0.1,
+        fontFamily: fonts.display,
+        fontSize: 20,
+        letterSpacing: 0.3,
     },
     badge: {
-        backgroundColor: colors.goldMuted,
-        borderRadius: 999,
-        paddingHorizontal: 8,
+        marginLeft: spacing.sm,
+        paddingHorizontal: spacing.xs,
         paddingVertical: 2,
+        borderRadius: 4,
     },
     badgeText: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 11,
-        color: colors.gold,
+        fontFamily: fonts.mono,
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     seeAll: {
-        fontFamily: fonts.body,
+        paddingVertical: spacing.xs,
+    },
+    seeAllText: {
+        fontFamily: fonts.bodySemiBold,
         fontSize: 13,
-        color: colors.textMuted,
     },
 });

@@ -35,6 +35,7 @@ function RootNavigator() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const router = useRouter();
     const segments = useSegments();
+    const { colors } = useTheme();
 
     useEffect(() => {
         const inAuthGroup = segments[0] === '(auth)';

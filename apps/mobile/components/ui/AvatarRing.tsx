@@ -14,63 +14,69 @@ import Animated, {
     withTiming,
     Easing,
 } from 'react-native-reanimated';
-import { colors, fonts, borderRadius } from '../../constants/theme';
+import { fonts, spacing, animation } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 interface AvatarRingProps {
-    initials?: string;
-    imageUrl?: string;
     size?: number;
-    ringColor?: string;
-    /** If true, subtly pulses the ring */
+    imageUri?: string;
+    initials?: string;
+    variant?: 'gold' | 'emerald' | 'sapphire';
     pulse?: boolean;
-    style?: ViewStyle;
 }
 
 export default function AvatarRing({
-    initials = 'U',
-    imageUrl,
-    size = 44,
-    ringColor = colors.gold,
+    size = 48,
+    imageUri,
+    initials = 'VR',
+    variant = 'gold',
     pulse = false,
-    style,
 }: AvatarRingProps) {
-    const ringOpacity = useSharedValue(1);
+    const { colors } = useTheme();
+    const ringSize = size + 8;
+    const padding = 4;
+
+    const ringColor = variant === 'gold' ? colors.gold :
+                      variant === 'emerald' ? colors.emerald :
+                      colors.sapphire;
+
+    const pulseValue = useSharedValue(1);
 
     useEffect(() => {
         if (pulse) {
-            ringOpacity.value = withRepeat(
-                withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
+            pulseValue.value = withRepeat(
+                withTiming(1.08, {
+                    duration: 1500,
+                    easing: Easing.inOut(Easing.sin),
+                }),
                 -1,
                 true
             );
+        } else {
+            pulseValue.value = withTiming(1);
         }
     }, [pulse]);
 
-    const animatedRingStyle = useAnimatedStyle(() => ({
-        opacity: ringOpacity.value,
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseValue.value }],
+        opacity: 1,
     }));
 
-    const ring = size + 8;
-    const innerSize = size - 4;
+    const innerSize = size - 4; // This calculation seems to be based on the original `size` prop
 
     return (
-        <View style={[{ width: ring, height: ring, alignItems: 'center', justifyContent: 'center' }, style]}>
+        <View style={[{ width: ringSize, height: ringSize, alignItems: 'center', justifyContent: 'center' }]}>
             <Animated.View
                 style={[
+                    styles.ring,
                     {
-                        width: ring,
-                        height: ring,
-                        borderRadius: ring / 2,
-                        borderWidth: 2,
+                        width: ringSize,
+                        height: ringSize,
+                        borderRadius: ringSize / 2,
+                        backgroundColor: colors.surface,
                         borderColor: ringColor,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: ringColor,
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.6,
-                        shadowRadius: 8,
                     },
-                    pulse && animatedRingStyle,
+                    animatedStyle
                 ]}
             >
                 <View
@@ -84,12 +90,14 @@ export default function AvatarRing({
                         overflow: 'hidden',
                     }}
                 >
-                    {imageUrl ? (
+                    {imageUri ? (
                         <Image
-                            source={{ uri: imageUrl }}
+                            source={{ uri: imageUri }}
                             style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
                         />
                     ) : (
+                        // Fallback for initials, assuming it's still desired but not explicitly in the diff
+                        // If initials are no longer needed, this block can be removed.
                         <Text
                             style={{
                                 fontFamily: fonts.bodySemiBold,
@@ -106,3 +114,11 @@ export default function AvatarRing({
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    ring: {
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});

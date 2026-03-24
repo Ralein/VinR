@@ -1,41 +1,41 @@
 import { useState, useCallback } from 'react';
 import api from '../services/api';
 
-export interface Glint {
+export interface Reel {
   video_id: string;
   title: string;
   channel: string;
   thumbnail_url: string;
 }
 
-export const useGlint = () => {
-  const [glints, setGlints] = useState<Glint[]>([]);
+export const useReels = () => {
+  const [reels, setReels] = useState<Reel[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGlints = useCallback(async (primaryReason: string = 'Stress Relief') => {
+  const fetchReels = useCallback(async (primaryReason: string = 'Stress Relief') => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming backend endpoint is updated to /media/glint or we use an alias
+      // Re-using the /media/glint endpoint for curated YouTube shorts/reels based on wellness reason
       const response = await api.get('/media/glint', {
         params: { primary_reason: primaryReason },
       });
       if (response.data && response.data.glints) {
-        setGlints(response.data.glints);
+        setReels(response.data.glints);
       }
     } catch (err: any) {
-      console.error('Failed to fetch glints:', err);
-      setError('Failed to load glints.');
+      console.error('Failed to fetch reels:', err);
+      setError('Failed to load reels.');
     } finally {
       setLoading(false);
     }
   }, []);
 
   return {
-    glints,
+    reels,
     loading,
     error,
-    fetchGlints,
+    fetchReels,
   };
 };

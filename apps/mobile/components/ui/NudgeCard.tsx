@@ -18,18 +18,11 @@ import Animated, {
     withSequence,
 } from 'react-native-reanimated';
 import { type LucideIcon, ChevronRight } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius, glass, animation } from '../../constants/theme';
+import { fonts, spacing, borderRadius, animation } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 
 type NudgeAccent = 'gold' | 'emerald' | 'sapphire' | 'lavender' | 'crimson';
-
-const ACCENT_MAP: Record<NudgeAccent, string> = {
-    gold: colors.gold,
-    emerald: colors.emerald,
-    sapphire: colors.sapphire,
-    lavender: colors.lavender,
-    crimson: colors.crimson,
-};
 
 interface NudgeCardProps {
     title: string;
@@ -50,6 +43,16 @@ export default function NudgeCard({
     onPress,
     delay = 0,
 }: NudgeCardProps) {
+    const { colors, glass } = useTheme();
+
+    const ACCENT_MAP: Record<NudgeAccent, string> = {
+        gold: colors.gold,
+        emerald: colors.emerald,
+        sapphire: colors.sapphire,
+        lavender: colors.lavender,
+        crimson: colors.crimson,
+    };
+
     const accentColor = ACCENT_MAP[accent];
     const scale = useSharedValue(1);
     const borderGlow = useSharedValue(0.2);
@@ -89,7 +92,14 @@ export default function NudgeCard({
             <AnimatedPressable
                 onPress={handlePress}
                 disabled={!onPress}
-                style={[styles.card, { backgroundColor: `${accentColor}06` }, animatedBorder]}
+                style={[
+                    styles.card,
+                    {
+                        backgroundColor: `${accentColor}06`,
+                        borderColor: colors.border
+                    },
+                    animatedBorder
+                ]}
             >
                 {/* Icon Column */}
                 <View style={[styles.iconCol, { backgroundColor: `${accentColor}15` }]}>
@@ -97,8 +107,8 @@ export default function NudgeCard({
                 </View>
                 {/* Text Column */}
                 <View style={styles.textCol}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.message} numberOfLines={2}>{message}</Text>
+                    <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+                    <Text style={[styles.message, { color: colors.textMuted }]} numberOfLines={2}>{message}</Text>
                 </View>
                 {/* Arrow */}
                 {onPress && (
@@ -117,8 +127,6 @@ const styles = StyleSheet.create({
         padding: spacing.md,
         borderRadius: borderRadius.lg,
         borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: glass.background,
         marginBottom: spacing.sm,
     },
     iconCol: {
@@ -136,13 +144,11 @@ const styles = StyleSheet.create({
     title: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 14,
-        color: colors.textPrimary,
         letterSpacing: 0.1,
     },
     message: {
         fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textMuted,
         lineHeight: 17,
     },
 });
