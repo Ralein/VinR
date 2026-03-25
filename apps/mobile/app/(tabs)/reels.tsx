@@ -16,7 +16,8 @@ import { WebView } from 'react-native-webview';
 import { Film, Play, Pause, RefreshCw, X } from 'lucide-react-native';
 import { useReels, Reel } from '../../hooks/useReels';
 import { useAuthStore } from '../../stores/authStore';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -38,6 +39,7 @@ interface ReelItemProps {
 }
 
 const ReelItem: React.FC<ReelItemProps> = ({ reel, isActive, index }) => {
+  const { colors } = useTheme();
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
@@ -103,7 +105,7 @@ const ReelItem: React.FC<ReelItemProps> = ({ reel, isActive, index }) => {
   const embedUrl = `https://www.youtube.com/embed/${reel.video_id}?autoplay=1&controls=0&modestbranding=1&loop=1&playlist=${reel.video_id}&rel=0&showinfo=0&mute=${isActive ? 0 : 1}`;
 
   return (
-    <Pressable onPress={handlePress} style={styles.reelContainer}>
+    <Pressable onPress={handlePress} style={[styles.reelContainer, { backgroundColor: colors.surface }]}>
       {/* Thumbnail / Placeholder */}
       {!isActive && (
          <View style={StyleSheet.absoluteFill}>
@@ -156,14 +158,15 @@ const ReelItem: React.FC<ReelItemProps> = ({ reel, isActive, index }) => {
 
       {/* Info overlay */}
       <View style={styles.infoContainer}>
-        <Text style={styles.title} numberOfLines={2}>{reel.title}</Text>
-        <Text style={styles.channel}>{reel.channel}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{reel.title}</Text>
+        <Text style={[styles.channel, { color: colors.gold }]}>{reel.channel}</Text>
       </View>
     </Pressable>
   );
 };
 
 export default function ReelsScreen() {
+  const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
   const { reels, loading, error, fetchReels } = useReels();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -193,37 +196,37 @@ export default function ReelsScreen() {
 
   if (loading && reels.length === 0) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.void }]}>
         <ActivityIndicator size="large" color={colors.gold} />
-        <Text style={styles.loadingText}>Curating Reels…</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Curating Reels…</Text>
       </SafeAreaView>
     );
   }
 
   if (error && reels.length === 0) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.void }]}>
         <Film size={48} color={colors.textGhost} />
-        <Text style={styles.errorTitle}>Couldn't load Reels</Text>
-        <Text style={styles.errorSubtitle}>{error}</Text>
+        <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>Couldn't load Reels</Text>
+        <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>{error}</Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[styles.retryButton, { backgroundColor: colors.gold }]}
           onPress={() => fetchReels(reason)}
         >
           <RefreshCw size={16} color={colors.void} />
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={[styles.retryText, { color: colors.void }]}>Retry</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.void }]}>
       {/* Header */}
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
         <View style={styles.header}>
           <Film size={18} color={colors.gold} />
-          <Text style={styles.headerTitle}>Reels</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Reels</Text>
         </View>
       </SafeAreaView>
 
@@ -254,12 +257,10 @@ export default function ReelsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.void,
   },
   reelContainer: {
     width: SCREEN_WIDTH,
     height: REELS_HEIGHT,
-    backgroundColor: colors.surface,
   },
   webview: {
     flex: 1,
@@ -269,11 +270,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.void,
   },
   loadingText: {
     marginTop: 16,
-    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
   },
@@ -292,7 +291,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.5,
@@ -305,7 +303,6 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   title: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
@@ -314,7 +311,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   channel: {
-    color: colors.gold,
     fontWeight: 'bold',
     fontFamily: fonts.bodySemiBold,
     marginLeft: spacing.xs,
@@ -325,7 +321,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
-    backgroundColor: 'transparent', // Would use LinearGradient if available, but staying vanilla for portability
+    backgroundColor: 'transparent',
   },
   gradientBottom: {
     position: 'absolute',
@@ -373,13 +369,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.lg,
   },
   errorTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.xs,
   },
   errorSubtitle: {
-    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: fonts.bodySemiBold,
     opacity: 0.9,
@@ -390,14 +384,12 @@ const styles = StyleSheet.create({
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gold,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
   },
   retryText: {
-    color: colors.void,
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
   },

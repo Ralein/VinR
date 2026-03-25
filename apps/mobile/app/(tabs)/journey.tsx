@@ -23,7 +23,8 @@ import Animated, {
 import {
     Check, Flame, Leaf, Flower, Trophy, CheckCircle2, ChevronRight,
 } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius, glass } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 import { useStreakStore } from '../../stores/streakStore';
 import { useActiveStreak, useCompleteDay } from '../../hooks/useStreak';
@@ -34,17 +35,12 @@ import GlassCard from '../../components/ui/GlassCard';
 
 const TOTAL_DAYS = 21;
 
-const MILESTONES = [
-    { day: 5,  Icon: Leaf,    label: 'Day 5',  color: colors.emerald },
-    { day: 10, Icon: Flower,  label: 'Day 10', color: colors.lavender },
-    { day: 15, Icon: Flame,   label: 'Day 15', color: colors.gold },
-    { day: 21, Icon: Trophy,  label: 'Day 21', color: '#F5C842' },
-];
-
-function DayCell({ day, status }: {
+function DayCell({ day, status, color }: {
     day: number;
     status: 'completed' | 'today' | 'missed' | 'future';
+    color: string;
 }) {
+    const { colors } = useTheme();
     const pulseOpacity = useSharedValue(1);
 
     useEffect(() => {
@@ -66,22 +62,23 @@ function DayCell({ day, status }: {
 
     const cellStyle = [
         styles.dayCell,
-        status === 'completed' && styles.dayCellCompleted,
-        status === 'today' && styles.dayCellToday,
-        status === 'missed' && styles.dayCellMissed,
-        status === 'future' && styles.dayCellFuture,
+        status === 'completed' && { backgroundColor: `${color}22`, borderColor: color },
+        status === 'today' && { backgroundColor: `${color}0A`, borderColor: color, borderWidth: 2 },
+        status === 'missed' && { backgroundColor: `${colors.crimson}08`, borderColor: `${colors.crimson}25` },
+        status === 'future' && { backgroundColor: 'transparent', borderColor: colors.border },
     ];
 
     return (
         <Animated.View style={[cellStyle, status === 'today' && animatedStyle]}>
             {status === 'completed' ? (
-                <Check size={13} color={colors.gold} strokeWidth={2.5} />
+                <Check size={13} color={color} strokeWidth={2.5} />
             ) : (
                 <Text style={[
                     styles.dayNumber,
-                    status === 'today' && styles.dayNumberToday,
-                    status === 'future' && styles.dayNumberFuture,
-                    status === 'missed' && styles.dayNumberMissed,
+                    { color: colors.textMuted },
+                    status === 'today' && [styles.dayNumberToday, { color: color }],
+                    status === 'future' && { color: colors.textGhost },
+                    status === 'missed' && { color: `${colors.crimson}70` },
                 ]}>
                     {day}
                 </Text>
@@ -91,6 +88,15 @@ function DayCell({ day, status }: {
 }
 
 export default function JourneyScreen() {
+    const { colors } = useTheme();
+
+    const MILESTONES = useMemo(() => [
+        { day: 5,  Icon: Leaf,    label: 'Day 5',  color: colors.emerald },
+        { day: 10, Icon: Flower,  label: 'Day 10', color: colors.lavender },
+        { day: 15, Icon: Flame,   label: 'Day 15', color: colors.gold },
+        { day: 21, Icon: Trophy,  label: 'Day 21', color: '#F5C842' },
+    ], [colors]);
+
     const {
         activeStreakId, currentStreak, totalDaysCompleted,
         startDate, dailyCompletions, isCompletedToday, milestone,
@@ -149,21 +155,21 @@ export default function JourneyScreen() {
     // Empty state
     if (!isLoading && !activeStreakId) {
         return (
-            <SafeAreaView style={styles.container} edges={['top']}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
                 <View style={styles.emptyState}>
                     <Animated.View entering={FadeIn.duration(600)} style={styles.emptyInner}>
-                        <View style={styles.emptyIconWrap}>
+                        <View style={[styles.emptyIconWrap, { backgroundColor: `${colors.gold}10`, borderColor: `${colors.gold}30` }]}>
                             <Flame size={52} color={colors.gold} strokeWidth={1.5} fill={`${colors.gold}30`} />
                         </View>
-                        <Text style={styles.emptyTitle}>Your Journey Awaits</Text>
-                        <Text style={styles.emptyText}>
+                        <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Your Journey Awaits</Text>
+                        <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                             Complete a check-in and start your 21-day journey to become a winner.
                         </Text>
                         <Pressable
-                            style={styles.emptyButton}
+                            style={[styles.emptyButton, { backgroundColor: colors.gold }]}
                             onPress={() => { haptics.light(); router.push('/(tabs)/checkin'); }}
                         >
-                            <Text style={styles.emptyButtonText}>Start a check-in</Text>
+                            <Text style={[styles.emptyButtonText, { color: colors.void }]}>Start a check-in</Text>
                             <ChevronRight size={16} color={colors.void} strokeWidth={2.2} />
                         </Pressable>
                     </Animated.View>
@@ -173,7 +179,7 @@ export default function JourneyScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                 {/* Streak Header */}
@@ -181,13 +187,13 @@ export default function JourneyScreen() {
                     <GlassCard accent="gold" elevated shimmer noAnimation>
                         <View style={styles.streakCard}>
                             <View style={styles.streakLeft}>
-                                <Text style={styles.streakCount}>{currentStreak}</Text>
+                                <Text style={[styles.streakCount, { color: colors.gold }]}>{currentStreak}</Text>
                                 <View style={styles.streakLabelRow}>
-                                    <Text style={styles.streakLabel}>day streak</Text>
+                                    <Text style={[styles.streakLabel, { color: colors.textMuted }]}>day streak</Text>
                                     <Flame size={16} color={colors.gold} fill={`${colors.gold}40`} strokeWidth={1.5} />
                                 </View>
                                 {startDate && (
-                                    <Text style={styles.startDate}>Started {startDate}</Text>
+                                    <Text style={[styles.startDate, { color: colors.textGhost }]}>Started {startDate}</Text>
                                 )}
                             </View>
                             <ProgressRing
@@ -204,10 +210,10 @@ export default function JourneyScreen() {
 
                 {/* 21-Day Grid */}
                 <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.section}>
-                    <Text style={styles.gridTitle}>21-Day Progress</Text>
+                    <Text style={[styles.gridTitle, { color: colors.textMuted }]}>21-Day Progress</Text>
                     <View style={styles.dayGrid}>
                         {dayStatuses.map((status, index) => (
-                            <DayCell key={index} day={index + 1} status={status} />
+                            <DayCell key={index} day={index + 1} status={status} color={colors.gold} />
                         ))}
                     </View>
                 </Animated.View>
@@ -220,6 +226,7 @@ export default function JourneyScreen() {
                         return (
                             <View key={m.day} style={[
                                 styles.milestoneBadge,
+                                { borderColor: colors.border },
                                 unlocked && { borderColor: m.color, backgroundColor: `${m.color}10` },
                             ]}>
                                 <View style={[
@@ -234,6 +241,7 @@ export default function JourneyScreen() {
                                 </View>
                                 <Text style={[
                                     styles.milestoneLabel,
+                                    { color: colors.textGhost },
                                     unlocked && { color: m.color, fontFamily: fonts.bodySemiBold },
                                 ]}>
                                     {m.label}
@@ -246,7 +254,7 @@ export default function JourneyScreen() {
                 {/* Mark Complete CTA */}
                 {!isCompletedToday && activeStreakId && (
                     <Animated.View entering={FadeInDown.delay(700).duration(400)}>
-                        <Pressable style={styles.markButton} onPress={handleMarkComplete}>
+                        <Pressable style={[styles.markButton, { backgroundColor: colors.emerald, shadowColor: colors.emerald }]} onPress={handleMarkComplete}>
                             <CheckCircle2 size={20} color="#FFFFFF" strokeWidth={2} />
                             <Text style={styles.markButtonText}>Mark today complete</Text>
                         </Pressable>
@@ -254,9 +262,9 @@ export default function JourneyScreen() {
                 )}
 
                 {isCompletedToday && (
-                    <Animated.View entering={FadeIn.delay(200).duration(400)} style={styles.completedBanner}>
+                    <Animated.View entering={FadeIn.delay(200).duration(400)} style={[styles.completedBanner, { backgroundColor: `${colors.emerald}0F`, borderColor: `${colors.emerald}28` }]}>
                         <CheckCircle2 size={24} color={colors.emerald} strokeWidth={2} />
-                        <Text style={styles.completedText}>Today is done! See you tomorrow.</Text>
+                        <Text style={[styles.completedText, { color: colors.emerald }]}>Today is done! See you tomorrow.</Text>
                     </Animated.View>
                 )}
             </ScrollView>
@@ -276,45 +284,45 @@ export default function JourneyScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
+    container: { flex: 1 },
     content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 60 },
     emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
     emptyInner: { alignItems: 'center' },
     emptyIconWrap: {
         width: 88, height: 88, borderRadius: 44,
-        backgroundColor: `${colors.gold}10`, alignItems: 'center', justifyContent: 'center',
+        alignItems: 'center', justifyContent: 'center',
         marginBottom: 24,
-        borderWidth: 1, borderColor: `${colors.gold}30`,
+        borderWidth: 1,
     },
     emptyTitle: {
         fontFamily: fonts.display, fontSize: 28,
-        color: colors.textPrimary, textAlign: 'center', marginBottom: 12,
+        textAlign: 'center', marginBottom: 12,
     },
     emptyText: {
         fontFamily: fonts.body, fontSize: 15,
-        color: colors.textMuted, textAlign: 'center', lineHeight: 24, marginBottom: 28,
+        textAlign: 'center', lineHeight: 24, marginBottom: 28,
     },
     emptyButton: {
-        backgroundColor: colors.gold, borderRadius: borderRadius.md,
+        borderRadius: borderRadius.md,
         paddingVertical: 16, paddingHorizontal: 32,
         flexDirection: 'row', alignItems: 'center', gap: 8,
     },
-    emptyButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.void },
+    emptyButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 16 },
     // Streak Card
     section: { marginTop: spacing.lg },
     streakCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     streakLeft: { flex: 1 },
     streakCount: {
         fontFamily: fonts.displayBlack, fontSize: 64,
-        color: colors.gold, lineHeight: 70, letterSpacing: -2,
+        lineHeight: 70, letterSpacing: -2,
     },
     streakLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: -4 },
-    streakLabel: { fontFamily: fonts.body, fontSize: 16, color: colors.textMuted },
-    startDate: { fontFamily: fonts.bodyLight, fontSize: 12, color: colors.textGhost, marginTop: 4 },
+    streakLabel: { fontFamily: fonts.body, fontSize: 16 },
+    startDate: { fontFamily: fonts.bodyLight, fontSize: 12, marginTop: 4 },
     // Grid
     gridTitle: {
         fontFamily: fonts.bodySemiBold, fontSize: 14,
-        color: colors.textMuted, marginBottom: 14, letterSpacing: 0.5, textTransform: 'uppercase',
+        marginBottom: 14, letterSpacing: 0.5, textTransform: 'uppercase',
     },
     dayGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
     dayCell: {
@@ -322,14 +330,8 @@ const styles = StyleSheet.create({
         borderRadius: 10, alignItems: 'center', justifyContent: 'center',
         borderWidth: 1.5,
     },
-    dayCellCompleted: { backgroundColor: `${colors.gold}22`, borderColor: colors.gold },
-    dayCellToday: { backgroundColor: `${colors.gold}0A`, borderColor: colors.gold, borderWidth: 2 },
-    dayCellMissed: { backgroundColor: `${colors.crimson}08`, borderColor: `${colors.crimson}25` },
-    dayCellFuture: { backgroundColor: 'transparent', borderColor: colors.border },
-    dayNumber: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted },
-    dayNumberToday: { color: colors.gold, fontFamily: fonts.bodySemiBold },
-    dayNumberFuture: { color: colors.textGhost },
-    dayNumberMissed: { color: `${colors.crimson}70` },
+    dayNumber: { fontFamily: fonts.body, fontSize: 11 },
+    dayNumberToday: { fontFamily: fonts.bodySemiBold },
     // Milestones
     milestonesRow: {
         flexDirection: 'row', justifyContent: 'space-between',
@@ -338,28 +340,26 @@ const styles = StyleSheet.create({
     milestoneBadge: {
         alignItems: 'center', gap: 6, padding: 10,
         borderRadius: borderRadius.md, borderWidth: 1.5,
-        borderColor: colors.border, flex: 1, marginHorizontal: 3,
+        flex: 1, marginHorizontal: 3,
     },
     milestoneIconWrap: {
         width: 36, height: 36, borderRadius: 18,
         alignItems: 'center', justifyContent: 'center',
     },
-    milestoneLabel: { fontFamily: fonts.body, fontSize: 11, color: colors.textGhost },
+    milestoneLabel: { fontFamily: fonts.body, fontSize: 11 },
     // Mark Complete
     markButton: {
-        backgroundColor: colors.emerald, borderRadius: borderRadius.md,
+        borderRadius: borderRadius.md,
         paddingVertical: 18, alignItems: 'center', justifyContent: 'center',
         flexDirection: 'row', gap: 10,
-        shadowColor: colors.emerald,
         shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8,
     },
     markButtonText: { fontFamily: fonts.bodySemiBold, fontSize: 17, color: '#FFFFFF', letterSpacing: 0.3 },
     // Completed
     completedBanner: {
-        backgroundColor: `${colors.emerald}0F`,
         borderRadius: borderRadius.md, padding: 20,
         flexDirection: 'row', alignItems: 'center',
-        gap: 12, borderWidth: 1, borderColor: `${colors.emerald}28`,
+        gap: 12, borderWidth: 1,
     },
-    completedText: { fontFamily: fonts.body, fontSize: 15, color: colors.emerald, flex: 1 },
+    completedText: { fontFamily: fonts.body, fontSize: 15, flex: 1 },
 });
