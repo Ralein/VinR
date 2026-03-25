@@ -15,7 +15,7 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { useTheme } from '../../context/ThemeContext';
+import { colors } from '../../constants/theme';
 
 type LogoSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -33,7 +33,6 @@ const SIZE_MAP: Record<LogoSize, { vin: number; r: number; spacing: number }> = 
 };
 
 export default function VinRLogo({ size = 'md', glow = false, style }: VinRLogoProps) {
-    const { colors } = useTheme();
     const { vin: vinSize, r: rSize, spacing } = SIZE_MAP[size];
     const glowOpacity = useSharedValue(0.28);
     const glowScale   = useSharedValue(0.85);
@@ -71,7 +70,6 @@ export default function VinRLogo({ size = 'md', glow = false, style }: VinRLogoP
                     style={[
                         styles.glowOrb,
                         {
-                            backgroundColor: `${colors.gold}28`,
                             width: orbSize,
                             height: orbSize,
                             borderRadius: orbSize / 2,
@@ -88,7 +86,7 @@ export default function VinRLogo({ size = 'md', glow = false, style }: VinRLogoP
             <Text
                 style={[
                     styles.vin,
-                    { fontSize: vinSize, color: colors.textPrimary },
+                    { fontSize: vinSize },
                 ]}
             >
                 vin
@@ -101,7 +99,6 @@ export default function VinRLogo({ size = 'md', glow = false, style }: VinRLogoP
                     {
                         fontSize: rSize,
                         marginLeft: spacing,
-                        color: colors.gold,
                         /* Add a subtle text shadow for luminosity */
                         textShadowColor: `${colors.gold}60`,
                         textShadowOffset: { width: 0, height: 0 },
@@ -123,13 +120,16 @@ const styles = StyleSheet.create({
     },
     vin: {
         fontFamily: 'PlayfairDisplay_700Bold',
+        color: colors.textPrimary,
         letterSpacing: -1.5,
     },
     r: {
         fontFamily: 'PlayfairDisplay_700Bold',
         fontStyle: 'italic',
+        color: colors.gold,
     },
     glowOrb: {
         position: 'absolute',
+        backgroundColor: '#D4A85318',
     },
 });

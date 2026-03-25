@@ -13,8 +13,7 @@ import Animated, {
     withSpring,
     withSequence,
 } from 'react-native-reanimated';
-import { fonts, borderRadius, spacing, shadows as darkShadows, animation } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
+import { colors, fonts, borderRadius, spacing, shadows, animation } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -40,7 +39,6 @@ export default function GoldButton({
     fullWidth = true,
     style,
 }: GoldButtonProps) {
-    const { colors, shadows } = useTheme();
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -60,7 +58,7 @@ export default function GoldButton({
     const buttonColors = {
         gold: {
             bg: colors.gold,
-            text: colors.surface, // Better contrast for primary action
+            text: colors.void,
             shadow: shadows.gold,
         },
         emerald: {
@@ -75,11 +73,6 @@ export default function GoldButton({
         },
     };
 
-    // Special case for gold/emerald text color if we want it to be void (near black)
-    // Actually colors.surface is fine for accessibility in dark mode, 
-    // but in light mode colors.void might be better.
-    const textOverride = variant === 'gold' ? (colors.void === '#07090F' ? '#07090F' : '#FFFFFF') : undefined;
-
     const { bg, text, shadow } = buttonColors[variant];
 
     return (
@@ -90,7 +83,7 @@ export default function GoldButton({
                 styles.button,
                 { backgroundColor: bg },
                 shadow,
-                variant === 'ghost' && [styles.ghostButton, { borderColor: colors.border }],
+                variant === 'ghost' && styles.ghostButton,
                 !fullWidth && styles.autoWidth,
                 (disabled || loading) && styles.disabled,
                 animatedStyle,
@@ -98,9 +91,9 @@ export default function GoldButton({
             ]}
         >
             {loading ? (
-                <ActivityIndicator color={textOverride || text} size="small" />
+                <ActivityIndicator color={text} size="small" />
             ) : (
-                <Text style={[styles.label, { color: textOverride || text }]}>{label}</Text>
+                <Text style={[styles.label, { color: text }]}>{label}</Text>
             )}
         </AnimatedPressable>
     );
@@ -120,6 +113,7 @@ const styles = StyleSheet.create({
     },
     ghostButton: {
         borderWidth: 1,
+        borderColor: colors.border,
     },
     disabled: {
         opacity: 0.45,

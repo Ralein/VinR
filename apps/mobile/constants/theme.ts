@@ -6,7 +6,7 @@
  * gold accents = reward, emerald = growth, sapphire = trust.
  */
 
-export const darkColors = {
+export const colors = {
     // ── Backgrounds ──
     void: '#07090F',
     surface: '#0F1320',
@@ -39,42 +39,6 @@ export const darkColors = {
     borderLight: 'rgba(255,255,255,0.12)',
     borderGold: 'rgba(212,168,83,0.25)',
 } as const;
-
-export const lightColors = {
-    // ── Backgrounds ──
-    void: '#F8F9FC',
-    surface: '#FFFFFF',
-    elevated: '#F0F2F7',
-
-    // ── Brand ──
-    gold: '#C59A48',
-    goldLight: '#D4A853',
-    goldGlow: 'rgba(197,154,72,0.15)',
-    goldMuted: 'rgba(197,154,72,0.08)',
-
-    // ── Semantic ──
-    emerald: '#3DAE88',
-    emeraldGlow: 'rgba(61,174,136,0.12)',
-    sapphire: '#3A7BC1',
-    sapphireGlow: 'rgba(58,123,193,0.10)',
-    crimson: '#D14F4F',
-    crimsonGlow: 'rgba(209,79,79,0.10)',
-    lavender: '#766AB1',
-    lavenderGlow: 'rgba(118,106,177,0.10)',
-
-    // ── Text ──
-    textPrimary: '#1A1D23',
-    textSecondary: '#4A5568',
-    textMuted: '#718096',
-    textGhost: '#A0AEC0',
-
-    // ── Borders ──
-    border: 'rgba(0,0,0,0.07)',
-    borderLight: 'rgba(0,0,0,0.12)',
-    borderGold: 'rgba(197,154,72,0.25)',
-} as const;
-
-export const colors = darkColors; // Backward compatibility
 
 export const gradients = {
     void: ['#0A0E1A', '#07090F', '#070B14'] as const,
@@ -117,13 +81,11 @@ export const spacing = {
 } as const;
 
 export const borderRadius = {
-    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
     xl: 20,
     '2xl': 24,
-    pill: 99,
     full: 9999,
 } as const;
 
@@ -185,7 +147,7 @@ export const shadows = {
 } as const;
 
 export type Theme = {
-    colors: typeof darkColors;
+    colors: typeof colors;
     fonts: typeof fonts;
     spacing: typeof spacing;
     borderRadius: typeof borderRadius;
@@ -196,7 +158,7 @@ export type Theme = {
 };
 
 export const theme: Theme = {
-    colors: darkColors,
+    colors,
     fonts,
     spacing,
     borderRadius,
@@ -206,4 +168,3 @@ export const theme: Theme = {
     gradients,
 };
 export const designSystem = theme;
-
