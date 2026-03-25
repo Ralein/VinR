@@ -11,13 +11,15 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { colors } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
 import { router } from 'expo-router';
+import { Wind, Layers, Activity, Moon, Heart, Star, Zap, Leaf, Sparkles } from 'lucide-react-native';
 
 interface ReliefItem {
     id: string;
     name: string;
-    emoji: string;
+    emoji?: string;
     category: string;
     duration: string;
+    difficulty?: 'easy' | 'medium' | 'deep';
     instructions: string[];
     scienceNote: string;
     source: string;
@@ -29,8 +31,23 @@ interface InstructionSheetProps {
     onClose: () => void;
 }
 
+const CATEGORY_META: Record<string, { Icon: any; color: string }> = {
+    breathing:   { Icon: Wind,      color: '#4A90D9' },
+    grounding:   { Icon: Layers,    color: '#4ECBA0' },
+    movement:    { Icon: Activity,  color: '#D4A853' },
+    sleep:       { Icon: Moon,      color: '#8B7EC8' },
+    mindfulness: { Icon: Sparkles,  color: '#D4A853' },
+    gratitude:   { Icon: Heart,     color: '#E85D5D' },
+    habit:       { Icon: Leaf,      color: '#4ECBA0' },
+    meditation:  { Icon: Star,      color: '#8B7EC8' },
+    reframing:   { Icon: Zap,       color: '#D4A853' },
+};
+
 export function InstructionSheet({ item, visible, onClose }: InstructionSheetProps) {
     if (!item) return null;
+
+    const meta = CATEGORY_META[item.category?.toLowerCase()] ?? { Icon: Star, color: colors.gold };
+    const Icon = meta.Icon;
 
     return (
         <Modal
@@ -47,7 +64,9 @@ export function InstructionSheet({ item, visible, onClose }: InstructionSheetPro
 
                     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                         {/* Header */}
-                        <Text style={styles.emoji}>{item.emoji}</Text>
+                        <View style={styles.iconContainer}>
+                            <Icon size={48} color={meta.color} strokeWidth={1.5} />
+                        </View>
                         <Text style={styles.name}>{item.name}</Text>
                         <View style={styles.metaRow}>
                             <Text style={styles.duration}>⏱ {item.duration}</Text>
@@ -131,10 +150,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginBottom: 20,
     },
-    emoji: {
-        fontSize: 40,
-        textAlign: 'center',
-        marginBottom: 8,
+    iconContainer: {
+        alignItems: 'center',
+        marginBottom: 16,
     },
     name: {
         fontFamily: 'PlayfairDisplay_700Bold',
