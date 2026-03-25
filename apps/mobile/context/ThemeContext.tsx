@@ -20,7 +20,6 @@ import {
     borderRadius,
     animation,
     shadows,
-    typography,
 } from '../constants/theme';
 import { lightColors, lightGradients, lightGlass } from '../constants/lightTheme';
 
@@ -40,13 +39,10 @@ export interface ThemeContextValue {
     borderRadius: typeof borderRadius;
     animation: typeof animation;
     shadows: typeof shadows;
-    typography: typeof typography;
     /** Tab bar / overlay background — semi-transparent, theme-aware */
     tabBarBg: string;
     /** Card background for light/dark — slightly different from surface */
     cardBg: string;
-    /** Toggle between light and dark themes */
-    toggleTheme: () => void;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -65,11 +61,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return systemScheme === 'dark'; // 'system'
     }, [themeSetting, systemScheme]);
 
-    const toggleTheme = React.useCallback(() => {
-        const next = isDark ? 'light' : 'dark';
-        useSettingsStore.getState().updateSettings({ theme: next });
-    }, [isDark]);
-
     const value = useMemo<ThemeContextValue>(() => ({
         isDark,
         colors: isDark ? darkColors : (lightColors as unknown as ThemeColors),
@@ -80,13 +71,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         borderRadius,
         animation,
         shadows,
-        typography,
         tabBarBg: isDark
             ? 'rgba(9,12,22,0.96)'
             : 'rgba(245,242,236,0.96)',
         cardBg: isDark ? darkColors.surface : '#FFFFFF',
-        toggleTheme,
-    }), [isDark, toggleTheme]);
+    }), [isDark]);
 
     return (
         <ThemeContext.Provider value={value}>
@@ -111,10 +100,8 @@ export function useTheme(): ThemeContextValue {
             borderRadius,
             animation,
             shadows,
-            typography,
             tabBarBg: 'rgba(9,12,22,0.96)',
             cardBg: darkColors.surface,
-            toggleTheme: () => {},
         };
     }
     return ctx;

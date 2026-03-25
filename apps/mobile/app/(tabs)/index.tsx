@@ -21,8 +21,7 @@ import {
     CalendarDays, TrendingUp, LogOut, MessageCircle
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
-import { fonts, spacing, borderRadius } from '../../constants/theme';
-import { useTheme } from '../../context/ThemeContext';
+import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
 import { useStreak } from '../../hooks/useStreak';
@@ -83,7 +82,6 @@ const NUDGE_ICON_MAP: Record<string, any> = {
 // ── Main Component ─────────────────────────────────────────
 
 export default function HomeScreen() {
-    const { colors: themeColors, isDark, toggleTheme } = useTheme();
     const [showSleepMode, setShowSleepMode] = useState(false);
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
@@ -92,51 +90,38 @@ export default function HomeScreen() {
     const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: themeColors.void }]}>
+        <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                 {/* ── Header ───────────────────────────────── */}
                 <Animated.View entering={FadeIn.duration(350)} style={styles.headerRow}>
                     <View style={styles.headerLeft}>
                         {/* Date chip */}
-                        <View style={[styles.dateChip, { backgroundColor: `${themeColors.gold}10`, borderColor: `${themeColors.gold}20` }]}>
-                            <CalendarDays size={11} color={themeColors.gold} strokeWidth={2} />
-                            <Text style={[styles.dateChipText, { color: themeColors.gold }]}>{getDateChip()}</Text>
+                        <View style={styles.dateChip}>
+                            <CalendarDays size={11} color={colors.gold} strokeWidth={2} />
+                            <Text style={styles.dateChipText}>{getDateChip()}</Text>
                         </View>
-                        <Text style={[styles.greeting, { color: themeColors.textGhost }]}>{getGreeting()}</Text>
+                        <Text style={styles.greeting}>{getGreeting()}</Text>
                         <Animated.Text
                             entering={FadeInDown.delay(80).duration(450)}
-                            style={[styles.welcomeName, { color: themeColors.textPrimary }]}
+                            style={styles.welcomeName}
                         >
                             Welcome to VinR
                         </Animated.Text>
                     </View>
-                    <Animated.View entering={FadeIn.delay(150).duration(400)} style={{ alignItems: 'center', flexDirection: 'row', gap: 12 }}>
-                        <Pressable 
-                            onPress={toggleTheme}
-                            style={({ pressed }) => ({
-                                opacity: pressed ? 0.7 : 1,
-                                padding: 8,
-                                borderRadius: 12,
-                                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            })}
-                        >
-                            {isDark ? (
-                                <Sun size={20} color={themeColors.gold} />
-                            ) : (
-                                <Moon size={20} color={themeColors.gold} />
-                            )}
+                    <Animated.View entering={FadeIn.delay(150).duration(400)} style={{ alignItems: 'center' }}>
+                        <AvatarRing initials="VR" size={48} pulse style={{ marginTop: 6 }} />
+                        <Pressable onPress={() => useAuthStore.getState().signOut()} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <LogOut size={12} color={colors.crimson} />
+                            <Text style={{ color: colors.crimson, fontSize: 10, fontFamily: fonts.bodySemiBold }}>Sign Out</Text>
                         </Pressable>
-                        <AvatarRing initials="VR" size={48} pulse />
                     </Animated.View>
                 </Animated.View>
 
                 {/* ── Daily Quote ────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(160).duration(420)} style={[styles.quoteCard, { backgroundColor: `${themeColors.gold}08`, borderColor: `${themeColors.gold}15` }]}>
-                    <Quote size={14} color={themeColors.gold} strokeWidth={1.8} style={{ opacity: 0.7 }} />
-                    <Text style={[styles.quoteText, { color: themeColors.textSecondary }]}>{getDailyQuote()}</Text>
+                <Animated.View entering={FadeInDown.delay(160).duration(420)} style={styles.quoteCard}>
+                    <Quote size={14} color={colors.gold} strokeWidth={1.8} style={{ opacity: 0.7 }} />
+                    <Text style={styles.quoteText}>{getDailyQuote()}</Text>
                 </Animated.View>
 
                 {/* ── Streak Hero ───────────────────────────── */}
@@ -153,7 +138,7 @@ export default function HomeScreen() {
                 {/* ── Adaptive Nudge Cards ──────────────────── */}
                 {adaptiveData?.nudge_cards && adaptiveData.nudge_cards.length > 0 && (
                     <Animated.View entering={FadeInDown.delay(320).duration(480)} style={styles.section}>
-                        <SectionHeader title="For You" Icon={Sparkles} iconColor={themeColors.gold} delay={0} />
+                        <SectionHeader title="For You" Icon={Sparkles} iconColor={colors.gold} delay={0} />
                         {adaptiveData.nudge_cards.map((card: any, i: number) => {
                             const IconComp = NUDGE_ICON_MAP[card.action] ?? NUDGE_ICON_MAP.default;
                             const isTherapist = card.type === 'therapist';
@@ -178,20 +163,20 @@ export default function HomeScreen() {
 
                 {/* ── VinR Buddy Promo ──────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
-                    <SectionHeader title="Your AI Companion" Icon={MessageCircle} iconColor={themeColors.lavender} delay={0} />
+                    <SectionHeader title="Your AI Companion" Icon={MessageCircle} iconColor={colors.lavender} delay={0} />
                     <Pressable onPress={() => router.push('/buddy/chat')}>
                         <GlassCard noAnimation accent="lavender">
                             <View style={styles.habitRow}>
-                                <View style={[styles.habitIconWrap, { backgroundColor: `${themeColors.lavender}15` }]}>
-                                    <Sparkles size={22} color={themeColors.lavender} strokeWidth={1.8} />
+                                <View style={[styles.habitIconWrap, { backgroundColor: `${colors.lavender}15` }]}>
+                                    <Sparkles size={22} color={colors.lavender} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.habitTitle, { color: themeColors.textPrimary }]}>Talk to VinR Buddy</Text>
-                                    <Text style={[styles.habitText, { color: themeColors.textMuted }]}>
+                                    <Text style={styles.habitTitle}>Talk to VinR Buddy</Text>
+                                    <Text style={styles.habitText}>
                                         I'm always here to listen. Share what's on your mind.
                                     </Text>
                                 </View>
-                                <ChevronRight size={16} color={themeColors.textGhost} strokeWidth={1.5} />
+                                <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
                             </View>
                         </GlassCard>
                     </Pressable>
@@ -199,26 +184,26 @@ export default function HomeScreen() {
 
                 {/* ── How are you feeling? ──────────────────── */}
                 <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
-                    <SectionHeader title="How Are You Feeling?" Icon={Heart} iconColor={themeColors.crimson} delay={0} />
+                    <SectionHeader title="How Are You Feeling?" Icon={Heart} iconColor={colors.crimson} delay={0} />
                     <GoldButton label="Start a Check-In" onPress={() => router.push('/(tabs)/checkin')} />
                 </Animated.View>
 
                 {/* ── Today's Habit ─────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
-                    <SectionHeader title="Today's Habit" Icon={Activity} iconColor={themeColors.emerald} delay={0} />
+                    <SectionHeader title="Today's Habit" Icon={Activity} iconColor={colors.emerald} delay={0} />
                     <Pressable onPress={() => router.push('/(tabs)/journey')}>
                         <GlassCard noAnimation>
                             <View style={styles.habitRow}>
-                                <View style={[styles.habitIconWrap, { backgroundColor: `${themeColors.emerald}15` }]}>
-                                    <Activity size={22} color={themeColors.emerald} strokeWidth={1.8} />
+                                <View style={[styles.habitIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
+                                    <Activity size={22} color={colors.emerald} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.habitTitle, { color: themeColors.textPrimary }]}>21-Day Daily Habit</Text>
-                                    <Text style={[styles.habitText, { color: themeColors.textMuted }]}>
+                                    <Text style={styles.habitTitle}>21-Day Daily Habit</Text>
+                                    <Text style={styles.habitText}>
                                         Continue your 21-day journey to build lasting healthy habits.
                                     </Text>
                                 </View>
-                                <ChevronRight size={16} color={themeColors.textGhost} strokeWidth={1.5} />
+                                <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
                             </View>
                         </GlassCard>
                     </Pressable>
@@ -227,7 +212,7 @@ export default function HomeScreen() {
                 {/* ── Your Vibe — YouTube ───────────────────── */}
                 {youtubeData && youtubeData.results.length > 0 && (
                     <Animated.View entering={FadeInDown.delay(640).duration(400)} style={styles.section}>
-                        <SectionHeader title="Your Vibe" Icon={Music2} iconColor={themeColors.sapphire} delay={0} />
+                        <SectionHeader title="Your Vibe" Icon={Music2} iconColor={colors.sapphire} delay={0} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {youtubeData.results.map((video: any) => (
                                 <YouTubeCard
@@ -245,7 +230,7 @@ export default function HomeScreen() {
                 {/* ── Get Fired Up — Motivation ─────────────── */}
                 {motivationData && motivationData.results.length > 0 && (
                     <Animated.View entering={FadeInDown.delay(720).duration(400)} style={styles.section}>
-                        <SectionHeader title="Get Fired Up" Icon={Zap} iconColor={themeColors.gold} delay={0} />
+                        <SectionHeader title="Get Fired Up" Icon={Zap} iconColor={colors.gold} delay={0} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                             {motivationData.results.map((video: any) => (
                                 <YouTubeCard
@@ -264,7 +249,7 @@ export default function HomeScreen() {
 
                 {/* ── Get Out & Connect ─────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(800).duration(400)} style={styles.section}>
-                    <SectionHeader title="Get Out & Connect" Icon={Users} iconColor={themeColors.emerald} delay={0} />
+                    <SectionHeader title="Get Out & Connect" Icon={Users} iconColor={colors.emerald} delay={0} />
                     <EventsList
                         events={eventsData?.events || []}
                         isLoading={eventsLoading}
@@ -275,14 +260,14 @@ export default function HomeScreen() {
                 <Animated.View entering={FadeInDown.delay(880).duration(400)} style={styles.section}>
                     <GlassCard accent="sapphire" shimmer onPress={() => setShowSleepMode(true)}>
                         <View style={styles.sleepRow}>
-                            <View style={[styles.sleepIconWrap, { backgroundColor: `${themeColors.sapphire}15` }]}>
-                                <Moon size={24} color={themeColors.sapphire} strokeWidth={1.8} />
+                            <View style={styles.sleepIconWrap}>
+                                <Moon size={24} color={colors.sapphire} strokeWidth={1.8} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.sleepTitle, { color: themeColors.textPrimary }]}>Sleep Mode</Text>
-                                <Text style={[styles.sleepSubtitle, { color: themeColors.textMuted }]}>Dim lights · breathing · auto-stop</Text>
+                                <Text style={styles.sleepTitle}>Sleep Mode</Text>
+                                <Text style={styles.sleepSubtitle}>Dim lights · breathing · auto-stop</Text>
                             </View>
-                            <ChevronRight size={18} color={themeColors.textGhost} strokeWidth={1.5} />
+                            <ChevronRight size={18} color={colors.textGhost} strokeWidth={1.5} />
                         </View>
                     </GlassCard>
                 </Animated.View>
@@ -297,7 +282,7 @@ export default function HomeScreen() {
 // ── Styles ─────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, backgroundColor: colors.void },
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
@@ -315,27 +300,32 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
+        backgroundColor: `${colors.gold}10`,
         borderRadius: borderRadius.full,
         paddingHorizontal: 10,
         paddingVertical: 4,
         alignSelf: 'flex-start',
         marginBottom: 8,
         borderWidth: 1,
+        borderColor: `${colors.gold}20`,
     },
     dateChipText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 10.5,
+        color: colors.gold,
         letterSpacing: 0.3,
     },
     greeting: {
         fontFamily: fonts.bodyLight,
         fontSize: 12,
+        color: colors.textGhost,
         letterSpacing: 2,
         textTransform: 'uppercase',
     },
     welcomeName: {
         fontFamily: fonts.display,
         fontSize: 26,
+        color: colors.textPrimary,
         marginTop: 3,
         lineHeight: 32,
     },
@@ -344,8 +334,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 8,
+        backgroundColor: `${colors.gold}08`,
         borderRadius: borderRadius.lg,
         borderWidth: 1,
+        borderColor: `${colors.gold}15`,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 4,
         marginBottom: spacing.lg,
@@ -354,6 +346,7 @@ const styles = StyleSheet.create({
     quoteText: {
         fontFamily: fonts.italic,
         fontSize: 14,
+        color: colors.textSecondary,
         lineHeight: 20,
         flex: 1,
         fontStyle: 'italic',
@@ -374,11 +367,13 @@ const styles = StyleSheet.create({
     habitTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 14,
+        color: colors.textPrimary,
         marginBottom: 2,
     },
     habitText: {
         fontFamily: fonts.body,
         fontSize: 13,
+        color: colors.textMuted,
         lineHeight: 18,
     },
     // Sleep
@@ -389,16 +384,19 @@ const styles = StyleSheet.create({
     },
     sleepIconWrap: {
         width: 44, height: 44, borderRadius: 22,
+        backgroundColor: `${colors.sapphire}15`,
         alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
     },
     sleepTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
+        color: colors.textPrimary,
     },
     sleepSubtitle: {
         fontFamily: fonts.body,
         fontSize: 12,
+        color: colors.textMuted,
         marginTop: 1,
     },
 });
