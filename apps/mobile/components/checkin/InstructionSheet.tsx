@@ -15,9 +15,10 @@ import { router } from 'expo-router';
 interface ReliefItem {
     id: string;
     name: string;
-    emoji: string;
+    emoji?: string;
     category: string;
     duration: string;
+    difficulty?: 'easy' | 'medium' | 'deep';
     instructions: string[];
     scienceNote: string;
     source: string;
