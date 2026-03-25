@@ -18,29 +18,31 @@ import {
     Cloud, Zap, Sun, CloudRain, Target, BatteryLow,
     Heart, Flame, Lock, ArrowRight,
 } from 'lucide-react-native';
-import { colors, fonts, spacing, glass, borderRadius, animation } from '../../constants/theme';
+import { fonts, spacing, glass, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { config } from '../../constants/config';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import MoodOrb, { type MoodOption } from '../../components/ui/MoodOrb';
 
-// Mood options with Lucide icons and accent colors
-const MOOD_OPTIONS: MoodOption[] = [
-    { value: 'calm',       label: 'Calm',      Icon: Cloud,     color: colors.sapphire },
-    { value: 'anxious',    label: 'Anxious',   Icon: Zap,       color: colors.gold },
-    { value: 'happy',      label: 'Happy',     Icon: Sun,       color: '#F5C842' },
-    { value: 'sad',        label: 'Sad',       Icon: CloudRain, color: '#7AB5E8' },
-    { value: 'focused',    label: 'Focused',   Icon: Target,    color: colors.emerald },
-    { value: 'tired',      label: 'Tired',     Icon: BatteryLow,color: colors.lavender },
-    { value: 'grateful',   label: 'Grateful',  Icon: Heart,     color: colors.crimson },
-    { value: 'frustrated', label: 'Frustrated',Icon: Flame,    color: '#E84545' },
-];
-
 export default function CheckinScreen() {
+    const { colors } = useTheme();
     const { selectedMood, setMood, inputText, setText } = useCheckinStore();
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const [textFocused, setTextFocused] = useState(false);
     const canSubmit = selectedMood !== null;
+
+    // Mood options with Lucide icons and accent colors
+    const MOOD_OPTIONS: MoodOption[] = [
+        { value: 'calm',       label: 'Calm',      Icon: Cloud,     color: colors.sapphire },
+        { value: 'anxious',    label: 'Anxious',   Icon: Zap,       color: colors.gold },
+        { value: 'happy',      label: 'Happy',     Icon: Sun,       color: '#F5C842' },
+        { value: 'sad',        label: 'Sad',       Icon: CloudRain, color: '#7AB5E8' },
+        { value: 'focused',    label: 'Focused',   Icon: Target,    color: colors.emerald },
+        { value: 'tired',      label: 'Tired',     Icon: BatteryLow,color: colors.lavender },
+        { value: 'grateful',   label: 'Grateful',  Icon: Heart,     color: colors.crimson },
+        { value: 'frustrated', label: 'Frustrated',Icon: Flame,    color: '#E84545' },
+    ];
 
     // Rotate placeholders every 4 seconds
     useEffect(() => {
@@ -63,7 +65,7 @@ export default function CheckinScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}
@@ -75,8 +77,8 @@ export default function CheckinScreen() {
                 >
                     {/* Header */}
                     <Animated.View entering={FadeInDown.delay(80).duration(450)}>
-                        <Text style={styles.title}>How are you feeling?</Text>
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>How are you feeling?</Text>
+                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                             Select your mood — we'll personalize your experience
                         </Text>
                     </Animated.View>
@@ -102,6 +104,7 @@ export default function CheckinScreen() {
                         <TextInput
                             style={[
                                 styles.textArea,
+                                { backgroundColor: glass.background, color: colors.textPrimary, borderColor: colors.border },
                                 textFocused && {
                                     borderColor: `${colors.gold}60`,
                                     shadowColor: colors.gold,
@@ -120,7 +123,7 @@ export default function CheckinScreen() {
                             onFocus={() => setTextFocused(true)}
                             onBlur={() => setTextFocused(false)}
                         />
-                        <Text style={styles.charCounter}>
+                        <Text style={[styles.charCounter, { color: colors.textGhost }]}>
                             {inputText.length}/{config.CHECKIN_TEXT_MAX_LENGTH}
                         </Text>
                     </Animated.View>
@@ -128,11 +131,11 @@ export default function CheckinScreen() {
                     {/* Submit Button */}
                     <Animated.View entering={FadeInDown.delay(700).duration(400)}>
                         <Pressable
-                            style={[styles.submitButton, !canSubmit && styles.buttonDisabled]}
+                            style={[styles.submitButton, { backgroundColor: colors.gold, shadowColor: colors.gold }, !canSubmit && styles.buttonDisabled]}
                             onPress={handleSubmit}
                             disabled={!canSubmit}
                         >
-                            <Text style={styles.submitText}>Analyze my feelings</Text>
+                            <Text style={[styles.submitText, { color: colors.void }]}>Analyze my feelings</Text>
                             <ArrowRight
                                 size={18}
                                 color={colors.void}
@@ -148,7 +151,7 @@ export default function CheckinScreen() {
                         style={styles.privacyBadge}
                     >
                         <Lock size={12} color={colors.textGhost} strokeWidth={2} />
-                        <Text style={styles.privacyText}>Private & secure — your data is encrypted</Text>
+                        <Text style={[styles.privacyText, { color: colors.textGhost }]}>Private & secure — your data is encrypted</Text>
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -157,7 +160,7 @@ export default function CheckinScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
+    container: { flex: 1 },
     flex: { flex: 1 },
     content: {
         paddingHorizontal: spacing.lg,
@@ -167,14 +170,12 @@ const styles = StyleSheet.create({
     title: {
         fontFamily: fonts.display,
         fontSize: 30,
-        color: colors.textPrimary,
         marginBottom: 8,
         letterSpacing: -0.5,
     },
     subtitle: {
         fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textMuted,
         marginBottom: 28,
         lineHeight: 22,
     },
@@ -185,14 +186,11 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     textArea: {
-        backgroundColor: glass.background,
         borderRadius: borderRadius.lg,
         padding: 18,
         fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textPrimary,
         borderWidth: 1,
-        borderColor: colors.border,
         minHeight: 120,
         lineHeight: 24,
         elevation: 2,
@@ -200,12 +198,10 @@ const styles = StyleSheet.create({
     charCounter: {
         fontFamily: fonts.bodyLight,
         fontSize: 12,
-        color: colors.textGhost,
         textAlign: 'right',
         marginTop: 8,
     },
     submitButton: {
-        backgroundColor: colors.gold,
         borderRadius: borderRadius.md,
         paddingVertical: 18,
         alignItems: 'center',
@@ -213,7 +209,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         flexDirection: 'row',
         gap: 8,
-        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 16,
@@ -225,7 +220,6 @@ const styles = StyleSheet.create({
     submitText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 17,
-        color: colors.void,
         letterSpacing: 0.3,
     },
     privacyBadge: {
@@ -237,7 +231,6 @@ const styles = StyleSheet.create({
     privacyText: {
         fontFamily: fonts.bodyLight,
         fontSize: 12,
-        color: colors.textGhost,
         textAlign: 'center',
     },
 });

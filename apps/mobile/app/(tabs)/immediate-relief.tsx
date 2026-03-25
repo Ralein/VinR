@@ -3,11 +3,13 @@ import { View, StyleSheet, Text, TouchableOpacity, ScrollView, SafeAreaView } fr
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { ChevronLeft, Wind, Activity } from 'lucide-react-native';
-import { colors, fonts, spacing } from '../../constants/theme';
+import { fonts, spacing } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import BreathingAnimation, { BreathingPattern } from '../../components/BreathingAnimation';
 
 export default function ImmediateReliefScreen() {
     const router = useRouter();
+    const { colors } = useTheme();
     const [activePattern, setActivePattern] = useState<BreathingPattern>('box');
     const [isBreathing, setIsBreathing] = useState(false);
 
@@ -16,8 +18,8 @@ export default function ImmediateReliefScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.root}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.void }]}>
+            <View style={[styles.root, { backgroundColor: colors.void }]}>
                 {/* Custom Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
@@ -27,13 +29,13 @@ export default function ImmediateReliefScreen() {
                     >
                         <ChevronLeft size={24} color={colors.textPrimary} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Immediate Relief</Text>
+                    <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Immediate Relief</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    <Text style={styles.title}>Take a Moment</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: colors.textPrimary }]}>Take a Moment</Text>
+                    <Text style={[styles.subtitle, { color: colors.textGhost }]}>
                         Follow the animation to calm your nervous system and find your center.
                     </Text>
 
@@ -44,7 +46,7 @@ export default function ImmediateReliefScreen() {
                             activeOpacity={0.8}
                         >
                             <Wind size={20} color={activePattern === 'box' ? colors.gold : colors.textGhost} />
-                            <Text style={[styles.selectorText, activePattern === 'box' && styles.selectorTextActive]}>Box Breathing</Text>
+                            <Text style={[styles.selectorText, { color: colors.textGhost }, activePattern === 'box' && { color: colors.gold }]}>Box Breathing</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -53,7 +55,7 @@ export default function ImmediateReliefScreen() {
                             activeOpacity={0.8}
                         >
                             <Activity size={20} color={activePattern === '478' ? colors.gold : colors.textGhost} />
-                            <Text style={[styles.selectorText, activePattern === '478' && styles.selectorTextActive]}>4-7-8 Pattern</Text>
+                            <Text style={[styles.selectorText, { color: colors.textGhost }, activePattern === '478' && { color: colors.gold }]}>4-7-8 Pattern</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -67,7 +69,7 @@ export default function ImmediateReliefScreen() {
                         activeOpacity={0.8}
                     >
                         <BlurView intensity={20} tint="dark" style={styles.actionButtonBlur}>
-                            <Text style={styles.actionButtonText}>
+                            <Text style={[styles.actionButtonText, { color: colors.gold }]}>
                                 {isBreathing ? "Pause Exercise" : "Start Exercise"}
                             </Text>
                         </BlurView>
@@ -76,15 +78,15 @@ export default function ImmediateReliefScreen() {
                     <View style={styles.infoCard}>
                         {activePattern === 'box' ? (
                             <>
-                                <Text style={styles.infoTitle}>Box Breathing (4-4-4-4)</Text>
-                                <Text style={styles.infoDescription}>
+                                <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>Box Breathing (4-4-4-4)</Text>
+                                <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
                                     Box breathing, also known as four-square breathing, involves exhaling to a count of four, holding your lungs empty for a four-count, inhaling at the same pace, and holding air in your lungs for a count of four before exhaling and beginning the pattern anew.
                                 </Text>
                             </>
                         ) : (
                             <>
-                                <Text style={styles.infoTitle}>4-7-8 Breathing</Text>
-                                <Text style={styles.infoDescription}>
+                                <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>4-7-8 Breathing</Text>
+                                <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
                                     The 4-7-8 breathing technique, also known as "relaxing breath," involves breathing in for 4 seconds, holding the breath for 7 seconds, and exhaling for 8 seconds. This breathing pattern aims to reduce anxiety or help people get to sleep.
                                 </Text>
                             </>
@@ -99,11 +101,9 @@ export default function ImmediateReliefScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: colors.void, // Use a solid dark background color for safe area
     },
     root: {
         flex: 1,
-        backgroundColor: colors.void,
     },
     header: {
         flexDirection: 'row',
@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 17,
-        color: colors.textPrimary,
     },
     scrollContent: {
         paddingHorizontal: spacing.lg,
@@ -133,14 +132,12 @@ const styles = StyleSheet.create({
     title: {
         fontFamily: fonts.display,
         fontSize: 28,
-        color: colors.textPrimary,
         marginBottom: spacing.xs,
         marginTop: spacing.md,
     },
     subtitle: {
         fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textGhost,
         marginBottom: spacing.xl,
         lineHeight: 22,
     },
@@ -166,10 +163,6 @@ const styles = StyleSheet.create({
     selectorText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 14,
-        color: colors.textGhost,
-    },
-    selectorTextActive: {
-        color: colors.gold,
     },
     animationWrapper: {
         height: 300,
@@ -193,7 +186,6 @@ const styles = StyleSheet.create({
     actionButtonText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.gold,
     },
     infoCard: {
         backgroundColor: 'rgba(255, 255, 255, 0.03)',
@@ -205,13 +197,11 @@ const styles = StyleSheet.create({
     infoTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.textPrimary,
         marginBottom: spacing.sm,
     },
     infoDescription: {
         fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textGhost,
         lineHeight: 24,
     },
 });

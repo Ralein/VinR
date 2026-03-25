@@ -16,7 +16,7 @@ import { WebView } from 'react-native-webview';
 import { Film, Play, Pause, RefreshCw, X } from 'lucide-react-native';
 import { useGlint, Glint } from '../../hooks/useGlint';
 import { useAuthStore } from '../../stores/authStore';
-import { colors } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -28,7 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const TAB_BAR_HEIGHT = 80; // Estimated
+const TAB_BAR_HEIGHT = 80;
 const GLINT_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
 interface GlintItemProps {
@@ -38,16 +38,15 @@ interface GlintItemProps {
 }
 
 const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
+  const { colors } = useTheme();
   const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const lastTap = useRef<number>(0);
   const controlsTimeout = useRef<any>(null);
 
-  // Shared value for overlay opacity
   const overlayOpacity = useSharedValue(0);
 
-  // Auto-play when active
   useEffect(() => {
     if (isActive) {
       setIsPlaying(true);
@@ -67,51 +66,36 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
     const DOUBLE_TAP_DELAY = 300;
 
     if (now - lastTap.current < DOUBLE_TAP_DELAY) {
-      // Double tap -> Play/Pause
       const newPlaying = !isPlaying;
       setIsPlaying(newPlaying);
-      
-      // Flash indicator
       overlayOpacity.value = withSequence(
         withTiming(1, { duration: 100 }),
         withTiming(0, { duration: 400 })
       );
     } else {
-      // Single tap -> Show/Hide controls
       setShowControls((prev) => !prev);
-      
-      if (controlsTimeout.current) {
-        clearTimeout(controlsTimeout.current);
-      }
-      
-      controlsTimeout.current = setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+      controlsTimeout.current = setTimeout(() => setShowControls(false), 3000);
     }
     lastTap.current = now;
   }, [isPlaying]);
 
-  // Cleanup timeout
   useEffect(() => {
     return () => {
-      if (controlsTimeout.current) {
-        clearTimeout(controlsTimeout.current);
-      }
+      if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
     };
   }, []);
 
   const embedUrl = `https://www.youtube.com/embed/${glint.video_id}?autoplay=1&controls=0&modestbranding=1&loop=1&playlist=${glint.video_id}&rel=0&showinfo=0&mute=${isActive ? 0 : 1}`;
 
   return (
-    <Pressable onPress={handlePress} style={styles.glintContainer}>
-      {/* Thumbnail / Placeholder */}
+    <Pressable onPress={handlePress} style={[styles.glintContainer, { backgroundColor: colors.surface }]}>
       {!isActive && (
          <View style={StyleSheet.absoluteFill}>
             <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.gold} />
          </View>
       )}
 
-      {/* Video Content */}
       {isActive && isPlaying && !hasError && (
         <View style={StyleSheet.absoluteFill}>
           <WebView
@@ -128,7 +112,6 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
         </View>
       )}
 
-      {/* Play/Pause Large Overlay Indicator */}
       <Animated.View style={[styles.largeOverlay, animatedOverlayStyle]}>
         {!isPlaying ? (
           <Play size={80} color="#FFFFFF" fill="rgba(255,255,255,0.3)" />
@@ -137,7 +120,6 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
         )}
       </Animated.View>
 
-      {/* Control Overlay */}
       {showControls && (
         <Animated.View entering={FadeIn.duration(200)} style={styles.controlsOverlay}>
           <TouchableOpacity 
@@ -150,20 +132,19 @@ const GlintItem: React.FC<GlintItemProps> = ({ glint, isActive, index }) => {
         </Animated.View>
       )}
 
-      {/* Gradient overlays */}
       <View style={styles.gradientTop} />
       <View style={styles.gradientBottom} />
 
-      {/* Info overlay */}
       <View style={styles.infoContainer}>
-        <Text style={styles.title} numberOfLines={2}>{glint.title}</Text>
-        <Text style={styles.channel}>{glint.channel}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{glint.title}</Text>
+        <Text style={[styles.channel, { color: colors.gold }]}>{glint.channel}</Text>
       </View>
     </Pressable>
   );
 };
 
 export default function GlintScreen() {
+  const { colors } = useTheme();
   const user = useAuthStore((s) => s.user);
   const { glints, loading, error, fetchGlints } = useGlint();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -193,37 +174,36 @@ export default function GlintScreen() {
 
   if (loading && glints.length === 0) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.void }]}>
         <ActivityIndicator size="large" color={colors.gold} />
-        <Text style={styles.loadingText}>Curating Glints…</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Curating Glints…</Text>
       </SafeAreaView>
     );
   }
 
   if (error && glints.length === 0) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.void }]}>
         <Film size={48} color={colors.textGhost} />
-        <Text style={styles.errorTitle}>Couldn't load Glint</Text>
-        <Text style={styles.errorSubtitle}>{error}</Text>
+        <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>Couldn't load Glint</Text>
+        <Text style={[styles.errorSubtitle, { color: colors.textSecondary }]}>{error}</Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[styles.retryButton, { backgroundColor: colors.gold }]}
           onPress={() => fetchGlints(reason)}
         >
           <RefreshCw size={16} color={colors.void} />
-          <Text style={styles.retryText}>Retry</Text>
+          <Text style={[styles.retryText, { color: colors.void }]}>Retry</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <View style={[styles.container, { backgroundColor: colors.void }]}>
       <SafeAreaView edges={['top']} style={styles.headerSafe}>
         <View style={styles.header}>
           <Film size={18} color={colors.gold} />
-          <Text style={styles.headerTitle}>Glint</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Glint</Text>
         </View>
       </SafeAreaView>
 
@@ -254,12 +234,10 @@ export default function GlintScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.void,
   },
   glintContainer: {
     width: SCREEN_WIDTH,
     height: GLINT_HEIGHT,
-    backgroundColor: colors.surface,
   },
   webview: {
     flex: 1,
@@ -269,11 +247,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.void,
   },
   loadingText: {
     marginTop: 16,
-    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
   },
@@ -292,7 +268,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.5,
@@ -305,7 +280,6 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   title: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontFamily: 'Inter_600SemiBold',
     marginBottom: 4,
@@ -314,7 +288,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   channel: {
-    color: colors.gold,
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     opacity: 0.9,
@@ -325,7 +298,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
-    backgroundColor: 'transparent', // Would use LinearGradient if available, but staying vanilla for portability
+    backgroundColor: 'transparent',
   },
   gradientBottom: {
     position: 'absolute',
@@ -365,18 +338,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
   },
-  errorBox: {
-    alignItems: 'center',
-    padding: 24,
-  },
   errorTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontFamily: 'Inter_600SemiBold',
     marginTop: 16,
   },
   errorSubtitle: {
-    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: 'Inter_400Regular',
     textAlign: 'center',
@@ -386,14 +353,12 @@ const styles = StyleSheet.create({
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gold,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
   },
   retryText: {
-    color: colors.void,
     fontSize: 14,
     fontFamily: 'Inter_600SemiBold',
   },

@@ -21,7 +21,8 @@ import {
     CalendarDays, TrendingUp, LogOut, MessageCircle
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { useYouTubeSearch } from '../../hooks/useMedia';
 import { useEventSearch } from '../../hooks/useEvents';
 import { useStreak } from '../../hooks/useStreak';
@@ -82,6 +83,7 @@ const NUDGE_ICON_MAP: Record<string, any> = {
 // ── Main Component ─────────────────────────────────────────
 
 export default function HomeScreen() {
+    const { colors } = useTheme();
     const [showSleepMode, setShowSleepMode] = useState(false);
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
@@ -90,21 +92,21 @@ export default function HomeScreen() {
     const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                 {/* ── Header ───────────────────────────────── */}
                 <Animated.View entering={FadeIn.duration(350)} style={styles.headerRow}>
                     <View style={styles.headerLeft}>
                         {/* Date chip */}
-                        <View style={styles.dateChip}>
+                        <View style={[styles.dateChip, { backgroundColor: `${colors.gold}10`, borderColor: `${colors.gold}20` }]}>
                             <CalendarDays size={11} color={colors.gold} strokeWidth={2} />
-                            <Text style={styles.dateChipText}>{getDateChip()}</Text>
+                            <Text style={[styles.dateChipText, { color: colors.gold }]}>{getDateChip()}</Text>
                         </View>
-                        <Text style={styles.greeting}>{getGreeting()}</Text>
+                        <Text style={[styles.greeting, { color: colors.textGhost }]}>{getGreeting()}</Text>
                         <Animated.Text
                             entering={FadeInDown.delay(80).duration(450)}
-                            style={styles.welcomeName}
+                            style={[styles.welcomeName, { color: colors.textPrimary }]}
                         >
                             Welcome to VinR
                         </Animated.Text>
@@ -119,9 +121,9 @@ export default function HomeScreen() {
                 </Animated.View>
 
                 {/* ── Daily Quote ────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(160).duration(420)} style={styles.quoteCard}>
+                <Animated.View entering={FadeInDown.delay(160).duration(420)} style={[styles.quoteCard, { backgroundColor: `${colors.gold}08`, borderColor: `${colors.gold}15` }]}>
                     <Quote size={14} color={colors.gold} strokeWidth={1.8} style={{ opacity: 0.7 }} />
-                    <Text style={styles.quoteText}>{getDailyQuote()}</Text>
+                    <Text style={[styles.quoteText, { color: colors.textSecondary }]}>{getDailyQuote()}</Text>
                 </Animated.View>
 
                 {/* ── Streak Hero ───────────────────────────── */}
@@ -171,8 +173,8 @@ export default function HomeScreen() {
                                     <Sparkles size={22} color={colors.lavender} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.habitTitle}>Talk to VinR Buddy</Text>
-                                    <Text style={styles.habitText}>
+                                    <Text style={[styles.habitTitle, { color: colors.textPrimary }]}>Talk to VinR Buddy</Text>
+                                    <Text style={[styles.habitText, { color: colors.textMuted }]}>
                                         I'm always here to listen. Share what's on your mind.
                                     </Text>
                                 </View>
@@ -198,8 +200,8 @@ export default function HomeScreen() {
                                     <Activity size={22} color={colors.emerald} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.habitTitle}>21-Day Daily Habit</Text>
-                                    <Text style={styles.habitText}>
+                                    <Text style={[styles.habitTitle, { color: colors.textPrimary }]}>21-Day Daily Habit</Text>
+                                    <Text style={[styles.habitText, { color: colors.textMuted }]}>
                                         Continue your 21-day journey to build lasting healthy habits.
                                     </Text>
                                 </View>
@@ -260,12 +262,12 @@ export default function HomeScreen() {
                 <Animated.View entering={FadeInDown.delay(880).duration(400)} style={styles.section}>
                     <GlassCard accent="sapphire" shimmer onPress={() => setShowSleepMode(true)}>
                         <View style={styles.sleepRow}>
-                            <View style={styles.sleepIconWrap}>
+                            <View style={[styles.sleepIconWrap, { backgroundColor: `${colors.sapphire}15` }]}>
                                 <Moon size={24} color={colors.sapphire} strokeWidth={1.8} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.sleepTitle}>Sleep Mode</Text>
-                                <Text style={styles.sleepSubtitle}>Dim lights · breathing · auto-stop</Text>
+                                <Text style={[styles.sleepTitle, { color: colors.textPrimary }]}>Sleep Mode</Text>
+                                <Text style={[styles.sleepSubtitle, { color: colors.textMuted }]}>Dim lights · breathing · auto-stop</Text>
                             </View>
                             <ChevronRight size={18} color={colors.textGhost} strokeWidth={1.5} />
                         </View>
@@ -282,7 +284,7 @@ export default function HomeScreen() {
 // ── Styles ─────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
+    container: { flex: 1 },
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
@@ -300,32 +302,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        backgroundColor: `${colors.gold}10`,
         borderRadius: borderRadius.full,
         paddingHorizontal: 10,
         paddingVertical: 4,
         alignSelf: 'flex-start',
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: `${colors.gold}20`,
     },
     dateChipText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 10.5,
-        color: colors.gold,
         letterSpacing: 0.3,
     },
     greeting: {
         fontFamily: fonts.bodyLight,
         fontSize: 12,
-        color: colors.textGhost,
         letterSpacing: 2,
         textTransform: 'uppercase',
     },
     welcomeName: {
         fontFamily: fonts.display,
         fontSize: 26,
-        color: colors.textPrimary,
         marginTop: 3,
         lineHeight: 32,
     },
@@ -334,10 +331,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 8,
-        backgroundColor: `${colors.gold}08`,
         borderRadius: borderRadius.lg,
         borderWidth: 1,
-        borderColor: `${colors.gold}15`,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 4,
         marginBottom: spacing.lg,
@@ -346,7 +341,6 @@ const styles = StyleSheet.create({
     quoteText: {
         fontFamily: fonts.italic,
         fontSize: 14,
-        color: colors.textSecondary,
         lineHeight: 20,
         flex: 1,
         fontStyle: 'italic',
@@ -367,13 +361,11 @@ const styles = StyleSheet.create({
     habitTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 14,
-        color: colors.textPrimary,
         marginBottom: 2,
     },
     habitText: {
         fontFamily: fonts.body,
         fontSize: 13,
-        color: colors.textMuted,
         lineHeight: 18,
     },
     // Sleep
@@ -384,19 +376,16 @@ const styles = StyleSheet.create({
     },
     sleepIconWrap: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: `${colors.sapphire}15`,
         alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
     },
     sleepTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.textPrimary,
     },
     sleepSubtitle: {
         fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textMuted,
         marginTop: 1,
     },
 });

@@ -21,6 +21,7 @@ interface StreakState {
     dailyCompletions: DailyCompletion[];
     isCompletedToday: boolean;
     milestone: string | null;
+    isWinner: boolean;
 
     setActiveStreak: (data: {
         id: string;
@@ -33,7 +34,10 @@ interface StreakState {
     markDayComplete: (completion: DailyCompletion) => void;
     setMilestone: (milestone: string | null) => void;
     reset: () => void;
+    setStreak: (newStreak: number) => void;
 }
+
+const JOURNEY_GOAL_DAYS = 21;
 
 export const useStreakStore = create<StreakState>((set) => ({
     activeStreakId: null,
@@ -44,6 +48,7 @@ export const useStreakStore = create<StreakState>((set) => ({
     dailyCompletions: [],
     isCompletedToday: false,
     milestone: null,
+    isWinner: false,
 
     setActiveStreak: (data) =>
         set({
@@ -53,15 +58,20 @@ export const useStreakStore = create<StreakState>((set) => ({
             totalDaysCompleted: data.totalDaysCompleted,
             startDate: data.startDate,
             dailyCompletions: data.dailyCompletions,
+            isWinner: data.totalDaysCompleted >= JOURNEY_GOAL_DAYS,
         }),
 
     markDayComplete: (completion) =>
-        set((state) => ({
-            dailyCompletions: [...state.dailyCompletions, completion],
-            currentStreak: state.currentStreak + 1,
-            totalDaysCompleted: state.totalDaysCompleted + 1,
-            isCompletedToday: true,
-        })),
+        set((state) => {
+            const newTotalCompleted = state.totalDaysCompleted + 1;
+            return {
+                dailyCompletions: [...state.dailyCompletions, completion],
+                currentStreak: state.currentStreak + 1,
+                totalDaysCompleted: newTotalCompleted,
+                isCompletedToday: true,
+                isWinner: newTotalCompleted >= JOURNEY_GOAL_DAYS,
+            };
+        }),
 
     setMilestone: (milestone) => set({ milestone }),
 
@@ -75,5 +85,17 @@ export const useStreakStore = create<StreakState>((set) => ({
             dailyCompletions: [],
             isCompletedToday: false,
             milestone: null,
+            isWinner: false,
+        }),
+
+    setStreak: (newStreak: number) =>
+        set((state) => {
+            // This is a helper mainly for testing or manual overrides
+            // If we update currentStreak, we should ideally also align totalDaysCompleted
+            // if we assume this update is correcting a missed day or similar.
+            // For now, let's just update the currentStreak as requested by existing UI if any.
+            return {
+                currentStreak: newStreak,
+            };
         }),
 }));
