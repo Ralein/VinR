@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import Layout from '../../components/layout/Layout';
-import { colors, spacing, fonts, borderRadius } from '../../theme';
+import { Layout } from '../../components/Layout';
+import { colors, spacing, fonts, borderRadius, shadows } from '../../constants/theme';
 
 const MOODS = [
     { emoji: '☀️', label: 'Radiant', color: '#FFD700' },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
     },
     question: {
-        fontFamily: fonts.heading,
+        fontFamily: fonts.display,
         fontSize: 18,
         color: colors.textPrimary,
         marginBottom: spacing.lg,
@@ -154,10 +154,10 @@ const styles = StyleSheet.create({
         borderRadius: borderRadius.md,
         alignItems: 'center',
         marginTop: spacing.md,
-        ...colors.shadowGold,
+        ...shadows.gold,
     },
     submitText: {
-        fontFamily: fonts.heading,
+        fontFamily: fonts.display,
         fontSize: 16,
         color: colors.void,
     },

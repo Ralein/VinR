@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Layout from '../../components/layout/Layout';
-import { colors, spacing, fonts, borderRadius } from '../../theme';
+import { Layout } from '../../components/Layout';
+import { colors, spacing, fonts, borderRadius, shadows } from '../../constants/theme';
 
 const JOURNEY_STEPS = [
     { id: 1, title: 'Foundations of Focus', emoji: '🌱', status: 'completed', duration: '5 days' },
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xs,
     },
     progressValue: {
-        fontFamily: fonts.heading,
+        fontFamily: fonts.display,
         fontSize: 32,
         color: colors.gold,
         marginBottom: spacing.md,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: colors.gold,
         borderRadius: borderRadius.full,
-        ...colors.shadowGold,
+        ...shadows.gold,
     },
     stepRow: {
         flexDirection: 'row',
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     iconActive: {
         backgroundColor: colors.elevated,
         borderColor: colors.gold,
-        ...colors.shadowGold,
+        ...shadows.gold,
     },
     iconLocked: {
         backgroundColor: colors.elevated,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     stepTitle: {
-        fontFamily: fonts.heading,
+        fontFamily: fonts.display,
         fontSize: 18,
         color: colors.textPrimary,
         marginBottom: 4,
