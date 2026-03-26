@@ -67,6 +67,7 @@ export const typography = {
     bodySm: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.textPrimary },
     caption: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 16, color: colors.textSecondary },
     label: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 16, letterSpacing: 0.5, color: colors.textMuted, textTransform: 'uppercase' as const },
+    bodySemiBold: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 24, color: colors.textPrimary },
 } as const;
 
 export const spacing = {
@@ -149,6 +150,7 @@ export const shadows = {
 export type Theme = {
     colors: typeof colors;
     fonts: typeof fonts;
+    typography: typeof typography;
     spacing: typeof spacing;
     borderRadius: typeof borderRadius;
     animation: typeof animation;
@@ -160,6 +162,7 @@ export type Theme = {
 export const theme: Theme = {
     colors,
     fonts,
+    typography,
     spacing,
     borderRadius,
     animation,

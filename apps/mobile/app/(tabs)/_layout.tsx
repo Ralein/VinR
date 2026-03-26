@@ -1,16 +1,15 @@
 /**
- * Tab Layout v5 — 5-tab bar + floating Buddy FAB
+ * Tab Layout v7 — 5-tab bar with center Glint button (Instagram-style)
  *
- * Tabs: Home · Check-in · Journey · Journal · Profile
- * Glint (previously Glint tab) moved to hidden — accessible from Profile
- * Journal elevated to main tab with BookOpen icon
+ * Tabs: Home · Check-in · Glint (center, raised) · Journey · Profile
+ * Events hidden — accessible via Home navigation
  *
  * Theme-aware: reads useTheme() for dark/light color tokens
  */
 
 import { Tabs, useRouter } from 'expo-router';
 import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
-import { Home, Heart, Map, User, BookOpen, MessageCircle } from 'lucide-react-native';
+import { Home, Heart, Film, Activity, User, MessageCircle } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
@@ -73,6 +72,48 @@ function TabIcon({ Icon, label, focused }: TabIconProps) {
                     shadowColor: colors.gold,
                 }
             ]} />
+        </View>
+    );
+}
+
+// ──────────────────── Center Glint Tab Icon (Instagram-style) ────────────────────
+
+function GlintTabIcon({ focused }: { focused: boolean }) {
+    const { colors } = useTheme();
+
+    const animatedScale = useAnimatedStyle(() => ({
+        transform: [
+            { scale: withSpring(focused ? 1.1 : 1, { stiffness: 280, damping: 20 }) },
+        ],
+    }));
+
+    return (
+        <View style={styles.glintTabWrapper}>
+            <Animated.View style={[
+                styles.glintButton,
+                animatedScale,
+                {
+                    backgroundColor: focused ? colors.gold : `${colors.gold}DD`,
+                    shadowColor: colors.gold,
+                    borderColor: focused ? colors.goldLight : `${colors.gold}40`,
+                },
+            ]}>
+                <Film
+                    size={24}
+                    color="#FFFFFF"
+                    strokeWidth={focused ? 2.4 : 2}
+                    fill={focused ? 'rgba(255,255,255,0.25)' : 'transparent'}
+                />
+            </Animated.View>
+            <Text style={[
+                styles.glintLabel,
+                {
+                    color: focused ? colors.gold : colors.textGhost,
+                    opacity: focused ? 1 : 0.45,
+                }
+            ]}>
+                Glint
+            </Text>
         </View>
     );
 }
@@ -152,18 +193,18 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="journey"
+                    name="glint"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={Map} label="Journey" focused={focused} />
+                            <GlintTabIcon focused={focused} />
                         ),
                     }}
                 />
                 <Tabs.Screen
-                    name="journal"
+                    name="journey"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={BookOpen} label="Journal" focused={focused} />
+                            <TabIcon Icon={Activity} label="Journey" focused={focused} />
                         ),
                     }}
                 />
@@ -176,11 +217,13 @@ export default function TabLayout() {
                     }}
                 />
                 {/* Hidden screens — accessible via navigation, not tab bar */}
-                <Tabs.Screen name="glint" options={{ href: null }} />
+                <Tabs.Screen name="events" options={{ href: null }} />
+                <Tabs.Screen name="journal" options={{ href: null }} />
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />
                 <Tabs.Screen name="immediate-relief" options={{ href: null }} />
+                <Tabs.Screen name="reels" options={{ href: null }} />
             </Tabs>
             {/* Persistent mini player above tab bar */}
             <MiniPlayer />
@@ -234,6 +277,31 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 6,
         elevation: 3,
+    },
+    // ── Center Glint Tab (Instagram-style) ──
+    glintTabWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: -20,
+    },
+    glintButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.45,
+        shadowRadius: 12,
+        elevation: 8,
+        borderWidth: 2,
+    },
+    glintLabel: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 9,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+        marginTop: 4,
     },
     // Floating Buddy FAB
     fab: {

@@ -2,7 +2,7 @@
  * ProgressDots — Animated step progress indicator
  *
  * Active step = gold pill, completed = gold circle, future = dim circle
- * Used across all 4 onboarding steps.
+ * Used across the 9-step onboarding.
  */
 
 import React from 'react';
@@ -11,29 +11,39 @@ import Animated, {
     useAnimatedStyle,
     withSpring,
 } from 'react-native-reanimated';
-import { colors, animation } from '../../constants/theme';
+import { Colors } from '../../constants/Colors';
 
 interface ProgressDotsProps {
     currentStep: number;
     totalSteps?: number;
 }
 
-export function ProgressDots({ currentStep, totalSteps = 4 }: ProgressDotsProps) {
+export function ProgressDots({ currentStep, totalSteps = 9 }: ProgressDotsProps) {
     return (
         <View style={styles.container}>
             {Array.from({ length: totalSteps }, (_, i) => (
-                <Dot key={i} index={i} isActive={i + 1 === currentStep} isCompleted={i + 1 < currentStep} />
+                <Dot 
+                    key={i} 
+                    isActive={i + 1 === currentStep} 
+                    isCompleted={i + 1 < currentStep} 
+                />
             ))}
         </View>
     );
 }
 
-function Dot({ index, isActive, isCompleted }: { index: number; isActive: boolean; isCompleted: boolean }) {
-    const animatedStyle = useAnimatedStyle(() => ({
-        width: withSpring(isActive ? 28 : 8, animation.spring),
-        backgroundColor: isActive || isCompleted ? colors.gold : colors.textGhost,
-        opacity: withSpring(isActive ? 1 : isCompleted ? 0.7 : 0.3, animation.spring),
-    }));
+function Dot({ isActive, isCompleted }: { isActive: boolean; isCompleted: boolean }) {
+    const animatedStyle = useAnimatedStyle(() => {
+        const width = withSpring(isActive ? 24 : 8, { damping: 15 });
+        const backgroundColor = isActive || isCompleted ? Colors.gold : 'rgba(255,255,255,0.25)';
+        const opacity = withSpring(isActive ? 1 : isCompleted ? 0.6 : 0.2, { damping: 15 });
+
+        return {
+            width,
+            backgroundColor,
+            opacity,
+        };
+    });
 
     return <Animated.View style={[styles.dot, animatedStyle]} />;
 }
@@ -44,10 +54,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        marginBottom: 32,
+        marginBottom: 40,
     },
     dot: {
-        height: 8,
-        borderRadius: 4,
+        height: 6,
+        borderRadius: 3,
     },
 });
+
