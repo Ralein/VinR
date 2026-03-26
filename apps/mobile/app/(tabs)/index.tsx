@@ -16,27 +16,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import {
-    Music2, Zap, Users, Moon, ChevronRight,
-    Activity, Brain, Sparkles, Wind, Heart, Sun, Quote,
-    CalendarDays, TrendingUp, LogOut, MessageCircle
+    Moon, ChevronRight, Calendar, MapPin,
+    Activity, Brain, Sparkles, Wind, Heart, Quote,
+    CalendarDays, LogOut, MessageCircle, Flame
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { fonts, spacing, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
-import { useYouTubeSearch } from '../../hooks/useMedia';
-import { useEventSearch } from '../../hooks/useEvents';
 import { useStreak } from '../../hooks/useStreak';
 import { useAdaptiveHome } from '../../hooks/useAdaptive';
+import { useEventSearch } from '../../hooks/useEvents';
 
-import YouTubeCard from '../../components/media/YouTubeCard';
 import SleepMode from '../../components/media/SleepMode';
-import EventsList from '../../components/events/EventsList';
 import GlassCard from '../../components/ui/GlassCard';
 import GoldButton from '../../components/ui/GoldButton';
 import AvatarRing from '../../components/ui/AvatarRing';
 import SectionHeader from '../../components/ui/SectionHeader';
 import StreakHero from '../../components/ui/StreakHero';
 import NudgeCard from '../../components/ui/NudgeCard';
+import EventsList from '../../components/events/EventsList';
 
 // ── Utilities ──────────────────────────────────────────────
 
@@ -87,8 +85,6 @@ export default function HomeScreen() {
     const [showSleepMode, setShowSleepMode] = useState(false);
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
-    const { data: youtubeData } = useYouTubeSearch('Pop', 'music');
-    const { data: motivationData } = useYouTubeSearch('Pop', 'motivation');
     const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
 
     return (
@@ -190,73 +186,53 @@ export default function HomeScreen() {
                     <GoldButton label="Start a Check-In" onPress={() => router.push('/(tabs)/checkin')} />
                 </Animated.View>
 
-                {/* ── Today's Habit ─────────────────────────── */}
+                {/* ── 21-Day Journey Plan ────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
-                    <SectionHeader title="Today's Habit" Icon={Activity} iconColor={colors.emerald} delay={0} />
+                    <SectionHeader title="21-Day Journey Plan" Icon={Flame} iconColor={colors.gold} delay={0} />
                     <Pressable onPress={() => router.push('/(tabs)/journey')}>
-                        <GlassCard noAnimation>
-                            <View style={styles.habitRow}>
-                                <View style={[styles.habitIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
-                                    <Activity size={22} color={colors.emerald} strokeWidth={1.8} />
+                        <GlassCard accent="gold" elevated shimmer noAnimation>
+                            <View style={styles.journeyCard}>
+                                <View style={[styles.journeyIconWrap, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
+                                    <Flame size={28} color={colors.gold} strokeWidth={1.8} fill={`${colors.gold}30`} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.habitTitle, { color: colors.textPrimary }]}>21-Day Daily Habit</Text>
-                                    <Text style={[styles.habitText, { color: colors.textMuted }]}>
-                                        Continue your 21-day journey to build lasting healthy habits.
+                                    <Text style={[styles.journeyTitle, { color: colors.textPrimary }]}>
+                                        Your 21-Day Journey
+                                    </Text>
+                                    <Text style={[styles.journeyStreak, { color: colors.gold }]}>
+                                        {streak} day streak · {todayDone ? 'Today done ✓' : 'Not started today'}
+                                    </Text>
+                                    <Text style={[styles.journeyText, { color: colors.textMuted }]}>
+                                        Build lasting habits with daily check-ins and reflections.
                                     </Text>
                                 </View>
-                                <ChevronRight size={16} color={colors.textGhost} strokeWidth={1.5} />
+                                <ChevronRight size={18} color={colors.gold} strokeWidth={2} />
                             </View>
                         </GlassCard>
                     </Pressable>
                 </Animated.View>
 
-                {/* ── Your Vibe — YouTube ───────────────────── */}
-                {youtubeData && youtubeData.results.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(640).duration(400)} style={styles.section}>
-                        <SectionHeader title="Your Vibe" Icon={Music2} iconColor={colors.sapphire} delay={0} />
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {youtubeData.results.map((video: any) => (
-                                <YouTubeCard
-                                    key={video.video_id}
-                                    videoId={video.video_id}
-                                    title={video.title}
-                                    channel={video.channel}
-                                    thumbnailUrl={video.thumbnail_url}
-                                />
-                            ))}
-                        </ScrollView>
-                    </Animated.View>
-                )}
-
-                {/* ── Get Fired Up — Motivation ─────────────── */}
-                {motivationData && motivationData.results.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(720).duration(400)} style={styles.section}>
-                        <SectionHeader title="Get Fired Up" Icon={Zap} iconColor={colors.gold} delay={0} />
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {motivationData.results.map((video: any) => (
-                                <YouTubeCard
-                                    key={video.video_id}
-                                    videoId={video.video_id}
-                                    title={video.title}
-                                    channel={video.channel}
-                                    thumbnailUrl={video.thumbnail_url}
-                                />
-                            ))}
-                        </ScrollView>
-                    </Animated.View>
-                )}
-
-
-
-                {/* ── Get Out & Connect ─────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(800).duration(400)} style={styles.section}>
-                    <SectionHeader title="Get Out & Connect" Icon={Users} iconColor={colors.emerald} delay={0} />
-                    <EventsList
-                        events={eventsData?.events || []}
-                        isLoading={eventsLoading}
-                    />
+                {/* ── Events Near You ─────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(640).duration(400)} style={styles.section}>
+                    <SectionHeader title="Events Near You" Icon={Calendar} iconColor={colors.emerald} delay={0} />
+                    <View style={styles.eventsContainer}>
+                        <EventsList
+                            events={(eventsData?.events || []).slice(0, 3)}
+                            isLoading={eventsLoading}
+                        />
+                        {eventsData?.events && eventsData.events.length > 3 && (
+                            <Pressable
+                                onPress={() => router.push('/(tabs)/events')}
+                                style={[styles.seeAllButton, { borderColor: `${colors.emerald}30` }]}
+                            >
+                                <Text style={[styles.seeAllText, { color: colors.emerald }]}>See all events</Text>
+                                <ChevronRight size={14} color={colors.emerald} strokeWidth={2} />
+                            </Pressable>
+                        )}
+                    </View>
                 </Animated.View>
+
+
 
                 {/* ── Sleep Mode ────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(880).duration(400)} style={styles.section}>
@@ -367,6 +343,51 @@ const styles = StyleSheet.create({
         fontFamily: fonts.body,
         fontSize: 13,
         lineHeight: 18,
+    },
+    // Journey Card
+    journeyCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    },
+    journeyIconWrap: {
+        width: 52, height: 52, borderRadius: 26,
+        alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+        borderWidth: 1,
+    },
+    journeyTitle: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 16,
+        marginBottom: 2,
+    },
+    journeyStreak: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 12,
+        marginBottom: 3,
+    },
+    journeyText: {
+        fontFamily: fonts.body,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    // Events
+    eventsContainer: {
+        marginTop: 4,
+    },
+    seeAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 14,
+        borderTopWidth: 1,
+        marginTop: 8,
+    },
+    seeAllText: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 13,
+        letterSpacing: 0.3,
     },
     // Sleep
     sleepRow: {

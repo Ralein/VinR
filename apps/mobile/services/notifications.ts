@@ -2,29 +2,47 @@
  * Push Notification Service — Registration, deep linking, and channels
  */
 
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { router } from 'expo-router';
 import api from './api';
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-    }),
-});
+// Safe wrapper for expo-notifications to prevent crashes in Expo Go (Android SDK 53+)
+let Notifications: typeof import('expo-notifications') | null = null;
+
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const isAndroid = Platform.OS === 'android';
+
+try {
+    // Only attempt to load notifications if NOT in Android Expo Go or if explicitly needed
+    // In SDK 53+, expo-notifications throws an error during initialization on Android Expo Go
+    if (!(isAndroid && isExpoGo)) {
+        Notifications = require('expo-notifications');
+    }
+} catch (error) {
+    console.warn('Notifications: Failed to load expo-notifications:', error);
+    Notifications = null;
+}
+
+// Configure notification handler safely
+if (Notifications) {
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+            shouldShowBanner: true,
+            shouldShowList: true,
+        }),
+    });
+}
 
 /**
  * Register for push notifications and store token on backend.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
     // Android channels
-    if (Platform.OS === 'android') {
+    if (Platform.OS === 'android' && Notifications) {
         await Notifications.setNotificationChannelAsync('streaks', {
             name: 'Streak Reminders',
             importance: Notifications.AndroidImportance.MAX,
@@ -46,6 +64,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
             name: 'Media Suggestions',
             importance: Notifications.AndroidImportance.LOW,
         });
+    }
+
+    if (!Notifications) {
+        console.warn('Notifications: expo-notifications not available in this environment');
+        return null;
     }
 
     // Check permission
@@ -84,6 +107,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
  * Routes to the appropriate screen based on notification data payload.
  */
 export function setupNotificationDeepLinking(): () => void {
+    if (!Notifications) return () => {};
+
     // Handle taps on notifications when app is in the foreground or background
     const subscription = Notifications.addNotificationResponseReceivedListener(
         (response) => {
@@ -123,6 +148,8 @@ export function setupNotificationDeepLinking(): () => void {
  * Get the last notification response (for cold starts).
  */
 export async function getInitialNotification() {
+    if (!Notifications) return null;
+    
     const response = await Notifications.getLastNotificationResponseAsync();
     if (response) {
         const data = response.notification.request.content.data;

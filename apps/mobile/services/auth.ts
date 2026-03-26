@@ -58,7 +58,7 @@ export const AuthService = {
                     email: user.email || '',
                     name: user.name || null,
                     avatarUrl: user.avatar_url || null,
-                    onboardingComplete: user.onboarding_complete ?? true,
+                    onboardingComplete: user.onboarding_complete ?? false,
                     age: user.age || null,
                     primaryReason: user.primary_reason || null,
                     relaxationMethods: user.relaxation_methods || [],

@@ -33,18 +33,25 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const user = useAuthStore((state) => state.user);
     const router = useRouter();
     const segments = useSegments();
 
     useEffect(() => {
         const inAuthGroup = segments[0] === '(auth)';
+        const inOnboarding = segments[1] === 'onboarding';
         
         if (!isAuthenticated && !inAuthGroup) {
+            // Not logged in → send to welcome
             router.replace('/(auth)/welcome');
-        } else if (isAuthenticated && inAuthGroup) {
+        } else if (isAuthenticated && user && !user.onboardingComplete && !inOnboarding) {
+            // Logged in but onboarding incomplete → send to onboarding
+            router.replace('/(auth)/onboarding');
+        } else if (isAuthenticated && user?.onboardingComplete && inAuthGroup) {
+            // Logged in + onboarding done + still in auth group → send to tabs
             router.replace('/(tabs)');
         }
-    }, [isAuthenticated, segments]);
+    }, [isAuthenticated, user?.onboardingComplete, segments]);
 
     return (
         <Stack
