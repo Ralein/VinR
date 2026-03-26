@@ -172,6 +172,9 @@ async def update_me(
     for field, value in update_data.items():
         setattr(user, field, value)
 
+    await db.commit()
+    await db.refresh(user)
+
     return user
 
 
