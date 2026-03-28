@@ -204,7 +204,7 @@ export default function TabLayout() {
                     name="journey"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={Activity} label="Journey" focused={focused} />
+                            <TabIcon Icon={Activity} label="Journel" focused={focused} />
                         ),
                     }}
                 />
