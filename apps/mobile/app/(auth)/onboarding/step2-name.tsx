@@ -4,10 +4,8 @@ import {
     Text,
     StyleSheet,
     TextInput,
-    Pressable,
     KeyboardAvoidingView,
     Platform,
-    Dimensions,
     ScrollView,
     TouchableWithoutFeedback,
     Keyboard,
@@ -18,283 +16,20 @@ import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useTheme } from '../../../context/ThemeContext';
 import Animated, {
     FadeIn,
-    FadeInDown,
     FadeOut,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withDelay,
     withSpring,
-    withSequence,
-    Easing,
-    interpolate,
 } from 'react-native-reanimated';
 import { User, Check } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
-import AmbientBackground from '../../../components/ui/AmbientBackground';
-import { LinearGradient } from 'expo-linear-gradient';
-import { haptics } from '../../../services/haptics';
-import { animation } from '../../../constants/theme';
+import { OnboardingBackground } from '../../../components/ui/OnboardingBackground';
+import { LiquidCTA } from '../../../components/ui/LiquidCTA';
 
-const { width, height } = Dimensions.get('window');
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-// ─── Color Palette ────────────────────────────────────────────────────────────
-const GOLD = '#D4AF37';
-const GOLD_BRIGHT = '#F2C84B';
-const VOID = '#05040E';
-const VOID_MID = '#0A0818';
-const PURPLE_ACCENT = '#7B5EF8';
-const TEXT_HI = '#ECEAF6';
-
-// ─── Warp Streak Component ────────────────────────────────────────────────────
-const STREAK_COUNT = 16;
-const STREAK_ANGLES = Array.from({ length: STREAK_COUNT }, (_, i) => i * (360 / STREAK_COUNT));
-const WARP_DIST = Math.max(width, height) * 0.65;
-
-function WarpStreak({
-    angleDeg,
-    delay: d,
-    isCore,
-}: {
-    angleDeg: number;
-    delay: number;
-    isCore: boolean;
-}) {
-    const p = useSharedValue(0);
-
-    useEffect(() => {
-        p.value = withDelay(
-            d,
-            withTiming(1, { duration: 1100, easing: Easing.out(Easing.cubic) })
-        );
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        opacity: isCore
-            ? interpolate(p.value, [0, 0.04, 0.55, 1], [0, 1, 0.7, 0])
-            : interpolate(p.value, [0, 0.06, 0.6, 1], [0, 0.5, 0.3, 0]),
-        transform: [
-            { rotate: `${angleDeg}deg` },
-            { translateX: WARP_DIST * p.value },
-            { scaleX: interpolate(p.value, [0, 0.08, 1], [1, 6, 16]) },
-        ],
-    }));
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    position: 'absolute',
-                    width: isCore ? 2.5 : 5,
-                    height: isCore ? 1.2 : 2.5,
-                    borderRadius: 2,
-                    backgroundColor: isCore ? GOLD_BRIGHT : 'rgba(212,175,55,0.25)',
-                    left: width / 2 - (isCore ? 1.25 : 2.5),
-                    top: height / 2 - (isCore ? 0.6 : 1.25),
-                },
-                style,
-            ]}
-        />
-    );
-}
-
-// ─── Ambient Blob Component ───────────────────────────────────────────────────
-function AmbientBlob({
-    color,
-    size,
-    top,
-    left,
-    right,
-    delay: d,
-}: {
-    color: string;
-    size: number;
-    top: number;
-    left?: number;
-    right?: number;
-    delay: number;
-}) {
-    const op = useSharedValue(0);
-
-    useEffect(() => {
-        op.value = withDelay(d, withTiming(1, { duration: 1000 }));
-    }, []);
-
-    const style = useAnimatedStyle(() => ({
-        opacity: op.value,
-    }));
-
-    return (
-        <Animated.View
-            style={[
-                {
-                    position: 'absolute',
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: color,
-                    top,
-                    left,
-                    right,
-                },
-                style,
-            ]}
-        />
-    );
-}
-
-// ─── Premium Liquid CTA Button ────────────────────────────────────────────────
-function LiquidCTA({
-    delay: d,
-    onPress,
-    isDisabled,
-}: {
-    delay: number;
-    onPress: () => void;
-    isDisabled: boolean;
-}) {
-    const CTA_W = width - 56;
-    const borderOp = useSharedValue(0);
-    const glowOp = useSharedValue(0);
-    const fillW = useSharedValue(0);
-    const shimmerX = useSharedValue(-80);
-    const shimmerOp = useSharedValue(0);
-    const labelOp = useSharedValue(0);
-    const labelSpc = useSharedValue(3);
-    const scale = useSharedValue(1);
-    const containerOp = useSharedValue(0);
-
-    useEffect(() => {
-        containerOp.value = withDelay(d, withTiming(1, { duration: 400 }));
-
-        if (!isDisabled) {
-            borderOp.value = withDelay(d + 150, withTiming(1, { duration: 360 }));
-            glowOp.value = withDelay(d + 350, withTiming(1, { duration: 420 }));
-            fillW.value = withDelay(d + 510, withTiming(CTA_W, {
-                duration: 600,
-                easing: Easing.inOut(Easing.quad),
-            }));
-            shimmerOp.value = withDelay(d + 530, withTiming(1, { duration: 80 }));
-            shimmerX.value = withDelay(d + 530, withTiming(CTA_W + 80, {
-                duration: 600,
-                easing: Easing.inOut(Easing.quad),
-            }));
-            labelOp.value = withDelay(d + 1130, withTiming(1, { duration: 320 }));
-            labelSpc.value = withDelay(d + 1130, withTiming(0.2, {
-                duration: 300,
-                easing: Easing.out(Easing.quad),
-            }));
-        } else {
-            // Disabled state - just fade in without animation sequence
-            borderOp.value = withDelay(d + 150, withTiming(0.4, { duration: 300 }));
-            glowOp.value = withDelay(d + 150, withTiming(0.2, { duration: 300 }));
-            fillW.value = withDelay(d + 150, withTiming(CTA_W, { duration: 300 }));
-            labelOp.value = withDelay(d + 150, withTiming(0.5, { duration: 300 }));
-        }
-    }, [isDisabled]);
-
-    const borderStyle = useAnimatedStyle(() => ({ opacity: borderOp.value }));
-    const glowStyle = useAnimatedStyle(() => ({ opacity: glowOp.value }));
-    const fillStyle = useAnimatedStyle(() => ({ width: fillW.value }));
-    const shimmerStyle = useAnimatedStyle(() => ({
-        opacity: shimmerOp.value,
-        transform: [{ translateX: shimmerX.value }],
-    }));
-    const labelStyle = useAnimatedStyle(() => ({
-        opacity: labelOp.value,
-        letterSpacing: labelSpc.value,
-    }));
-    const pressStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
-    const containerStyle = useAnimatedStyle(() => ({
-        opacity: containerOp.value,
-    }));
-
-    const handlePress = () => {
-        if (isDisabled) return;
-        haptics.medium();
-        scale.value = withSequence(
-            withSpring(0.96, { stiffness: 400 }),
-            withSpring(1, animation.spring)
-        );
-        setTimeout(() => onPress(), 150);
-    };
-
-    return (
-        <Animated.View style={containerStyle}>
-            <AnimatedPressable
-                onPress={handlePress}
-                style={[styles.ctaOuter, pressStyle]}
-                disabled={isDisabled}
-            >
-                {/* Outer glow */}
-                <Animated.View style={[StyleSheet.absoluteFill, styles.ctaGlow, glowStyle]} />
-                {/* Border */}
-                <Animated.View style={[StyleSheet.absoluteFill, styles.ctaBorder, borderStyle]} />
-
-                {/* Liquid fill */}
-                <View
-                    style={[
-                        StyleSheet.absoluteFill,
-                        { overflow: 'hidden', borderRadius: 16 },
-                    ]}
-                >
-                    <Animated.View style={[{ height: '100%' }, fillStyle]}>
-                        <LinearGradient
-                            colors={
-                                isDisabled
-                                    ? [
-                                        'rgba(212,175,55,0.1)',
-                                        'rgba(212,175,55,0.05)',
-                                        'rgba(212,175,55,0.02)',
-                                    ]
-                                    : [GOLD_BRIGHT, GOLD, '#C9981C']
-                            }
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={{ flex: 1 }}
-                        />
-                    </Animated.View>
-                    {/* Shimmer highlight */}
-                    {!isDisabled && (
-                        <Animated.View style={[styles.ctaShimmer, shimmerStyle]}>
-                            <LinearGradient
-                                colors={[
-                                    'transparent',
-                                    'rgba(255,255,255,0.35)',
-                                    'transparent',
-                                ]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={{ flex: 1 }}
-                            />
-                        </Animated.View>
-                    )}
-                </View>
-                {/* Label */}
-                <Animated.View style={[StyleSheet.absoluteFill, styles.ctaLabelRow]}>
-                    <Animated.Text
-                        style={[
-                            styles.ctaText,
-                            {
-                                color: isDisabled ? 'rgba(236,234,246,0.3)' : VOID,
-                            },
-                            labelStyle,
-                        ]}
-                    >
-                        CONTINUE
-                    </Animated.Text>
-                </Animated.View>
-            </AnimatedPressable>
-        </Animated.View>
-    );
-}
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function Step2Name() {
-    const { colors, fonts, borderRadius } = useTheme();
+    const { colors, fonts } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const [name, setName] = useState('');
@@ -358,46 +93,7 @@ export default function Step2Name() {
             style={[styles.container, { backgroundColor: colors.void }]}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-            {/* ─── Background Gradient ─── */}
-            <LinearGradient
-                colors={[VOID, VOID_MID, VOID, VOID]}
-                style={StyleSheet.absoluteFill}
-                locations={[0, 0.3, 0.7, 1]}
-                start={{ x: 0.25, y: 0 }}
-                end={{ x: 0.75, y: 1 }}
-            />
-
-            {/* Radial glow center */}
-            <LinearGradient
-                colors={['rgba(123,94,248,0.05)', 'transparent']}
-                style={[StyleSheet.absoluteFill, { borderRadius: 0 }]}
-                start={{ x: 0.5, y: 0.25 }}
-                end={{ x: 0.5, y: 1 }}
-            />
-
-            {/* ─── Warp Field ─── */}
-            {STREAK_ANGLES.map((a, i) => (
-                <WarpStreak key={`c${i}`} angleDeg={a} delay={i * 12} isCore />
-            ))}
-            {STREAK_ANGLES.map((a, i) => (
-                <WarpStreak key={`h${i}`} angleDeg={a + 2} delay={i * 12 + 40} isCore={false} />
-            ))}
-
-            {/* ─── Aurora Blobs ─── */}
-            <AmbientBlob
-                color="rgba(212,175,55,0.05)"
-                size={380}
-                top={height * 0.05}
-                left={-70}
-                delay={100}
-            />
-            <AmbientBlob
-                color="rgba(123,94,248,0.06)"
-                size={320}
-                top={height * 0.65}
-                right={-80}
-                delay={300}
-            />
+            <OnboardingBackground />
 
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.flexFill}>
@@ -493,6 +189,7 @@ export default function Step2Name() {
                         {/* ─── CTA Section ─── */}
                         <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
                             <LiquidCTA
+                                label="CONTINUE"
                                 delay={1350}
                                 onPress={handleNext}
                                 isDisabled={!isNameValid}
@@ -505,7 +202,6 @@ export default function Step2Name() {
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -568,44 +264,5 @@ const styles = StyleSheet.create({
     },
     footer: {
         width: '100%',
-    },
-    ctaOuter: {
-        width: width - 56,
-        height: 60,
-        borderRadius: 16,
-    },
-    ctaGlow: {
-        borderRadius: 16,
-        shadowColor: GOLD_BRIGHT,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.55,
-        shadowRadius: 32,
-        backgroundColor: 'transparent',
-    },
-    ctaBorder: {
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(212,175,55,0.38)',
-    },
-    ctaShimmer: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: -80,
-        width: 80,
-    },
-    ctaLabelRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-        gap: 12,
-    },
-    ctaText: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 17,
-        flex: 1,
-        letterSpacing: 0.5,
-        textAlign: 'center',
     },
 });

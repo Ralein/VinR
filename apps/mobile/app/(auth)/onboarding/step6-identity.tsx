@@ -1,9 +1,9 @@
-import React from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    Pressable, 
+import React, { useEffect } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Pressable,
     ScrollView,
     Dimensions,
 } from 'react-native';
@@ -12,13 +12,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useTheme } from '../../../context/ThemeContext';
-import Animated, { 
+import Animated, {
     FadeInDown,
-    FadeInRight,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withDelay,
+    withSpring,
 } from 'react-native-reanimated';
-import { 
-    ArrowLeft, 
-    ArrowRight, 
+import {
+    ArrowLeft,
     GraduationCap,
     Briefcase,
     Palette,
@@ -26,13 +29,15 @@ import {
     Rocket,
     Activity,
     Cpu,
-    Compass
+    Compass,
+    Check,
 } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
-import AmbientBackground from '../../../components/ui/AmbientBackground';
-import { LinearGradient } from 'expo-linear-gradient';
+import { haptics } from '../../../services/haptics';
+import { OnboardingBackground } from '../../../components/ui/OnboardingBackground';
+import { LiquidCTA } from '../../../components/ui/LiquidCTA';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const IDENTITIES = [
     { id: 'student', label: 'Student', icon: GraduationCap },
@@ -46,10 +51,39 @@ const IDENTITIES = [
 ];
 
 export default function Step6Identity() {
-    const { colors, fonts, spacing, borderRadius } = useTheme();
+    const { colors } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { identity, setIdentity } = useOnboardingStore();
+
+    // Animations
+    const headerOp = useSharedValue(0);
+    const titleOp = useSharedValue(0);
+    const titleY = useSharedValue(20);
+    const subtitleOp = useSharedValue(0);
+    const subtitleY = useSharedValue(20);
+
+    useEffect(() => {
+        headerOp.value = withDelay(80, withTiming(1, { duration: 400 }));
+        titleOp.value = withDelay(200, withTiming(1, { duration: 500 }));
+        titleY.value = withDelay(200, withSpring(0, { stiffness: 90, damping: 15 }));
+        subtitleOp.value = withDelay(350, withTiming(1, { duration: 500 }));
+        subtitleY.value = withDelay(350, withSpring(0, { stiffness: 90, damping: 15 }));
+    }, []);
+
+    const headerStyle = useAnimatedStyle(() => ({
+        opacity: headerOp.value,
+    }));
+
+    const titleStyle = useAnimatedStyle(() => ({
+        opacity: titleOp.value,
+        transform: [{ translateY: titleY.value }],
+    }));
+
+    const subtitleStyle = useAnimatedStyle(() => ({
+        opacity: subtitleOp.value,
+        transform: [{ translateY: subtitleY.value }],
+    }));
 
     const handleNext = () => {
         if (identity) {
@@ -59,63 +93,123 @@ export default function Step6Identity() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground minimal={true} />
-            <View style={[styles.content, { 
-                paddingTop: insets.top + (height > 800 ? 40 : 20), 
-                paddingBottom: insets.bottom + 20 
-            }]}>
-                <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <OnboardingBackground />
+
+            <View
+                style={[
+                    styles.content,
+                    {
+                        paddingTop: insets.top + (height > 800 ? 28 : 12),
+                        paddingBottom: insets.bottom + 20,
+                    },
+                ]}
+            >
+                {/* ─── Header ─── */}
+                <Animated.View style={[styles.header, headerStyle]}>
+                    <Pressable
+                        onPress={() => router.back()}
+                        style={styles.backButton}
+                    >
                         <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={6} totalSteps={9} />
-                    
-                    <Animated.View entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}>
-                        <Text style={[styles.title, { color: colors.textPrimary }]}>
-                            Identify your role
-                        </Text>
-                    </Animated.View>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
-                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                            Which path defines your daily rhythm? We tailor the VinR experience to your lifestyle.
-                        </Text>
-                    </Animated.View>
-                </View>
+                </Animated.View>
 
-                <ScrollView 
+                {/* ─── Title ─── */}
+                <Animated.View style={[styles.titleSection, titleStyle]}>
+                    <Text style={[styles.title, { color: colors.textPrimary }]}>
+                        Identify your role
+                    </Text>
+                </Animated.View>
+
+                {/* ─── Subtitle ─── */}
+                <Animated.View style={[styles.subtitleSection, subtitleStyle]}>
+                    <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                        The roles we play are but costumes. Find the actor beneath.
+                    </Text>
+                </Animated.View>
+
+                {/* ─── Grid ─── */}
+                <ScrollView
                     style={styles.scrollView}
-                    showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.grid}>
                         {IDENTITIES.map((item, index) => {
                             const isSelected = identity === item.id;
                             const Icon = item.icon;
                             return (
-                                <Animated.View 
+                                <Animated.View
                                     key={item.id}
-                                    entering={FadeInDown.duration(1000).delay(600 + index * 50).springify().damping(15)}
+                                    entering={FadeInDown.duration(800)
+                                        .delay(500 + index * 40)
+                                        .springify()
+                                        .damping(15)}
                                     style={styles.gridItem}
                                 >
                                     <Pressable
-                                        onPress={() => setIdentity(item.id)}
+                                        onPress={() => {
+                                            haptics.light();
+                                            setIdentity(item.id);
+                                        }}
                                         style={({ pressed }) => [
                                             styles.identityPressable,
-                                            pressed && styles.identityPressed
+                                            pressed && styles.identityPressed,
                                         ]}
                                     >
-                                        <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                        <GlassCard
+                                            accent={isSelected ? 'gold' : undefined}
+                                            glow={isSelected}
+                                        >
                                             <View style={styles.identityCard}>
-                                                <View style={[styles.iconWrapper, { backgroundColor: isSelected ? `${colors.gold}15` : colors.surface }]}>
-                                                    <Icon size={32} color={isSelected ? colors.gold : colors.textGhost} strokeWidth={1.5} />
+                                                <View
+                                                    style={[
+                                                        styles.iconWrapper,
+                                                        {
+                                                            backgroundColor: isSelected
+                                                                ? `${colors.gold}15`
+                                                                : colors.surface,
+                                                        },
+                                                    ]}
+                                                >
+                                                    <Icon
+                                                        size={32}
+                                                        color={
+                                                            isSelected
+                                                                ? colors.gold
+                                                                : colors.textGhost
+                                                        }
+                                                        strokeWidth={1.5}
+                                                    />
                                                 </View>
-                                                <Text style={[
-                                                    styles.cardLabel,
-                                                    { color: isSelected ? colors.gold : colors.textPrimary },
-                                                    isSelected && styles.cardLabelSelected
-                                                ]}>
+                                                <Text
+                                                    style={[
+                                                        styles.cardLabel,
+                                                        {
+                                                            color: isSelected
+                                                                ? colors.gold
+                                                                : colors.textPrimary,
+                                                        },
+                                                        isSelected && styles.cardLabelSelected,
+                                                    ]}
+                                                >
                                                     {item.label}
                                                 </Text>
+                                                {isSelected && (
+                                                    <View
+                                                        style={[
+                                                            styles.checkIcon,
+                                                            { backgroundColor: colors.gold },
+                                                        ]}
+                                                    >
+                                                        <Check
+                                                            size={10}
+                                                            color={colors.void}
+                                                            strokeWidth={4}
+                                                        />
+                                                    </View>
+                                                )}
                                             </View>
                                         </GlassCard>
                                     </Pressable>
@@ -125,30 +219,14 @@ export default function Step6Identity() {
                     </View>
                 </ScrollView>
 
-                <View style={[styles.footer, { paddingBottom: 20 }]}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
-                        <Pressable 
-                            onPress={handleNext}
-                            style={({ pressed }) => [
-                                styles.button,
-                                { backgroundColor: colors.gold },
-                                pressed && styles.buttonPressed,
-                                !identity && styles.buttonDisabled
-                            ]}
-                            disabled={!identity}
-                        >
-                            <LinearGradient
-                                colors={identity ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={StyleSheet.absoluteFill}
-                            />
-                            <Text style={[styles.buttonText, { color: identity ? colors.void : colors.textGhost }]}>
-                                CONFIRM PATH
-                            </Text>
-                            <ArrowRight size={20} color={identity ? colors.void : colors.textGhost} />
-                        </Pressable>
-                    </Animated.View>
+                {/* ─── Footer ─── */}
+                <View style={[styles.footer, { paddingTop: 16 }]}>
+                    <LiquidCTA
+                        label="CONFIRM PATH"
+                        delay={1300}
+                        onPress={handleNext}
+                        isDisabled={!identity}
+                    />
                 </View>
             </View>
         </View>
@@ -164,33 +242,37 @@ const styles = StyleSheet.create({
         paddingHorizontal: 28,
     },
     header: {
-        marginBottom: 8,
+        marginBottom: 16,
     },
     backButton: {
         width: 44,
         height: 44,
         justifyContent: 'center',
         alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    titleSection: {
         marginBottom: 10,
     },
     title: {
         fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
         lineHeight: 40,
-        marginTop: 32,
+    },
+    subtitleSection: {
+        marginBottom: 20,
     },
     subtitle: {
         fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
-        marginTop: 12,
         opacity: 0.7,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        paddingVertical: 20,
+        paddingVertical: 12,
     },
     grid: {
         flexDirection: 'row',
@@ -229,29 +311,17 @@ const styles = StyleSheet.create({
     cardLabelSelected: {
         fontFamily: 'DMSans_700Bold',
     },
-    footer: {
-        width: '100%',
-        marginTop: 10,
-    },
-    button: {
-        width: '100%',
-        height: 64,
-        borderRadius: 16,
-        flexDirection: 'row',
+    checkIcon: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 12,
     },
-    buttonPressed: {
-        transform: [{ scale: 0.98 }],
-        opacity: 0.9,
-    },
-    buttonDisabled: {
-        opacity: 0.3,
-    },
-    buttonText: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 18,
-        letterSpacing: 0.5,
+    footer: {
+        width: '100%',
     },
 });
