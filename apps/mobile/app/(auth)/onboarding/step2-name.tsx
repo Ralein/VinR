@@ -37,46 +37,31 @@ export default function Step2Name() {
 
     // Animations
     const headerOp = useSharedValue(0);
-    const headerY = useSharedValue(20);
     const titleOp = useSharedValue(0);
-    const titleY = useSharedValue(20);
     const subtitleOp = useSharedValue(0);
-    const subtitleY = useSharedValue(20);
     const inputOp = useSharedValue(0);
-    const inputY = useSharedValue(20);
 
     useEffect(() => {
         headerOp.value = withDelay(200, withTiming(1, { duration: 500 }));
-        headerY.value = withDelay(200, withSpring(0, { stiffness: 90, damping: 15 }));
-
         titleOp.value = withDelay(450, withTiming(1, { duration: 500 }));
-        titleY.value = withDelay(450, withSpring(0, { stiffness: 90, damping: 15 }));
-
         subtitleOp.value = withDelay(650, withTiming(1, { duration: 500 }));
-        subtitleY.value = withDelay(650, withSpring(0, { stiffness: 90, damping: 15 }));
-
         inputOp.value = withDelay(850, withTiming(1, { duration: 500 }));
-        inputY.value = withDelay(850, withSpring(0, { stiffness: 90, damping: 15 }));
     }, []);
 
     const headerStyle = useAnimatedStyle(() => ({
         opacity: headerOp.value,
-        transform: [{ translateY: headerY.value }],
     }));
 
     const titleStyle = useAnimatedStyle(() => ({
         opacity: titleOp.value,
-        transform: [{ translateY: titleY.value }],
     }));
 
     const subtitleStyle = useAnimatedStyle(() => ({
         opacity: subtitleOp.value,
-        transform: [{ translateY: subtitleY.value }],
     }));
 
     const inputStyle = useAnimatedStyle(() => ({
         opacity: inputOp.value,
-        transform: [{ translateY: inputY.value }],
     }));
 
     const handleNext = () => {
@@ -89,7 +74,7 @@ export default function Step2Name() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={[styles.container, { backgroundColor: colors.void }]}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >

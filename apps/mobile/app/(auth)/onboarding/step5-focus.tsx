@@ -13,12 +13,11 @@ import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useTheme } from '../../../context/ThemeContext';
 import Animated, {
-    FadeInDown,
+    FadeIn,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withDelay,
-    withSpring,
 } from 'react-native-reanimated';
 import {
     ArrowLeft,
@@ -55,16 +54,12 @@ export default function Step5Focus() {
     // Animations
     const headerOp = useSharedValue(0);
     const titleOp = useSharedValue(0);
-    const titleY = useSharedValue(20);
     const subtitleOp = useSharedValue(0);
-    const subtitleY = useSharedValue(20);
 
     useEffect(() => {
         headerOp.value = withDelay(80, withTiming(1, { duration: 400 }));
         titleOp.value = withDelay(200, withTiming(1, { duration: 500 }));
-        titleY.value = withDelay(200, withSpring(0, { stiffness: 90, damping: 15 }));
         subtitleOp.value = withDelay(350, withTiming(1, { duration: 500 }));
-        subtitleY.value = withDelay(350, withSpring(0, { stiffness: 90, damping: 15 }));
     }, []);
 
     const headerStyle = useAnimatedStyle(() => ({
@@ -73,12 +68,10 @@ export default function Step5Focus() {
 
     const titleStyle = useAnimatedStyle(() => ({
         opacity: titleOp.value,
-        transform: [{ translateY: titleY.value }],
     }));
 
     const subtitleStyle = useAnimatedStyle(() => ({
         opacity: subtitleOp.value,
-        transform: [{ translateY: subtitleY.value }],
     }));
 
     const toggleGoal = (id: string) => {
@@ -145,10 +138,8 @@ export default function Step5Focus() {
                         return (
                             <Animated.View
                                 key={goal.id}
-                                entering={FadeInDown.duration(700)
-                                    .delay(500 + index * 35)
-                                    .springify()
-                                    .damping(15)}
+                                entering={FadeIn.duration(700)
+                                    .delay(500 + index * 35)}
                                 style={styles.goalWrapper}
                             >
                                 <Pressable

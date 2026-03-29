@@ -39,20 +39,14 @@ export default function Step3Age() {
     // Animations
     const headerOp = useSharedValue(0);
     const titleOp = useSharedValue(0);
-    const titleY = useSharedValue(20);
     const subtitleOp = useSharedValue(0);
-    const subtitleY = useSharedValue(20);
     const inputOp = useSharedValue(0);
-    const inputY = useSharedValue(20);
 
     useEffect(() => {
         headerOp.value = withDelay(150, withTiming(1, { duration: 400 }));
         titleOp.value = withDelay(350, withTiming(1, { duration: 500 }));
-        titleY.value = withDelay(350, withSpring(0, { stiffness: 90, damping: 15 }));
         subtitleOp.value = withDelay(550, withTiming(1, { duration: 500 }));
-        subtitleY.value = withDelay(550, withSpring(0, { stiffness: 90, damping: 15 }));
         inputOp.value = withDelay(750, withTiming(1, { duration: 500 }));
-        inputY.value = withDelay(750, withSpring(0, { stiffness: 90, damping: 15 }));
     }, []);
 
     const headerStyle = useAnimatedStyle(() => ({
@@ -61,17 +55,14 @@ export default function Step3Age() {
 
     const titleStyle = useAnimatedStyle(() => ({
         opacity: titleOp.value,
-        transform: [{ translateY: titleY.value }],
     }));
 
     const subtitleStyle = useAnimatedStyle(() => ({
         opacity: subtitleOp.value,
-        transform: [{ translateY: subtitleY.value }],
     }));
 
     const inputStyle = useAnimatedStyle(() => ({
         opacity: inputOp.value,
-        transform: [{ translateY: inputY.value }],
     }));
 
     const handleNext = () => {
@@ -84,7 +75,7 @@ export default function Step3Age() {
 
     return (
         <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={[styles.container, { backgroundColor: colors.void }]}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
@@ -168,7 +159,7 @@ export default function Step3Age() {
                                 </View>
                             </GlassCard>
                             {!isAgeValid && age.length === 2 && (
-                                <Animated.View entering={FadeInDown}>
+                                <Animated.View entering={FadeIn}>
                                     <Text style={[styles.errorText, { color: colors.crimson }]}>
                                         Must be 13 or older.
                                     </Text>

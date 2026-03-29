@@ -34,7 +34,6 @@ export default function Step1Welcome() {
 
     // Quote animations
     const quoteOp = useSharedValue(0);
-    const quoteY = useSharedValue(20);
 
     // Divider animations
     const dividerOp = useSharedValue(0);
@@ -52,7 +51,6 @@ export default function Step1Welcome() {
         logoScale.value = withDelay(200, withSpring(1, { stiffness: 90, damping: 15 }));
 
         quoteOp.value = withDelay(600, withTiming(1, { duration: 600 }));
-        quoteY.value = withDelay(600, withSpring(0, { stiffness: 90, damping: 15 }));
 
         dividerOp.value = withDelay(1000, withTiming(1, { duration: 400 }));
         dividerW.value = withDelay(1000, withTiming(40, {
@@ -73,7 +71,6 @@ export default function Step1Welcome() {
 
     const quoteStyle = useAnimatedStyle(() => ({
         opacity: quoteOp.value,
-        transform: [{ translateY: quoteY.value }],
     }));
 
     const dividerStyle = useAnimatedStyle(() => ({
