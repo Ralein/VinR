@@ -9,7 +9,7 @@
 
 import { Tabs, useRouter } from 'expo-router';
 import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
-import { Home, Heart, Film, Activity, User, MessageCircle } from 'lucide-react-native';
+import { Home, Heart, Film, Activity, User, MessageCircle, BookOpen } from 'lucide-react-native';
 import Animated, {
     useAnimatedStyle,
     withSpring,
@@ -201,10 +201,10 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="journey"
+                    name="journal"
                     options={{
                         tabBarIcon: ({ focused }) => (
-                            <TabIcon Icon={Activity} label="Journel" focused={focused} />
+                            <TabIcon Icon={BookOpen} label="Journal" focused={focused} />
                         ),
                     }}
                 />
@@ -218,7 +218,7 @@ export default function TabLayout() {
                 />
                 {/* Hidden screens — accessible via navigation, not tab bar */}
                 <Tabs.Screen name="events" options={{ href: null }} />
-                <Tabs.Screen name="journal" options={{ href: null }} />
+                <Tabs.Screen name="journey" options={{ href: null }} />
                 <Tabs.Screen name="loading" options={{ href: null }} />
                 <Tabs.Screen name="emergency" options={{ href: null }} />
                 <Tabs.Screen name="results" options={{ href: null }} />

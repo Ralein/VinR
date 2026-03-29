@@ -158,10 +158,10 @@ export default function ResultsScreen() {
         setSheetVisible(true);
     };
 
-    const handleStartJourney = () => {
+    const handleStartJournal = () => {
         haptics.success();
         reset();
-        router.replace('/(tabs)/journey');
+        router.replace('/(tabs)/journal');
     };
 
     const handleDone = () => {
@@ -279,7 +279,7 @@ export default function ResultsScreen() {
                         <View style={[styles.pathwayDot, { backgroundColor: colors.emerald }]} />
                         <Leaf size={15} color={colors.emerald} strokeWidth={2} />
                         <Text style={[styles.pathwayTitle, { color: colors.textPrimary }]}>
-                            21-Day Daily Habits
+                            Daily Habit Journal
                         </Text>
                         <View style={[styles.countBadge, {
                             backgroundColor: colors.emeraldGlow,
@@ -330,10 +330,10 @@ export default function ResultsScreen() {
                             backgroundColor: colors.gold,
                             shadowColor: colors.gold,
                         }]}
-                        onPress={handleStartJourney}
+                        onPress={handleStartJournal}
                     >
                         <Text style={[styles.journeyButtonText, { color: colors.void }]}>
-                            Start my 21-day journey →
+                            Start my journal journey →
                         </Text>
                     </Pressable>
 

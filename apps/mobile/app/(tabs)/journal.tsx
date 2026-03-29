@@ -8,9 +8,11 @@ import {
     ActivityIndicator, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, PenLine, BookOpen, CheckCircle2, FileText, BarChart2, ChevronRight } from 'lucide-react-native';
+import { Search, PenLine, BookOpen, CheckCircle2, FileText, BarChart2, ChevronRight, Sparkles } from 'lucide-react-native';
 import { fonts, spacing, glass, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
+import AmbientBackground from '../../components/ui/AmbientBackground';
+import GlassCard from '../../components/ui/GlassCard';
 import {
     useJournalEntries,
     useJournalCalendar,
@@ -83,6 +85,7 @@ export default function JournalScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground />
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -108,53 +111,58 @@ export default function JournalScreen() {
 
                 {/* Search bar */}
                 {showSearch && (
-                    <View style={styles.searchContainer}>
-                        <TextInput
-                            style={[styles.searchInput, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholder="Search gratitude & reflections..."
-                            placeholderTextColor={colors.textGhost}
-                            autoFocus
-                        />
-                        {searchResults && searchResults.length > 0 && (
-                            <View style={styles.searchResults}>
-                                <Text style={[styles.searchResultsLabel, { color: colors.textGhost }]}>
-                                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-                                </Text>
-                                {searchResults.slice(0, 5).map((entry) => (
-                                    <JournalEntryCard key={entry.id} entry={entry} />
-                                ))}
-                            </View>
-                        )}
-                    </View>
+                    <GlassCard accent="gold" style={{ marginBottom: spacing.md }}>
+                        <View style={styles.searchContainer}>
+                            <TextInput
+                                style={[styles.searchInput, { color: colors.textPrimary, backgroundColor: 'transparent', borderColor: colors.border }]}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                placeholder="Search gratitude & reflections..."
+                                placeholderTextColor={colors.textGhost}
+                                autoFocus
+                            />
+                            {searchResults && searchResults.length > 0 && (
+                                <View style={styles.searchResults}>
+                                    <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm, opacity: 0.5 }} />
+                                    <Text style={[styles.searchResultsLabel, { color: colors.textGhost }]}>
+                                        {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                                    </Text>
+                                    {searchResults.slice(0, 5).map((entry) => (
+                                        <JournalEntryCard key={entry.id} entry={entry} />
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    </GlassCard>
                 )}
 
                 {/* Calendar */}
                 <View style={styles.section}>
-                    <JournalCalendar
-                        month={month}
-                        entryDates={calendar?.dates || []}
-                        selectedDate={selectedDate}
-                        onSelectDate={setSelectedDate}
-                        onPrevMonth={() => navigateMonth(-1)}
-                        onNextMonth={() => navigateMonth(1)}
-                    />
+                    <GlassCard noAnimation elevated>
+                        <JournalCalendar
+                            month={month}
+                            entryDates={calendar?.dates || []}
+                            selectedDate={selectedDate}
+                            onSelectDate={setSelectedDate}
+                            onPrevMonth={() => navigateMonth(-1)}
+                            onNextMonth={() => navigateMonth(1)}
+                        />
+                    </GlassCard>
                 </View>
 
                 {/* Weekly Insight */}
                 {weeklyInsight && weeklyInsight.entry_count > 0 && (
                     <View style={styles.section}>
-                        <View style={[styles.insightCard, { backgroundColor: colors.surface, borderColor: colors.sapphire + '30', borderLeftColor: colors.sapphire }]}>
+                        <GlassCard accent="sapphire" glow shimmer>
                             <View style={styles.insightHeader}>
-                                <BarChart2 size={15} color={colors.sapphire} strokeWidth={2} />
+                                <Sparkles size={18} color={colors.sapphire} strokeWidth={2} />
                                 <Text style={[styles.insightLabel, { color: colors.sapphire }]}>Weekly Insight</Text>
                             </View>
                             <Text style={[styles.insightText, { color: colors.textPrimary }]}>{weeklyInsight.insight}</Text>
                             <Text style={[styles.insightMeta, { color: colors.textGhost }]}>
                                 {weeklyInsight.entry_count} entries this week
                             </Text>
-                        </View>
+                        </GlassCard>
                     </View>
                 )}
 
@@ -204,19 +212,21 @@ export default function JournalScreen() {
                 {viewMode === 'write' && (
                     <View style={styles.section}>
                         {todayEntry ? (
-                            <View style={[styles.alreadyDoneCard, { backgroundColor: colors.surface, borderColor: colors.emerald + '30' }]}>
-                                <CheckCircle2 size={32} color={colors.emerald} strokeWidth={1.8} />
-                                <Text style={[styles.alreadyDoneText, { color: colors.textPrimary }]}>
-                                    You've already journaled today. Beautiful work!
-                                </Text>
-                                <Pressable
-                                    style={styles.viewEntryButton}
-                                    onPress={() => setViewMode('entries')}
-                                >
-                                    <Text style={[styles.viewEntryText, { color: colors.gold }]}>View today's entry</Text>
-                                    <ChevronRight size={14} color={colors.gold} strokeWidth={2} />
-                                </Pressable>
-                            </View>
+                            <GlassCard accent="emerald" glow>
+                                <View style={styles.alreadyDoneCard}>
+                                    <CheckCircle2 size={32} color={colors.emerald} strokeWidth={1.8} />
+                                    <Text style={[styles.alreadyDoneText, { color: colors.textPrimary }]}>
+                                        You've already journaled today. Beautiful work!
+                                    </Text>
+                                    <Pressable
+                                        style={styles.viewEntryButton}
+                                        onPress={() => setViewMode('entries')}
+                                    >
+                                        <Text style={[styles.viewEntryText, { color: colors.gold }]}>View today's entry</Text>
+                                        <ChevronRight size={14} color={colors.gold} strokeWidth={2} />
+                                    </Pressable>
+                                </View>
+                            </GlassCard>
                         ) : (
                             <GratitudeInput
                                 onSubmit={handleSubmit}
