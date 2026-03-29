@@ -30,6 +30,7 @@ import {
 } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -69,18 +70,16 @@ export default function Step6Identity() {
                     </Pressable>
                     <ProgressDots currentStep={6} totalSteps={9} />
                     
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
-                    >
-                        Identify your role
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        Which path defines your daily rhythm? We tailor the VinR experience to your lifestyle.
-                    </Animated.Text>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>
+                            Identify your role
+                        </Text>
+                    </Animated.View>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                            Which path defines your daily rhythm? We tailor the VinR experience to your lifestyle.
+                        </Text>
+                    </Animated.View>
                 </View>
 
                 <ScrollView 
@@ -126,31 +125,28 @@ export default function Step6Identity() {
                     </View>
                 </ScrollView>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
-                        <Pressable
+                <View style={[styles.footer, { paddingBottom: 20 }]}>
+                    <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                        <Pressable 
+                            onPress={handleNext}
                             style={({ pressed }) => [
                                 styles.button,
-                                identity
-                                    ? { backgroundColor: colors.gold } 
-                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-                                pressed && identity && styles.buttonPressed,
+                                { backgroundColor: colors.gold },
+                                pressed && styles.buttonPressed,
                                 !identity && styles.buttonDisabled
                             ]}
-                            onPress={handleNext}
                             disabled={!identity}
                         >
-                            <Text style={[
-                                styles.buttonText,
-                                { color: identity ? colors.void : colors.textGhost }
-                            ]}>
-                                Confirm Path
-                            </Text>
-                            <ArrowRight 
-                                size={20} 
-                                color={identity ? colors.void : colors.textGhost} 
-                                strokeWidth={3} 
+                            <LinearGradient
+                                colors={identity ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
                             />
+                            <Text style={[styles.buttonText, { color: identity ? colors.void : colors.textGhost }]}>
+                                CONFIRM PATH
+                            </Text>
+                            <ArrowRight size={20} color={identity ? colors.void : colors.textGhost} />
                         </Pressable>
                     </Animated.View>
                 </View>

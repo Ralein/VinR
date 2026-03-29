@@ -8,6 +8,9 @@ import {
     KeyboardAvoidingView, 
     Platform,
     Dimensions,
+    ScrollView,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +23,7 @@ import Animated, {
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,91 +45,96 @@ export default function Step3Age() {
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={[styles.container, { backgroundColor: colors.void }]}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
             <AmbientBackground minimal={true} />
-            <View style={[styles.content, { 
-                paddingTop: insets.top + (height > 800 ? 40 : 20), 
-                paddingBottom: insets.bottom + 20 
-            }]}>
-                <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
-                    </Pressable>
-                    <ProgressDots currentStep={3} totalSteps={9} />
-                    
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
+            
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.flexFill}>
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        How old are you?
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        VinR experiences are tailored to your stage of life.
-                    </Animated.Text>
-                </View>
-
-                <Animated.View 
-                    entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
-                    style={styles.inputSection}
-                >
-                    <GlassCard accent={isAgeValid ? 'gold' : undefined} shimmer={age.length > 0} >
-                        <View style={styles.ageInputContainer}>
-                            <TextInput
-                                style={[styles.input, { color: colors.gold }]}
-                                placeholder="00"
-                                placeholderTextColor={`${colors.gold}20`}
-                                value={age}
-                                onChangeText={(text) => setAge(text.replace(/[^0-9]/g, '').slice(0, 2))}
-                                keyboardType="number-pad"
-                                maxLength={2}
-                                autoFocus
-                                selectionColor={colors.gold}
-                            />
-                            <Text style={[styles.yearsText, { color: colors.textSecondary }]}>years</Text>
+                        <View style={[styles.header, { marginTop: insets.top + 20 }]}>
+                            <Pressable onPress={() => router.back()} style={styles.backButton}>
+                                <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
+                            </Pressable>
+                            <ProgressDots currentStep={3} totalSteps={9} />
+                            
+                            <Animated.View entering={FadeInDown.duration(800).delay(200).springify()}>
+                                <Text style={[styles.title, { color: colors.textPrimary }]}>
+                                    How old are you?
+                                </Text>
+                            </Animated.View>
+                            <Animated.View entering={FadeInDown.duration(800).delay(400).springify()}>
+                                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                                    VinR tailored experiences align with your stage of life.
+                                </Text>
+                            </Animated.View>
                         </View>
-                    </GlassCard>
-                    {!isAgeValid && age.length === 2 && (
-                        <Animated.Text 
-                            entering={FadeIn}
-                            style={[styles.errorText, { color: colors.crimson }]}
-                        >
-                            Must be 13 or older.
-                        </Animated.Text>
-                    )}
-                </Animated.View>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.button,
-                                isAgeValid 
-                                    ? { backgroundColor: colors.gold } 
-                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-                                pressed && isAgeValid && styles.buttonPressed,
-                                !isAgeValid && styles.buttonDisabled
-                            ]}
-                            onPress={handleNext}
-                            disabled={!isAgeValid}
-                        >
-                            <Text style={[
-                                styles.buttonText,
-                                { color: isAgeValid ? colors.void : colors.textGhost }
-                            ]}>
-                                Continue
-                            </Text>
-                            <ArrowRight 
-                                size={20} 
-                                color={isAgeValid ? colors.void : colors.textGhost} 
-                                strokeWidth={3} 
-                            />
-                        </Pressable>
-                    </Animated.View>
+                        <View style={styles.inputSection}>
+                            <Animated.View 
+                                entering={FadeInDown.duration(800).delay(600).springify()}
+                                style={{ alignItems: 'center' }}
+                            >
+                                <GlassCard accent={isAgeValid ? 'gold' : undefined} shimmer={age.length > 0} >
+                                    <View style={styles.ageInputContainer}>
+                                        <TextInput
+                                            style={[styles.input, { color: colors.gold, fontFamily: 'DMSans_700Bold' }]}
+                                            placeholder="00"
+                                            placeholderTextColor={`${colors.gold}20`}
+                                            value={age}
+                                            onChangeText={(text) => setAge(text.replace(/[^0-9]/g, '').slice(0, 2))}
+                                            keyboardType="number-pad"
+                                            maxLength={2}
+                                            autoFocus
+                                            selectionColor={colors.gold}
+                                        />
+                                        <Text style={[styles.yearsText, { color: colors.textSecondary, fontFamily: fonts.body }]}>years</Text>
+                                    </View>
+                                </GlassCard>
+                                {!isAgeValid && age.length === 2 && (
+                                    <Animated.View entering={FadeIn}>
+                                        <Text style={[styles.errorText, { color: colors.crimson, fontFamily: fonts.body }]}>
+                                            Must be 13 or older.
+                                        </Text>
+                                    </Animated.View>
+                                )}
+                            </Animated.View>
+                        </View>
+
+                        <View style={{ flex: 1 }} />
+                        
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+                            <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                                <Pressable 
+                                    onPress={handleNext}
+                                    style={({ pressed }) => [
+                                        styles.button,
+                                        { backgroundColor: colors.gold },
+                                        pressed && styles.buttonPressed,
+                                        !isAgeValid && styles.buttonDisabled
+                                    ]}
+                                    disabled={!isAgeValid}
+                                >
+                                    <LinearGradient
+                                        colors={isAgeValid ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                    <Text style={[styles.buttonText, { color: isAgeValid ? colors.void : colors.textGhost }]}>
+                                        CONTINUE
+                                    </Text>
+                                    <ArrowRight size={20} color={isAgeValid ? colors.void : colors.textGhost} />
+                                </Pressable>
+                            </Animated.View>
+                        </View>
+                    </ScrollView>
                 </View>
-            </View>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
@@ -134,8 +143,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
+    flexFill: {
         flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 28,
     },
     header: {
@@ -150,8 +162,8 @@ const styles = StyleSheet.create({
     },
     title: {
         fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 32,
-        lineHeight: 40,
+        fontSize: 34,
+        lineHeight: 42,
         marginTop: 32,
     },
     subtitle: {

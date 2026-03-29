@@ -11,7 +11,7 @@ import {
     View, Text, TextInput, Pressable, StyleSheet,
     ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
@@ -28,6 +28,7 @@ import AmbientBackground from '../../components/ui/AmbientBackground';
 
 export default function CheckinScreen() {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const { selectedMood, setMood, inputText, setText } = useCheckinStore();
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const [textFocused, setTextFocused] = useState(false);
@@ -67,13 +68,13 @@ export default function CheckinScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
-            <AmbientBackground />
+            <AmbientBackground hideBlobs={true} />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}
             >
                 <ScrollView
-                    contentContainerStyle={styles.content}
+                    contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
@@ -167,7 +168,6 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.lg,
-        paddingBottom: 40,
     },
     title: {
         fontFamily: fonts.display,

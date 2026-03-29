@@ -30,6 +30,7 @@ import {
 } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,18 +68,16 @@ export default function Step4Avatar() {
                     </Pressable>
                     <ProgressDots currentStep={4} totalSteps={9} />
                     
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
-                    >
-                        Define your identity
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        Select an icon that reflects your essence within the VinR circle.
-                    </Animated.Text>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>
+                            Define your identity
+                        </Text>
+                    </Animated.View>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                            Select an icon that reflects your essence within the VinR circle.
+                        </Text>
+                    </Animated.View>
                 </View>
 
                 <ScrollView 
@@ -136,31 +135,28 @@ export default function Step4Avatar() {
                     })}
                 </ScrollView>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
-                        <Pressable
+                <View style={[styles.footer, { paddingBottom: 20 }]}>
+                    <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                        <Pressable 
+                            onPress={handleNext}
                             style={({ pressed }) => [
                                 styles.button,
-                                avatarId 
-                                    ? { backgroundColor: colors.gold } 
-                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-                                pressed && avatarId && styles.buttonPressed,
+                                { backgroundColor: colors.gold },
+                                pressed && styles.buttonPressed,
                                 !avatarId && styles.buttonDisabled
                             ]}
-                            onPress={handleNext}
                             disabled={!avatarId}
                         >
-                            <Text style={[
-                                styles.buttonText,
-                                { color: avatarId ? colors.void : colors.textGhost }
-                            ]}>
-                                Continue
-                            </Text>
-                            <ArrowRight 
-                                size={20} 
-                                color={avatarId ? colors.void : colors.textGhost} 
-                                strokeWidth={3} 
+                            <LinearGradient
+                                colors={avatarId ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
                             />
+                            <Text style={[styles.buttonText, { color: avatarId ? colors.void : colors.textGhost }]}>
+                                CONTINUE
+                            </Text>
+                            <ArrowRight size={20} color={avatarId ? colors.void : colors.textGhost} />
                         </Pressable>
                     </Animated.View>
                 </View>

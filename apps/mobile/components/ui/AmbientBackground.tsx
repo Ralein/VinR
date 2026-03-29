@@ -24,14 +24,7 @@ export function AmbientBlob({ color, size, top, left, right, bottom, delay: d, d
 
     useEffect(() => {
         op.value    = withDelay(d, withTiming(minimal ? 0.35 : 1, { duration: 1400 }));
-        if (!minimal) {
-            scale.value = withRepeat(
-                withSequence(
-                    withTiming(1.15, { duration, easing: Easing.inOut(Easing.sin) }),
-                    withTiming(0.85, { duration, easing: Easing.inOut(Easing.sin) })
-                ), -1, true
-            );
-        }
+        // Removed scale animation for a cleaner, static look
     }, [minimal]);
 
     const style = useAnimatedStyle(() => ({
@@ -117,6 +110,7 @@ export default function AmbientBackground({
     // Defaults for standard screens (Midnight Gold + deep lavender)
     topColor = 'rgba(212,175,55,0.04)',
     minimal = false,
+    hideBlobs = false,
     blobs = [
         { color: 'rgba(212,175,55,0.05)', size: 380, top: -80, left: -100, delay: 200, duration: 5400 },
         { color: 'rgba(123,94,248,0.06)', size: 300, top: height * 0.6, right: -80, delay: 400, duration: 6600 }
@@ -124,6 +118,7 @@ export default function AmbientBackground({
 }: {
     topColor?: string;
     minimal?: boolean;
+    hideBlobs?: boolean;
     blobs?: { color: string; size: number; top?: number; left?: number; right?: number; bottom?: number; delay: number; duration: number; }[];
 }) {
     const { colors } = useTheme();
@@ -137,7 +132,7 @@ export default function AmbientBackground({
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
             />
-            {blobs.map((blob, idx) => (
+            {!hideBlobs && blobs.map((blob, idx) => (
                 <AmbientBlob key={`blob-${idx}`} {...blob} minimal={minimal} />
             ))}
         </View>

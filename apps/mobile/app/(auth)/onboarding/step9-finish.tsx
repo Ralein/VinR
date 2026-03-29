@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useTheme } from '../../../context/ThemeContext';
 import { AuthService } from '../../../services/auth';
@@ -9,6 +10,7 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { ChevronRight, Check } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import PremiumCTA from '../../../components/ui/PremiumCTA';
 import VinRLogo from '../../../components/ui/VinRLogo';
 
 import PremiumLogo from '../../../components/ui/PremiumLogo';
@@ -66,18 +68,16 @@ export default function Step9Finish() {
                 </View>
                 
                 <View style={styles.textContainer}>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
-                    >
-                        Welcome to the Circle, {name}.
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        Your personalized path is established. Precision and refinement await you within the VinR sanctuary.
-                    </Animated.Text>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>
+                            Welcome to the Circle, {name}.
+                        </Text>
+                    </Animated.View>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                            Your personalized path is established. Precision and refinement await you within the VinR sanctuary.
+                        </Text>
+                    </Animated.View>
                 </View>
 
                 <Animated.View 
@@ -104,22 +104,30 @@ export default function Step9Finish() {
                 </Animated.View>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(1000).springify().damping(15)}>
-                        <Pressable
+                    <Animated.View entering={FadeInDown.duration(1000).delay(1000).springify()}>
+                        <Pressable 
+                            onPress={handleFinish}
                             style={({ pressed }) => [
                                 styles.button,
                                 { backgroundColor: colors.gold },
-                                (pressed || saving) && styles.buttonPressed
+                                pressed && styles.buttonPressed
                             ]}
-                            onPress={handleFinish}
                             disabled={saving}
                         >
+                            <LinearGradient
+                                colors={[colors.goldLight, colors.gold, colors.gold]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
                             {saving ? (
-                                <ActivityIndicator size="small" color={colors.void} />
+                                <ActivityIndicator color={colors.void} />
                             ) : (
                                 <>
-                                    <Text style={[styles.buttonText, { color: colors.void }]}>Enter Your Sanctuary</Text>
-                                    <ChevronRight size={20} color={colors.void} strokeWidth={3} />
+                                    <Text style={[styles.buttonText, { color: colors.void }]}>
+                                        ENTER YOUR SANCTUARY
+                                    </Text>
+                                    <ChevronRight size={20} color={colors.void} />
                                 </>
                             )}
                         </Pressable>

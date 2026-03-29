@@ -11,13 +11,9 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
-
-// ─── Constants from Welcome Screen ───
-const GOLD           = '#D4AF37';
-const GOLD_BRIGHT    = '#F2C84B';
-const TEXT_HI        = '#ECEAF6';
 
 // ─── Components ───
 
@@ -34,6 +30,7 @@ function OrbitRing({
     delay: number;
     variant?: 'primary' | 'secondary' | 'micro';
 }) {
+    const { colors } = useTheme();
     const rot = useSharedValue(0);
     const op  = useSharedValue(0);
 
@@ -56,10 +53,10 @@ function OrbitRing({
 
     const ringStyle = variant === 'primary'
         ? {
-            borderTopColor:    'rgba(212,175,55,0.75)',
-            borderRightColor:  'rgba(212,175,55,0.18)',
+            borderTopColor:    `${colors.gold}BF`, // 0.75
+            borderRightColor:  `${colors.gold}2E`, // 0.18
             borderBottomColor: 'transparent',
-            borderLeftColor:   'rgba(212,175,55,0.18)',
+            borderLeftColor:   `${colors.gold}2E`,
             borderWidth: 1,
         }
         : variant === 'secondary'
@@ -71,9 +68,9 @@ function OrbitRing({
             borderWidth: 0.75,
         }
         : {
-            borderTopColor:    'rgba(212,175,55,0.15)',
+            borderTopColor:    `${colors.gold}26`, // 0.15
             borderRightColor:  'transparent',
-            borderBottomColor: 'rgba(212,175,55,0.06)',
+            borderBottomColor: `${colors.gold}0F`, // 0.06
             borderLeftColor:   'transparent',
             borderWidth: 0.5,
         };
@@ -95,6 +92,8 @@ function OrbitRing({
 }
 
 export default function PremiumLogo({ delay = 0, scale = 1 }: { delay?: number; scale?: number }) {
+    const { colors } = useTheme();
+
     // Logo Animations
     const vinOp    = useSharedValue(0);
     const vinY     = useSharedValue(24);
@@ -141,17 +140,18 @@ export default function PremiumLogo({ delay = 0, scale = 1 }: { delay?: number; 
             <OrbitRing size={244 * scale} duration={18000} delay={delay + 600} variant="primary"   />
             <OrbitRing size={290 * scale} duration={28000} delay={delay + 800} variant="micro"     reverse />
 
-            {/* Background Orbs */}
+            {/* Enhanced Background Orbs/Halos */}
+            <View style={[styles.logoBedOuter2, { width: 320 * scale, height: 320 * scale, borderRadius: 160 * scale }]} />
             <View style={[styles.logoBedOuter, { width: 220 * scale, height: 220 * scale, borderRadius: 110 * scale }]} />
-            <View style={[styles.logoBed, { width: 130 * scale, height: 130 * scale, borderRadius: 65 * scale }]} />
-            <View style={[styles.logoRingStatic, { width: 120 * scale, height: 120 * scale, borderRadius: 60 * scale }]} />
+            <View style={[styles.logoBed, { width: 130 * scale, height: 130 * scale, borderRadius: 65 * scale, backgroundColor: `${colors.gold}14` }]} />
+            <View style={[styles.logoRingStatic, { width: 120 * scale, height: 120 * scale, borderRadius: 60 * scale, borderColor: `${colors.gold}52` }]} />
 
             {/* Wordmark */}
             <View style={styles.wordmarkWrap}>
                 <View style={[styles.uLineTrack, { bottom: -7 * scale }]} pointerEvents="none">
                     <Animated.View style={[styles.uLineBeam, uLineStyle]}>
                         <LinearGradient
-                            colors={['transparent', GOLD_BRIGHT, GOLD, 'transparent']}
+                            colors={['transparent', colors.goldLight, colors.gold, 'transparent']}
                             start={{ x: 0, y: 0.5 }}
                             end={{ x: 1, y: 0.5 }}
                             style={{ flex: 1, borderRadius: 1 }}
@@ -159,12 +159,12 @@ export default function PremiumLogo({ delay = 0, scale = 1 }: { delay?: number; 
                     </Animated.View>
                 </View>
 
-                <Animated.Text style={[styles.logoVin, vinStyle, { fontSize: 47 * scale, lineHeight: 54 * scale }]}>vin</Animated.Text>
+                <Animated.Text style={[styles.logoVin, vinStyle, { fontSize: 47 * scale, lineHeight: 54 * scale, color: colors.textPrimary }]}>vin</Animated.Text>
 
                 <Animated.View style={[styles.rContainer, rStyle]}>
                     <Animated.View style={[styles.cometStreakHalo, streakStyle]} pointerEvents="none">
                         <LinearGradient
-                            colors={['rgba(242,200,75,0.15)', 'transparent']}
+                            colors={[`${colors.gold}26`, 'transparent']}
                             start={{ x: 0, y: 0.5 }}
                             end={{ x: 1, y: 0.5 }}
                             style={{ flex: 1, borderRadius: 4 }}
@@ -172,13 +172,17 @@ export default function PremiumLogo({ delay = 0, scale = 1 }: { delay?: number; 
                     </Animated.View>
                     <Animated.View style={[styles.cometStreak, streakStyle]} pointerEvents="none">
                         <LinearGradient
-                            colors={[GOLD_BRIGHT, 'rgba(212,175,55,0.3)', 'transparent']}
+                            colors={[colors.goldLight, `${colors.gold}4D`, 'transparent']}
                             start={{ x: 0, y: 0.5 }}
                             end={{ x: 1, y: 0.5 }}
                             style={{ flex: 1, borderRadius: 1 }}
                         />
                     </Animated.View>
-                    <Text style={[styles.logoR, { fontSize: 55 * scale, lineHeight: 60 * scale }]}>R</Text>
+                    <Text style={[styles.logoR, { 
+                        fontSize: 55 * scale, 
+                        lineHeight: 60 * scale, 
+                        color: colors.gold,
+                    }]}>R</Text>
                 </Animated.View>
             </View>
         </Animated.View>
@@ -190,18 +194,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    logoBedOuter2: {
+        position: 'absolute',
+        backgroundColor: 'rgba(212,175,55,0.02)',
+    },
     logoBedOuter: {
         position: 'absolute',
         backgroundColor: 'rgba(212,175,55,0.04)',
-        shadowColor: GOLD,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.22,
-        shadowRadius: 90,
     },
     logoBed: {
         position: 'absolute',
-        backgroundColor: 'rgba(212,175,55,0.08)',
-        shadowColor: GOLD,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.55,
         shadowRadius: 48,
@@ -209,7 +211,6 @@ const styles = StyleSheet.create({
     logoRingStatic: {
         position: 'absolute',
         borderWidth: 0.5,
-        borderColor: 'rgba(212,175,55,0.32)',
     },
     wordmarkWrap: {
         flexDirection: 'row',
@@ -229,7 +230,6 @@ const styles = StyleSheet.create({
     },
     logoVin: {
         fontFamily: 'DMSans_300Light',
-        color: TEXT_HI,
         letterSpacing: -1,
     },
     rContainer: {
@@ -239,11 +239,7 @@ const styles = StyleSheet.create({
     },
     logoR: {
         fontFamily: 'DMSans_600SemiBold',
-        color: GOLD,
         letterSpacing: -1,
-        textShadowColor: 'rgba(212,175,55,0.65)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 20,
     },
     cometStreakHalo: {
         position: 'absolute',
@@ -260,3 +256,4 @@ const styles = StyleSheet.create({
         marginLeft: 3,
     },
 });
+

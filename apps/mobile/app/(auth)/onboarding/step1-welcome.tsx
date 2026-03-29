@@ -1,4 +1,5 @@
 import React from 'react';
+// Trigger refresh
 import { 
     View, 
     Text, 
@@ -16,8 +17,9 @@ import { useTheme } from '../../../context/ThemeContext';
 import { fonts, spacing } from '../../../constants/theme';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 import PremiumLogo from '../../../components/ui/PremiumLogo';
-import LiquidCTA from '../../../components/ui/LiquidCTA';
+import { LinearGradient } from 'expo-linear-gradient';
 import { haptics } from '../../../services/haptics';
+import { ChevronRight } from 'lucide-react-native';
 
 const { height } = Dimensions.get('window');
 
@@ -49,27 +51,27 @@ export default function Step1Welcome() {
             <View style={styles.content}>
                 {/* ─── Hero Section ─── */}
                 <Animated.View 
-                    entering={FadeIn.duration(1200).delay(200)} 
+                    entering={FadeIn.duration(1000).delay(100)} 
                     style={styles.heroSection}
                 >
-                    <PremiumLogo delay={400} scale={1.1} />
+                    <PremiumLogo delay={200} scale={1.2} />
                 </Animated.View>
 
                 {/* ─── Quote Section ─── */}
                 <Animated.View 
-                    entering={FadeInDown.duration(1000).delay(1200).springify()}
+                    entering={FadeInDown.duration(800).delay(600).springify()}
                     style={styles.quoteSection}
                 >
                     <Text style={[styles.quote, { color: colors.textPrimary }]}>
-                        "Excellence is not an act, but a habit."
+                        "Mastery is the silent refinement of the soul."
                     </Text>
                     <View style={[styles.divider, { backgroundColor: colors.gold }]} />
                     <View style={styles.taglineReveal}>
                         <Text style={[styles.tagline, { color: colors.textSecondary }]}>
-                            Refinement in every detail. 
+                            Welcome to your digital sanctuary.
                         </Text>
                         <Text style={[styles.tagline, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>
-                            Exclusivity in every experience.
+                            Exclusivity in every moment.
                         </Text>
                     </View>
                 </Animated.View>
@@ -77,28 +79,30 @@ export default function Step1Welcome() {
                 {/* ─── CTA Section ─── */}
                 <View style={styles.bottomSection}>
                     <Animated.View 
-                        entering={FadeInDown.duration(800).delay(2000).springify()}
+                        entering={FadeInDown.duration(800).delay(1000).springify()}
                         style={styles.ctaAlign}
                     >
-                        <LiquidCTA 
-                            onPress={handleNext} 
-                            label="Begin Your Journey" 
-                            delay={2400} 
-                        />
+                        <Pressable 
+                            onPress={handleNext}
+                            style={({ pressed }) => [
+                                styles.button,
+                                { backgroundColor: colors.gold },
+                                pressed && styles.buttonPressed
+                            ]}
+                        >
+                            <LinearGradient
+                                colors={[colors.goldLight, colors.gold, colors.gold]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
+                            <Text style={[styles.buttonText, { color: colors.void }]}>
+                                BEGIN YOUR JOURNEY
+                            </Text>
+                            <ChevronRight size={20} color={colors.void} />
+                        </Pressable>
 
-                        <View style={styles.authLinks}>
-                            <Pressable onPress={handleSignUp} style={styles.authLink}>
-                                <Text style={styles.authTextBase}>
-                                    New here? <Text style={[styles.authTextHighlight, { color: colors.gold }]}>Sign Up</Text>
-                                </Text>
-                            </Pressable>
-                            <View style={[styles.linkSeparator, { backgroundColor: colors.border }]} />
-                            <Pressable onPress={handleSignIn} style={styles.authLink}>
-                                <Text style={styles.authTextBase}>
-                                    Member? <Text style={[styles.authTextHighlight, { color: colors.gold }]}>Sign In</Text>
-                                </Text>
-                            </Pressable>
-                        </View>
+                        
                     </Animated.View>
                 </View>
             </View>
@@ -156,18 +160,42 @@ const styles = StyleSheet.create({
     // Bottom
     bottomSection: {
         width: '100%',
+        marginTop: 20,
     },
     ctaAlign: {
+        width: '100%',
         alignItems: 'center',
+    },
+    button: {
+        width: '100%',
+        height: 64,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        overflow: 'hidden',
+    },
+    buttonPressed: {
+        transform: [{ scale: 0.98 }],
+        opacity: 0.9,
+    },
+    buttonText: {
+        fontFamily: fonts.bodySemiBold,
+        fontSize: 18,
+        letterSpacing: 0.5,
     },
     authLinks: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 24,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.03)',
+        justifyContent: 'center',
+        marginTop: 32,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 24,
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
     },
     authLink: {
         paddingHorizontal: 8,

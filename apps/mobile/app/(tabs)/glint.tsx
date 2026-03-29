@@ -11,7 +11,7 @@ import {
     View, Text, StyleSheet, FlatList, Pressable,
     Dimensions, Image, Linking, ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Play, ExternalLink, Flame, RefreshCw, Film } from 'lucide-react-native';
@@ -96,6 +96,7 @@ function GlintCard({ item, index }: { item: Glint; index: number }) {
 
 export default function GlintScreen() {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const { glints, loading, error, fetchGlints } = useGlint();
     const flatListRef = useRef<FlatList>(null);
 
@@ -112,7 +113,7 @@ export default function GlintScreen() {
     if (!loading && glints.length === 0 && !error) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
-                <AmbientBackground />
+                <AmbientBackground hideBlobs={true} />
                 <View style={styles.emptyState}>
                     <Animated.View entering={FadeIn.duration(500)} style={styles.emptyInner}>
                         <View style={[styles.emptyIcon, { backgroundColor: `${colors.gold}12` }]}>
@@ -139,7 +140,7 @@ export default function GlintScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
-            <AmbientBackground />
+            <AmbientBackground hideBlobs={true} />
             {/* Header */}
             <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.header}>
                 <View style={styles.headerLeft}>
@@ -176,7 +177,7 @@ export default function GlintScreen() {
                     data={glints}
                     keyExtractor={(item) => item.video_id}
                     renderItem={({ item, index }) => <GlintCard item={item} index={index} />}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
                     showsVerticalScrollIndicator={false}
                     snapToInterval={CARD_HEIGHT + 16}
                     decelerationRate="fast"
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: spacing.lg,
-        paddingBottom: 100,
     },
     // Card
     cardOuter: {

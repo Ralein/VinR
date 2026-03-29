@@ -7,7 +7,7 @@ import {
     View, Text, ScrollView, TextInput, StyleSheet,
     ActivityIndicator, Pressable,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, PenLine, BookOpen, CheckCircle2, FileText, BarChart2, ChevronRight, Sparkles } from 'lucide-react-native';
 import { fonts, spacing, glass, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -40,6 +40,7 @@ type ViewMode = 'write' | 'entries';
 
 export default function JournalScreen() {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const [month, setMonth] = useState(getCurrentMonth);
     const [selectedDate, setSelectedDate] = useState<string | null>(getToday());
     const [viewMode, setViewMode] = useState<ViewMode>('write');
@@ -85,10 +86,10 @@ export default function JournalScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground />
+            <AmbientBackground hideBlobs={true} />
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
@@ -274,7 +275,7 @@ export default function JournalScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollView: { flex: 1 },
-    scrollContent: { padding: spacing.lg, paddingBottom: spacing['2xl'] },
+    scrollContent: { padding: spacing.lg },
 
     // Header
     header: { marginBottom: spacing.lg },

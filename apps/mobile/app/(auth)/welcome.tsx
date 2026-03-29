@@ -984,9 +984,9 @@ const s = StyleSheet.create({
     // Trust bar
     trustBar: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 46 : 30,
+        bottom: Platform.OS === 'ios' ? 46 : 70,
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 20, paddingVertical: 10,
+        paddingHorizontal: 20, paddingVertical: 8,
         backgroundColor: 'rgba(255,255,255,0.025)',
         borderRadius: 30,
         borderWidth: 0.5,

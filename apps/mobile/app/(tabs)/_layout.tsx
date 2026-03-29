@@ -10,6 +10,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
 import { Home, Heart, Film, Activity, User, MessageCircle, BookOpen } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     useAnimatedStyle,
     withSpring,
@@ -120,13 +121,13 @@ function GlintTabIcon({ focused }: { focused: boolean }) {
 
 // ──────────────────── Floating Buddy FAB ────────────────────
 
-function BuddyFAB() {
+function BuddyFAB({ bottomOffset }: { bottomOffset: number }) {
     const router = useRouter();
     const { colors } = useTheme();
 
     return (
         <Pressable
-            style={styles.fab}
+            style={[styles.fab, { bottom: bottomOffset + 12 }]}
             onPress={() => router.push('/buddy/chat')}
         >
             <View style={[
@@ -147,14 +148,18 @@ function BuddyFAB() {
 
 export default function TabLayout() {
     const { colors, tabBarBg, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
+
+    // Calibration: base height (60) + safe area bottom
+    const TAB_BAR_HEIGHT = 65 + insets.bottom;
 
     const tabBarStyle = {
         backgroundColor: 'transparent',
         borderTopWidth: 0,
         elevation: 0,
-        height: tabBarHeight,
+        height: TAB_BAR_HEIGHT,
         paddingTop: 8,
-        paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+        paddingBottom: insets.bottom,
         shadowColor: 'transparent',
     } as const;
 
@@ -228,12 +233,12 @@ export default function TabLayout() {
             {/* Persistent mini player above tab bar */}
             <MiniPlayer />
             {/* Floating VinR Buddy chat button */}
-            <BuddyFAB />
+            <BuddyFAB bottomOffset={TAB_BAR_HEIGHT} />
         </View>
     );
 }
 
-const tabBarHeight = Platform.OS === 'ios' ? 84 : 68;
+
 
 const styles = StyleSheet.create({
     root: {
@@ -306,7 +311,6 @@ const styles = StyleSheet.create({
     // Floating Buddy FAB
     fab: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 100 : 80,
         right: 20,
         zIndex: 100,
     },

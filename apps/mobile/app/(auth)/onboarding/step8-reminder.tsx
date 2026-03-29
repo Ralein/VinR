@@ -21,6 +21,7 @@ import Animated, {
 import { ArrowLeft, ArrowRight, Bell, Calendar, Trophy } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,18 +54,16 @@ export default function Step8Reminder() {
                     </Pressable>
                     <ProgressDots currentStep={8} totalSteps={9} />
 
-                    <Animated.Text
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
-                    >
-                        Maintain the rhythm
-                    </Animated.Text>
-                    <Animated.Text
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        A soft nudge to keep you aligned with your standards. Reminders help anchor your daily discipline.
-                    </Animated.Text>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>
+                            Maintain the rhythm
+                        </Text>
+                    </Animated.View>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                            A soft nudge to keep you aligned with your standards. Reminders help anchor your daily discipline.
+                        </Text>
+                    </Animated.View>
                 </View>
 
                 <ScrollView
@@ -121,20 +120,26 @@ export default function Step8Reminder() {
                     </Animated.View>
                 </ScrollView>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(1000).springify().damping(15)}>
-                        <Pressable
+                <View style={[styles.footer, { paddingBottom: 20 }]}>
+                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                        <Pressable 
+                            onPress={handleNext}
                             style={({ pressed }) => [
                                 styles.button,
                                 { backgroundColor: colors.gold },
                                 pressed && styles.buttonPressed
                             ]}
-                            onPress={handleNext}
                         >
+                            <LinearGradient
+                                colors={[colors.goldLight, colors.gold, colors.gold]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
+                            />
                             <Text style={[styles.buttonText, { color: colors.void }]}>
-                                {isEnabled ? 'Enable & Continue' : 'Continue'}
+                                {isEnabled ? 'ENABLE & CONTINUE' : 'CONTINUE'}
                             </Text>
-                            <ArrowRight size={20} color={colors.void} strokeWidth={3} />
+                            <ArrowRight size={20} color={colors.void} />
                         </Pressable>
                     </Animated.View>
                 </View>
