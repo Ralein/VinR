@@ -10,14 +10,10 @@ import {
     useRemoveBookmark 
 } from '../../hooks/useEvents';
 
-interface EventsListProps {
-    events: EventResult[];
-    isLoading: boolean;
-}
-
 export default function EventsList({
     events,
-    isLoading
+    isLoading,
+    scrollEnabled = true
 }: EventsListProps) {
     const { colors, fonts, spacing } = useTheme();
     const { data: bookmarks } = useEventBookmarks();
@@ -76,6 +72,29 @@ export default function EventsList({
         );
     }
 
+    if (!scrollEnabled) {
+        return (
+            <View style={styles.staticContainer}>
+                {sections.map((section, sIndex) => (
+                    <View key={`section-${sIndex}`} style={{ marginBottom: spacing.lg }}>
+                        <View style={[styles.header, { paddingVertical: spacing.sm }]}>
+                            <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>{section.title}</Text>
+                            <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>{section.description}</Text>
+                        </View>
+                        {section.data.map((item, iIndex) => (
+                            <EventCard
+                                key={`${item.event_id}-${iIndex}`}
+                                event={item}
+                                isBookmarked={bookmarkedIds.has(item.event_id.toString())}
+                                onBookmarkToggle={() => handleToggleBookmark(item)}
+                            />
+                        ))}
+                    </View>
+                ))}
+            </View>
+        );
+    }
+
     return (
         <SectionList
             sections={sections}
@@ -100,8 +119,16 @@ export default function EventsList({
     );
 }
 
+interface EventsListProps {
+    events: EventResult[];
+    isLoading: boolean;
+    scrollEnabled?: boolean;
+}
+
 const styles = StyleSheet.create({
     listContent: {
+    },
+    staticContainer: {
     },
     header: {
         gap: 4,

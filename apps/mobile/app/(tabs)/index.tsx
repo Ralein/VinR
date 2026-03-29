@@ -103,7 +103,7 @@ export default function HomeScreen() {
                             <CalendarDays size={11} color={colors.gold} strokeWidth={2} />
                             <Text style={[styles.dateChipText, { color: colors.gold }]}>{getDateChip()}</Text>
                         </View>
-                        <Text style={[styles.greeting, { color: colors.textGhost }]}>{getGreeting()}</Text>
+                        <Text style={[styles.greeting, { color: colors.textGhost, opacity: 1 }]}>{getGreeting()}</Text>
                         <Animated.Text
                             entering={FadeInDown.delay(80).duration(450)}
                             style={[styles.welcomeName, { color: colors.textPrimary }]}
@@ -194,7 +194,7 @@ export default function HomeScreen() {
                 <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
                     <SectionHeader title="Gratitude Journal" Icon={BookOpen} iconColor={colors.gold} delay={0} />
                     <Pressable onPress={() => router.push('/(tabs)/journal')}>
-                        <GlassCard accent="gold" elevated shimmer noAnimation noBorder={!isDark} hideGlow={!isDark}>
+                        <GlassCard accent="gold" elevated={isDark} shimmer={isDark} noAnimation noBorder={!isDark} hideGlow={!isDark}>
                             <View style={styles.journeyCard}>
                                 <View style={[styles.journeyIconWrap, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
                                     <BookOpen size={28} color={colors.gold} strokeWidth={1.8} />
@@ -223,6 +223,7 @@ export default function HomeScreen() {
                         <EventsList
                             events={(eventsData?.events || []).slice(0, 3)}
                             isLoading={eventsLoading}
+                            scrollEnabled={false}
                         />
                         {eventsData?.events && eventsData.events.length > 3 && (
                             <Pressable

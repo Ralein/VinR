@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { ChevronLeft, Send, Mic, Sparkles, Brain, User as UserIcon, Volume2, Info } from 'lucide-react-native';
+import { ChevronLeft, Send, Mic, Sparkles, Brain, User as UserIcon, Volume2, Info, Bot, Heart, Zap, ShieldCheck } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, Layout, useAnimatedStyle, withRepeat, withSequence, withTiming, useSharedValue } from 'react-native-reanimated';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
-
 const SafeBlurView = (props: any) => {
     const { isDark } = useTheme();
     try {
-        if (BlurView) {
-            return <BlurView {...props} tint={isDark ? "dark" : "light"} />;
-        }
-    } catch (e) {}
-    return <View {...props} />;
+        return <BlurView {...props} tint={isDark ? "dark" : "light"} />;
+    } catch (e) {
+        return <View {...props} />;
+    }
 };
 
 const SafeAudio = {
@@ -34,16 +32,23 @@ const SafeAudio = {
     }
 };
 
-
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     audioUrl?: string;
-    persona?: 'sara' | 'alex';
+    persona?: PersonaType;
 }
 
-type PersonaType = 'sara' | 'alex';
+type PersonaType = 'sara' | 'alex' | 'vinr' | 'therapist' | 'coach';
+
+const PERSONAS: { id: PersonaType; name: string; icon: any; color: string; bio: string }[] = [
+    { id: 'sara', name: 'Sara', icon: Sparkles, color: '#D4A853', bio: '🌿 Kind & Calm' },
+    { id: 'alex', name: 'Alex', icon: Brain, color: '#4F46E5', bio: '🧠 Nerd & Playful' },
+    { id: 'vinr', name: 'VinR', icon: Bot, color: '#10B981', bio: '🤖 Smart & Direct' },
+    { id: 'therapist', name: 'Dr. Aris', icon: ShieldCheck, color: '#EC4899', bio: '🫂 Clinical Support' },
+    { id: 'coach', name: 'Coach', icon: Zap, color: '#F59E0B', bio: '🔥 High Energy' }
+];
 
 export default function ChatScreen() {
     const { colors, spacing, borderRadius, isDark } = useTheme();
@@ -63,6 +68,27 @@ export default function ChatScreen() {
     const flatListRef = useRef<FlatList>(null);
     const [audioEnabled, setAudioEnabled] = useState(true);
     const audioRef = useRef<any>(null);
+
+    const micScale = useSharedValue(1);
+
+    useEffect(() => {
+        if (isLoading) {
+            micScale.value = withRepeat(
+                withSequence(
+                    withTiming(1.2, { duration: 500 }),
+                    withTiming(1, { duration: 500 })
+                ),
+                -1,
+                true
+            );
+        } else {
+            micScale.value = withTiming(1);
+        }
+    }, [isLoading]);
+
+    const animatedMicStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: micScale.value }]
+    }));
 
     // Cleanup audio on unmount
     useEffect(() => {
@@ -96,8 +122,6 @@ export default function ChatScreen() {
         setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
 
-        setIsLoading(true);
-
         try {
             const res = await api.post('/chat/message', { 
                 text: userText,
@@ -115,11 +139,10 @@ export default function ChatScreen() {
 
             setMessages(prev => {
                 const newMessages = [...prev, aiMsg];
-                // Limit to 20 messages, removing the oldest ones from the top
                 return newMessages.slice(-20);
             });
 
-            if (aiMsg.audioUrl) {
+            if (aiMsg.audioUrl && audioEnabled) {
                 playAudio(aiMsg.audioUrl);
             }
         } catch (error) {
@@ -137,9 +160,29 @@ export default function ChatScreen() {
         }
     };
 
+    const changePersona = (newPersona: PersonaType) => {
+        if (newPersona === persona) return;
+        setPersona(newPersona);
+        
+        const pData = PERSONAS.find(p => p.id === newPersona);
+        const welcomeText = `Switching to ${pData?.name}. ${pData?.bio.split(' ').slice(1).join(' ')} mode active.`;
+            
+        setMessages(prev => {
+            const newMessages = [...prev, {
+                id: `switch-${Date.now()}`,
+                role: 'assistant' as const,
+                content: welcomeText,
+                persona: newPersona
+            }];
+            return newMessages.slice(-20);
+        });
+    };
+
     const renderMessage = ({ item, index }: { item: Message, index: number }) => {
         const isUser = item.role === 'user';
         const msgPersona = item.persona || 'sara';
+        const pData = PERSONAS.find(p => p.id === msgPersona);
+        const Icon = pData?.icon || Sparkles;
         
         return (
             <Animated.View 
@@ -153,21 +196,18 @@ export default function ChatScreen() {
                 {!isUser && (
                     <View style={[
                         styles.aiAvatar, 
-                        { backgroundColor: `${colors.gold}15` }
+                        { backgroundColor: `${pData?.color || colors.gold}15`, borderColor: `${pData?.color || colors.gold}30` }
                     ]}>
-                        {msgPersona === 'sara' ? (
-                            <Sparkles size={16} color={colors.gold} />
-                        ) : (
-                            <Brain size={16} color={colors.gold} />
-                        )}
+                        <Icon size={16} color={pData?.color || colors.gold} />
                     </View>
                 )}
                 <View style={[
                     styles.msgBubble, 
                     isUser ? styles.msgBubbleUser : styles.msgBubbleAi,
                     isUser ? { backgroundColor: colors.sapphire } : { 
-                        backgroundColor: isDark ? colors.surface : colors.elevated, 
-                        borderColor: colors.border 
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)', 
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                        borderWidth: 1
                     }
                 ]}>
                     <Text style={[
@@ -179,10 +219,10 @@ export default function ChatScreen() {
                     {!isUser && item.audioUrl && (
                         <Pressable 
                             onPress={() => playAudio(item.audioUrl!)} 
-                            style={[styles.playBtn, { borderTopColor: colors.border }]}
+                            style={[styles.playBtn, { borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }]}
                         >
-                            <Volume2 size={14} color={colors.gold} />
-                            <Text style={[styles.playText, { color: colors.gold }]}>Listen</Text>
+                            <Volume2 size={14} color={pData?.color || colors.gold} />
+                            <Text style={[styles.playText, { color: pData?.color || colors.gold }]}>Listen</Text>
                         </Pressable>
                     )}
                 </View>
@@ -190,36 +230,15 @@ export default function ChatScreen() {
         );
     };
 
-    const changePersona = (newPersona: PersonaType) => {
-        if (newPersona === persona) return;
-        setPersona(newPersona);
-        
-        const welcomeText = newPersona === 'sara' 
-            ? "Switching to Sara. She's kind, calm, and ready to listen."
-            : "Switching to Alex. He's playful, nerdy, and ready to improve together!";
-            
-        setMessages(prev => {
-            const newMessages = [...prev, {
-                id: `switch-${Date.now()}`,
-                role: 'assistant' as const,
-                content: welcomeText,
-                persona: newPersona
-            }];
-            return newMessages.slice(-20);
-        });
-    };
-
     return (
         <View style={[styles.container, { backgroundColor: colors.void }]}>
             <Stack.Screen options={{ headerShown: false }} />
             
             {/* Header */}
-            <View style={[
+            <SafeBlurView intensity={90} style={[
                 styles.header, 
                 { 
                     paddingTop: insets.top + 10,
-                    backgroundColor: isDark ? 'rgba(7, 9, 15, 0.95)' : 'rgba(245, 242, 236, 0.95)',
-                    borderBottomWidth: isDark ? 1 : 0,
                     borderBottomColor: colors.border
                 }
             ]}>
@@ -235,67 +254,48 @@ export default function ChatScreen() {
                     style={[
                         styles.audioToggle, 
                         { 
-                            backgroundColor: isDark ? colors.surface : colors.elevated, 
+                            backgroundColor: audioEnabled ? `${colors.gold}15` : (isDark ? colors.surface : colors.elevated), 
                             borderColor: audioEnabled ? colors.gold : colors.border,
                             borderWidth: 1.5 
-                        },
-                        !audioEnabled && styles.audioDisabled
+                        }
                     ]}
                 >
                     <Mic size={20} color={audioEnabled ? colors.gold : colors.textMuted} />
                 </Pressable>
-            </View>
+            </SafeBlurView>
 
-            {/* Persona Selection */}
-            <View style={[styles.personaContainer, { backgroundColor: isDark ? colors.surface : colors.elevated }]}>
-                <Pressable 
-                    onPress={() => changePersona('sara')}
-                    style={[
-                        styles.personaTab, 
-                        persona === 'sara' && { 
-                            backgroundColor: isDark ? `${colors.gold}15` : colors.void, 
-                            borderColor: colors.gold,
-                            shadowColor: colors.gold,
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: isDark ? 0 : 0.08,
-                            shadowRadius: 4,
-                            elevation: 2
-                        }
-                    ]}
+            {/* Persona Selector */}
+            <View style={styles.personaScrollContainer}>
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    contentContainerStyle={styles.personaList}
                 >
-                    <Sparkles size={14} color={persona === 'sara' ? colors.gold : colors.textMuted} />
-                    <View>
-                        <Text style={[
-                            styles.personaName, 
-                            { color: persona === 'sara' ? colors.gold : colors.textPrimary }
-                        ]}>Sara</Text>
-                        <Text style={[styles.personaSub, { color: colors.textMuted }]}>Kind & Calm</Text>
-                    </View>
-                </Pressable>
-                <Pressable 
-                    onPress={() => changePersona('alex')}
-                    style={[
-                        styles.personaTab, 
-                        persona === 'alex' && { 
-                            backgroundColor: isDark ? `${colors.gold}15` : colors.void, 
-                            borderColor: colors.gold,
-                            shadowColor: colors.gold,
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: isDark ? 0 : 0.08,
-                            shadowRadius: 4,
-                            elevation: 2
-                        }
-                    ]}
-                >
-                    <Brain size={14} color={persona === 'alex' ? colors.gold : colors.textMuted} />
-                    <View>
-                        <Text style={[
-                            styles.personaName, 
-                            { color: persona === 'alex' ? colors.gold : colors.textPrimary }
-                        ]}>Alex</Text>
-                        <Text style={[styles.personaSub, { color: colors.textMuted }]}>Nerd & Playful</Text>
-                    </View>
-                </Pressable>
+                    {PERSONAS.map((p) => {
+                        const Icon = p.icon;
+                        const isSelected = persona === p.id;
+                        return (
+                            <Pressable 
+                                key={p.id}
+                                onPress={() => changePersona(p.id)}
+                                style={[
+                                    styles.personaCard,
+                                    { 
+                                        backgroundColor: isSelected ? `${p.color}15` : (isDark ? colors.surface : colors.elevated),
+                                        borderColor: isSelected ? p.color : 'transparent',
+                                        borderWidth: 2
+                                    }
+                                ]}
+                            >
+                                <Icon size={20} color={isSelected ? p.color : colors.textMuted} />
+                                <Text style={[
+                                    styles.personaNameLabel, 
+                                    { color: isSelected ? p.color : colors.textPrimary }
+                                ]}>{p.name}</Text>
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
             </View>
 
             <FlatList
@@ -303,9 +303,17 @@ export default function ChatScreen() {
                 data={messages}
                 keyExtractor={item => item.id}
                 renderItem={renderMessage}
-                contentContainerStyle={[styles.chatContent, { paddingBottom: insets.bottom + 100 }]}
+                contentContainerStyle={[styles.chatContent, { paddingBottom: insets.bottom + 120 }]}
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                ListFooterComponent={isLoading ? (
+                    <Animated.View entering={FadeInUp} style={styles.typingContainer}>
+                        <ActivityIndicator size="small" color={colors.gold} />
+                        <Text style={[styles.typingText, { color: colors.textMuted }]}>
+                            {PERSONAS.find(p => p.id === persona)?.name} is thinking...
+                        </Text>
+                    </Animated.View>
+                ) : null}
             />
 
             {/* Input Area */}
@@ -313,28 +321,27 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
                 style={styles.keyboardAvoid}
             >
-                <SafeBlurView intensity={80} style={[
+                <SafeBlurView intensity={100} style={[
                     styles.inputContainer, 
                     { 
-                        paddingBottom: insets.bottom || 20,
+                        paddingBottom: Math.max(insets.bottom, 20),
                         borderTopColor: colors.border
                     }
                 ]}>
-                    <View style={[styles.inputInner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={[styles.inputInner, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
                         <TextInput
                             style={[styles.input, { color: colors.textPrimary }]}
-                            placeholder="Message VinR..."
+                            placeholder="Type a message..."
                             placeholderTextColor={colors.textMuted}
                             value={input}
                             onChangeText={setInput}
                             multiline
                             maxLength={500}
-                            onSubmitEditing={handleSend}
                         />
                         {isLoading ? (
-                            <View style={styles.sendBtn}>
-                                <ActivityIndicator size="small" color={colors.gold} />
-                            </View>
+                            <Animated.View style={[styles.sendBtn, animatedMicStyle]}>
+                                <Mic size={20} color={colors.gold} />
+                            </Animated.View>
                         ) : input.trim() ? (
                             <Pressable onPress={handleSend} style={[styles.sendBtn, { backgroundColor: colors.sapphire }]}>
                                 <Send size={20} color="#FFF" style={{ marginLeft: 2 }} />
@@ -364,12 +371,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 16,
         borderBottomWidth: 1,
-        zIndex: 10,
+        zIndex: 100,
     },
     backBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -382,46 +389,48 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: '700',
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
     onlineStatus: {
         width: 8,
         height: 8,
         borderRadius: 4,
         backgroundColor: '#10B981',
-        marginTop: 2,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
     },
-    personaContainer: {
-        flexDirection: 'row',
-        padding: 8,
-        margin: 16,
-        borderRadius: 12,
-        gap: 8,
+    personaScrollContainer: {
+        paddingVertical: 12,
+        zIndex: 50,
     },
-    personaTab: {
-        flex: 1,
+    personaList: {
+        paddingHorizontal: 20,
+        gap: 12,
+    },
+    personaCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: 'transparent',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 24,
+        gap: 8,
+        minWidth: 100,
     },
-    personaText: {
-        fontSize: 13,
-        fontWeight: '600',
+    personaNameLabel: {
+        fontSize: 14,
+        fontWeight: '700',
     },
     chatContent: {
         padding: 20,
-        gap: 16,
+        gap: 20,
     },
     msgWrapper: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 8,
-        marginVertical: 4,
+        gap: 10,
     },
     msgWrapperUser: {
         justifyContent: 'flex-end',
@@ -430,27 +439,30 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
     aiAvatar: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(212,168,83,0.3)',
-        marginBottom: 4,
+        borderWidth: 1.5,
+        marginBottom: 2,
     },
     msgBubble: {
         maxWidth: '80%',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 20,
+        paddingHorizontal: 18,
+        paddingVertical: 14,
+        borderRadius: 24,
     },
     msgBubbleUser: {
         borderBottomRightRadius: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     msgBubbleAi: {
         borderBottomLeftRadius: 4,
-        borderWidth: 1,
     },
     msgText: {
         fontSize: 16,
@@ -458,27 +470,39 @@ const styles = StyleSheet.create({
     },
     msgTextUser: {
         color: '#FFFFFF',
+        fontWeight: '500',
+    },
+    typingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingLeft: 42,
+        marginTop: -10,
+    },
+    typingText: {
+        fontSize: 13,
+        fontStyle: 'italic',
     },
     keyboardAvoid: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 10,
+        zIndex: 100,
     },
     inputContainer: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 16,
         borderTopWidth: 1,
     },
     inputInner: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        borderRadius: 24,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        borderRadius: 30,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
         borderWidth: 1,
-        minHeight: 52,
+        minHeight: 56,
     },
     input: {
         flex: 1,
@@ -489,43 +513,32 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     sendBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 2,
+        marginBottom: 1,
     },
     audioToggle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-    },
-    audioDisabled: {
-        opacity: 0.5,
     },
     playBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        marginTop: 8,
-        paddingTop: 8,
+        marginTop: 10,
+        paddingTop: 10,
         borderTopWidth: 1,
     },
     playText: {
         fontSize: 12,
-        fontWeight: '600',
-    },
-    personaName: {
-        fontSize: 14,
         fontWeight: '700',
-    },
-    personaSub: {
-        fontSize: 10,
-        fontWeight: '500',
-        marginTop: -2,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     }
 });

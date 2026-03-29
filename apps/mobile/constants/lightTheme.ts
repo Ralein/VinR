@@ -31,8 +31,8 @@ export const lightColors = {
     // ── Text ──
     textPrimary: '#1A1208',    // near-black warm
     textSecondary: '#4A3F2F',  // deep brown
-    textMuted: '#7A6E5C',      // muted warm
-    textGhost: '#B0A896',      // very light warm grey
+    textMuted: '#5C5446',      // Darker muted brown for accessibility
+    textGhost: '#8B8272',      // Darker ghost grey for visibility on parchment
 
     // ── Borders ──
     border: 'rgba(0,0,0,0.08)',

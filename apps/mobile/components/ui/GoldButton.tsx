@@ -13,7 +13,7 @@ import Animated, {
     withSpring,
     withSequence,
 } from 'react-native-reanimated';
-import { colors, fonts, borderRadius, spacing, shadows, animation } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -39,6 +39,7 @@ export default function GoldButton({
     fullWidth = true,
     style,
 }: GoldButtonProps) {
+    const { colors, fonts, borderRadius, spacing, shadows, animation, isDark } = useTheme();
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -58,7 +59,7 @@ export default function GoldButton({
     const buttonColors = {
         gold: {
             bg: colors.gold,
-            text: colors.void,
+            text: isDark ? colors.void : colors.surface,
             shadow: shadows.gold,
         },
         emerald: {
@@ -81,11 +82,15 @@ export default function GoldButton({
             disabled={disabled || loading}
             style={[
                 styles.button,
-                { backgroundColor: bg },
+                { 
+                    backgroundColor: bg, 
+                    borderRadius: borderRadius.lg,
+                    paddingHorizontal: spacing.xl,
+                },
                 shadow,
-                variant === 'ghost' && styles.ghostButton,
-                !fullWidth && styles.autoWidth,
-                (disabled || loading) && styles.disabled,
+                variant === 'ghost' && { borderWidth: 1, borderColor: colors.border },
+                !fullWidth && { alignSelf: 'center' },
+                (disabled || loading) && { opacity: 0.45 },
                 animatedStyle,
                 style,
             ]}
@@ -93,7 +98,7 @@ export default function GoldButton({
             {loading ? (
                 <ActivityIndicator color={text} size="small" />
             ) : (
-                <Text style={[styles.label, { color: text }]}>{label}</Text>
+                <Text style={[styles.label, { color: text, fontFamily: fonts.bodySemiBold }]}>{label}</Text>
             )}
         </AnimatedPressable>
     );
@@ -101,25 +106,12 @@ export default function GoldButton({
 
 const styles = StyleSheet.create({
     button: {
-        borderRadius: borderRadius.lg,
         paddingVertical: 18,
-        paddingHorizontal: spacing.xl,
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: 56,
     },
-    autoWidth: {
-        alignSelf: 'center',
-    },
-    ghostButton: {
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    disabled: {
-        opacity: 0.45,
-    },
     label: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 17,
         letterSpacing: 0.3,
     },

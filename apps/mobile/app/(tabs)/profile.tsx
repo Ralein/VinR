@@ -197,7 +197,7 @@ function InsightCardView({ insight }: { insight: InsightCard }) {
     const { colors, spacing, isDark } = useTheme();
     return (
         <View style={{ marginBottom: spacing.sm }}>
-            <GlassCard glow accent="gold" noBorder={!isDark} hideGlow={!isDark} style={{ padding: spacing.md }}>
+            <GlassCard accent="gold" elevated={!isDark} shimmer={!isDark} noBorder={isDark} hideGlow={isDark} style={{ padding: spacing.md }}>
                 <View style={insightStyles.contentRow}>
                     <View style={[insightStyles.iconWrap, { backgroundColor: `${colors.gold}10` }]}>
                         <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
@@ -212,7 +212,7 @@ function InsightCardView({ insight }: { insight: InsightCard }) {
 import AmbientBackground from '../../components/ui/AmbientBackground';
 
 export default function ProfileScreen() {
-    const { colors, spacing, fonts } = useTheme();
+    const { colors, spacing, fonts, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const [period, setPeriod] = useState('30d');
     const { data: summary, isLoading: loadingSummary } = useAnalyticsSummary();
@@ -314,7 +314,7 @@ export default function ProfileScreen() {
                         {/* Streak Correlation */}
                         {trends?.streak_correlation && trends.streak_correlation.improvement_percent > 0 && (
                             <View style={{ marginHorizontal: 24, marginBottom: 24 }}>
-                                <GlassCard accent="emerald" glow style={{ padding: 20 }}>
+                                <GlassCard accent="emerald" elevated={!isDark} shimmer={!isDark} hideGlow={isDark} style={{ padding: 20 }}>
                                     <View style={styles.correlationRow}>
                                         <View style={[styles.correlationIconWrap, { backgroundColor: `${colors.emerald}10` }]}>
                                             <BarChart2 size={24} color={colors.emerald} strokeWidth={1.5} />

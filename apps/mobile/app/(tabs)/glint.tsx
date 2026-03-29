@@ -113,18 +113,11 @@ function GlintCard({ item, index, isActive, onError }: { item: Glint; index: num
     const [isReady, setIsReady] = useState(false);
     const [isPlaying, setIsPlaying] = useState(true);
     
-    // Transient play/pause icon state
-    const [actionIcon, setActionIcon] = useState<'play' | 'pause' | null>(null);
-    const [actionTrigger, setActionTrigger] = useState(0);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Reset readiness if it becomes active again just in case
+    // Reset readiness if it becomes active again
     useEffect(() => {
         if (!isActive) {
             setIsReady(false);
             setIsPlaying(true);
-            setActionIcon(null);
-            if (timerRef.current) clearTimeout(timerRef.current);
         }
     }, [isActive]);
 
@@ -136,15 +129,6 @@ function GlintCard({ item, index, isActive, onError }: { item: Glint; index: num
         
         const action = newIsPlaying ? 'play' : 'pause';
         webViewRef.current?.injectJavaScript(`togglePlayPauseMsg('${action}'); true;`);
-
-        // Trigger brief visual overlay
-        setActionIcon(action);
-        setActionTrigger(prev => prev + 1);
-        
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => {
-            setActionIcon(null);
-        }, 800); // Overlay disappears after 800ms
     };
 
     return (
@@ -199,25 +183,6 @@ function GlintCard({ item, index, isActive, onError }: { item: Glint; index: num
                     style={[styles.gradient, { zIndex: 3 }]}
                     pointerEvents="none"
                 />
-
-                {/* Transient Pause/Play Visual Indicator */}
-                {actionIcon && (
-                    <Animated.View 
-                        key={`${actionIcon}-${actionTrigger}`}
-                        entering={ZoomIn.duration(200)}
-                        exiting={ZoomOut.duration(200)}
-                        style={[StyleSheet.absoluteFill, styles.pauseOverlay]} 
-                        pointerEvents="none"
-                    >
-                        <View style={styles.playIconContainer}>
-                            {actionIcon === 'play' ? (
-                                <Play size={40} color="#FFFFFF" fill="#FFFFFF" />
-                            ) : (
-                                <Pause size={40} color="#FFFFFF" fill="#FFFFFF" />
-                            )}
-                        </View>
-                    </Animated.View>
-                )}
 
                 {/* Bottom Video Info */}
                 <View style={[styles.cardInfo, { zIndex: 4 }]} pointerEvents="none">

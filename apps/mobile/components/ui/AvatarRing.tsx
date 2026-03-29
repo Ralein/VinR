@@ -14,7 +14,7 @@ import Animated, {
     withTiming,
     Easing,
 } from 'react-native-reanimated';
-import { colors, fonts, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 interface AvatarRingProps {
     initials?: string;
@@ -30,11 +30,13 @@ export default function AvatarRing({
     initials = 'U',
     imageUrl,
     size = 44,
-    ringColor = colors.gold,
+    ringColor,
     pulse = false,
     style,
 }: AvatarRingProps) {
+    const { colors, fonts, isDark } = useTheme();
     const ringOpacity = useSharedValue(1);
+    const activeRingColor = ringColor || colors.gold;
 
     useEffect(() => {
         if (pulse) {
@@ -62,12 +64,12 @@ export default function AvatarRing({
                         height: ring,
                         borderRadius: ring / 2,
                         borderWidth: 2,
-                        borderColor: ringColor,
+                        borderColor: activeRingColor,
                         alignItems: 'center',
                         justifyContent: 'center',
-                        shadowColor: ringColor,
+                        shadowColor: activeRingColor,
                         shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.6,
+                        shadowOpacity: isDark ? 0.6 : 0.3,
                         shadowRadius: 8,
                     },
                     pulse && animatedRingStyle,
@@ -78,7 +80,7 @@ export default function AvatarRing({
                         width: innerSize,
                         height: innerSize,
                         borderRadius: innerSize / 2,
-                        backgroundColor: colors.elevated,
+                        backgroundColor: isDark ? colors.elevated : colors.surface,
                         alignItems: 'center',
                         justifyContent: 'center',
                         overflow: 'hidden',
@@ -94,7 +96,7 @@ export default function AvatarRing({
                             style={{
                                 fontFamily: fonts.bodySemiBold,
                                 fontSize: size * 0.33,
-                                color: ringColor,
+                                color: activeRingColor,
                                 letterSpacing: 0.5,
                             }}
                         >
@@ -106,3 +108,5 @@ export default function AvatarRing({
         </View>
     );
 }
+
+const styles = StyleSheet.create({});
