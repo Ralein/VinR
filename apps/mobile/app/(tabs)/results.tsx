@@ -162,7 +162,7 @@ export default function ResultsScreen() {
     const handleStartJournal = () => {
         haptics.success();
         reset();
-        router.replace('/(tabs)/journal');
+        router.replace('/(tabs)/journey');
     };
 
     const handleDone = () => {
