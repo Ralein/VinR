@@ -1,21 +1,24 @@
 /**
  * Notification Settings Screen
  * Toggle notification types, set reminder time, snooze
+ * Redesigned for Midnight Gold aesthetic.
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, Switch, Pressable,
     ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import {
-    Clock, AlertTriangle, Trophy, Heart, Moon,
+    Clock, AlertTriangle, Trophy, Heart, Moon, ArrowLeft
 } from 'lucide-react-native';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 import { useNotificationSettings } from '../hooks/useNotificationSettings';
 import type { LucideIcon } from 'lucide-react-native';
+import AmbientBackground from '../components/ui/AmbientBackground';
+import GlassCard from '../components/ui/GlassCard';
 
 const NOTIFICATION_TYPES: {
     key: 'daily_reminder_enabled' | 'streak_at_risk_enabled' | 'milestone_enabled' | 're_engagement_enabled';
@@ -26,31 +29,31 @@ const NOTIFICATION_TYPES: {
 }[] = [
     {
         key: 'daily_reminder_enabled',
-        title: 'Daily Reminder',
-        description: 'Gentle nudge at your chosen time to check in',
+        title: 'Daily Protocol',
+        description: 'Synchronized alignment at your preferred hour',
         Icon: Clock,
-        iconColor: colors.gold,
+        iconColor: '#D4AF37',
     },
     {
         key: 'streak_at_risk_enabled',
-        title: 'Streak at Risk',
-        description: 'Warning at 11 PM if you haven\'t completed today',
+        title: 'Continuity Alert',
+        description: 'Warning at 11 PM to prevent path disruption',
         Icon: AlertTriangle,
         iconColor: '#E8A85D',
     },
     {
         key: 'milestone_enabled',
-        title: 'Milestone Celebrations',
-        description: 'Celebrate when you hit 5, 10, 15, and 21 days',
+        title: 'Achievement Sync',
+        description: 'Celebrate progression milestones (5, 10, 21 days)',
         Icon: Trophy,
-        iconColor: colors.gold,
+        iconColor: '#D4AF37',
     },
     {
         key: 're_engagement_enabled',
-        title: 'Come Back Nudge',
-        description: 'If we haven\'t heard from you in a few days',
+        title: 'Re-alignment Nudge',
+        description: 'Gentle recall if session attendance lapses',
         Icon: Heart,
-        iconColor: colors.sapphire,
+        iconColor: '#4A90D9',
     },
 ];
 
@@ -66,6 +69,8 @@ const REMINDER_TIMES = [
 ];
 
 export default function NotificationSettingsScreen() {
+    const { colors, fonts, spacing } = useTheme();
+    const router = useRouter();
     const {
         preferences,
         isLoading,
@@ -79,7 +84,8 @@ export default function NotificationSettingsScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+                <AmbientBackground minimal={true} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.gold} />
                 </View>
@@ -91,77 +97,86 @@ export default function NotificationSettingsScreen() {
     const currentTimeLabel = REMINDER_TIMES.find(t => t.value === currentTime)?.label || '8:00 AM';
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            
+            {/* Header */}
+            <View style={styles.header}>
+                <Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: `#FFFFFF05`, borderColor: colors.border }]}>
+                    <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={1.5} />
+                </Pressable>
+                <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>Notifications</Text>
+                <View style={{ width: 44 }} />
+            </View>
+
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
-                <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <Text style={styles.backText}>← Back</Text>
-                    </Pressable>
-                    <Text style={styles.title}>Notifications</Text>
-                    <Text style={styles.subtitle}>
-                        Choose how VinR checks on you
-                    </Text>
-                </View>
+                <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: fonts.body }]}>
+                    Configure how VinR maintains your focus protocol.
+                </Text>
 
                 {/* Snooze Banner */}
                 {preferences?.snooze_until && new Date(preferences.snooze_until) > new Date() && (
-                    <View style={styles.snoozeBanner}>
-                        <View style={styles.snoozeIconWrap}>
+                    <View style={{ marginBottom: 24 }}>
+                        <GlassCard accent="gold" glow={true} style={styles.snoozeBanner}>
                             <Moon size={20} color={colors.gold} strokeWidth={1.8} />
-                        </View>
-                        <Text style={styles.snoozeText}>
-                            Notifications snoozed until{' '}
-                            {new Date(preferences.snooze_until).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}
-                        </Text>
+                            <Text style={[styles.snoozeText, { color: colors.textPrimary, fontFamily: fonts.body }]}>
+                                Protocol paused until{' '}
+                                <Text style={{ fontFamily: fonts.bodySemiBold }}>
+                                    {new Date(preferences.snooze_until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                            </Text>
+                        </GlassCard>
                     </View>
                 )}
 
                 {/* Notification Toggles */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Notification Types</Text>
-                    {NOTIFICATION_TYPES.map((type) => (
-                        <View key={type.key} style={styles.toggleRow}>
-                            <View style={styles.toggleInfo}>
-                                <View style={[styles.toggleIconWrap, { backgroundColor: `${type.iconColor}15` }]}>
-                                    <type.Icon size={18} color={type.iconColor} strokeWidth={1.8} />
+                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Alert Types</Text>
+                    <GlassCard accent="gold">
+                        {NOTIFICATION_TYPES.map((type, index) => (
+                            <View key={type.key}>
+                                <View style={styles.toggleRow}>
+                                    <View style={styles.toggleInfo}>
+                                        <View style={[styles.toggleIconWrap, { backgroundColor: `${type.iconColor}10` }]}>
+                                            <type.Icon size={18} color={type.iconColor} strokeWidth={1.8} />
+                                        </View>
+                                        <View style={styles.toggleText}>
+                                            <Text style={[styles.toggleTitle, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>{type.title}</Text>
+                                            <Text style={[styles.toggleDescription, { color: colors.textSecondary, fontFamily: fonts.body }]}>
+                                                {type.description}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Switch
+                                        value={preferences?.[type.key] ?? true}
+                                        onValueChange={(value) => updatePreferences({ [type.key]: value })}
+                                        trackColor={{ false: `#FFFFFF10`, true: `${colors.gold}80` }}
+                                        thumbColor={preferences?.[type.key] ? colors.gold : colors.textSecondary}
+                                        disabled={isUpdating}
+                                    />
                                 </View>
-                                <View style={styles.toggleText}>
-                                    <Text style={styles.toggleTitle}>{type.title}</Text>
-                                    <Text style={styles.toggleDescription}>
-                                        {type.description}
-                                    </Text>
-                                </View>
+                                {index < NOTIFICATION_TYPES.length - 1 && (
+                                    <View style={[styles.divider, { backgroundColor: colors.border, opacity: 0.1, marginLeft: 68 }]} />
+                                )}
                             </View>
-                            <Switch
-                                value={preferences?.[type.key] ?? true}
-                                onValueChange={(value) =>
-                                    updatePreferences({ [type.key]: value })
-                                }
-                                trackColor={{ false: colors.surface, true: colors.gold }}
-                                thumbColor={colors.textPrimary}
-                                disabled={isUpdating}
-                            />
-                        </View>
-                    ))}
+                        ))}
+                    </GlassCard>
                 </View>
 
                 {/* Reminder Time */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Daily Reminder Time</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Protocol Recurrence</Text>
                     <Pressable
-                        style={styles.timePickerButton}
                         onPress={() => setShowTimePicker(!showTimePicker)}
                     >
-                        <Text style={styles.timePickerLabel}>Remind me at</Text>
-                        <Text style={styles.timePickerValue}>{currentTimeLabel}</Text>
+                        <GlassCard accent="gold" style={styles.timePickerButton}>
+                            <Text style={[styles.timePickerLabel, { color: colors.textPrimary, fontFamily: fonts.body }]}>Scheduled Sync</Text>
+                            <Text style={[styles.timePickerValue, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>{currentTimeLabel}</Text>
+                        </GlassCard>
                     </Pressable>
 
                     {showTimePicker && (
@@ -171,7 +186,8 @@ export default function NotificationSettingsScreen() {
                                     key={time.value}
                                     style={[
                                         styles.timeChip,
-                                        currentTime === time.value && styles.timeChipActive,
+                                        { backgroundColor: `#FFFFFF05`, borderColor: colors.border },
+                                        currentTime === time.value && { backgroundColor: `${colors.gold}20`, borderColor: colors.gold },
                                     ]}
                                     onPress={() => {
                                         updatePreferences({ daily_reminder_time: time.value });
@@ -181,7 +197,8 @@ export default function NotificationSettingsScreen() {
                                     <Text
                                         style={[
                                             styles.timeChipText,
-                                            currentTime === time.value && styles.timeChipTextActive,
+                                            { color: colors.textSecondary, fontFamily: fonts.body },
+                                            currentTime === time.value && { color: colors.gold, fontFamily: fonts.bodySemiBold },
                                         ]}
                                     >
                                         {time.label}
@@ -194,125 +211,125 @@ export default function NotificationSettingsScreen() {
 
                 {/* Snooze */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Need a Break?</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Temporary Silence</Text>
                     <Pressable
-                        style={styles.snoozeButton}
                         onPress={() => snooze(2)}
                         disabled={isSnoozeing}
                     >
-                        <Moon size={18} color={colors.textPrimary} strokeWidth={1.8} />
-                        <Text style={[styles.snoozeButtonText, { marginLeft: spacing.sm }]}>
-                            Snooze for 2 hours
-                        </Text>
+                        <GlassCard accent="gold" style={styles.snoozeButton}>
+                            <Moon size={18} color={colors.textPrimary} strokeWidth={1.8} />
+                            <Text style={[styles.snoozeButtonText, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold, marginLeft: 12 }]}>
+                                Snooze for 120 Minutes
+                            </Text>
+                        </GlassCard>
                     </Pressable>
                 </View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollView: { flex: 1 },
-    scrollContent: { padding: spacing.lg },
+    scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
 
-    // Header
-    header: { marginBottom: spacing.xl },
-    backButton: { marginBottom: spacing.md },
-    backText: { fontFamily: fonts.body, fontSize: 16, color: colors.gold },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        paddingBottom: 24,
+    },
+    backButton: {
+        width: 44, height: 44, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1,
+    },
     title: {
-        fontFamily: fonts.display, fontSize: 32,
-        color: colors.textPrimary, marginBottom: spacing.xs,
+        fontSize: 22,
     },
     subtitle: {
-        fontFamily: fonts.body, fontSize: 16,
-        color: colors.textMuted,
+        fontSize: 16,
+        opacity: 0.6,
+        marginBottom: 32,
+        lineHeight: 24,
     },
 
-    // Snooze Banner
     snoozeBanner: {
         flexDirection: 'row', alignItems: 'center',
-        backgroundColor: colors.elevated, borderRadius: borderRadius.md,
-        padding: spacing.md, marginBottom: spacing.lg,
-        borderWidth: 1, borderColor: colors.gold + '30',
+        padding: 16,
+        gap: 12,
     },
-    snoozeIconWrap: { marginRight: spacing.sm },
     snoozeText: {
-        fontFamily: fonts.body, fontSize: 14,
-        color: colors.textMuted, flex: 1,
+        fontSize: 14,
+        flex: 1,
     },
 
-    // Section
-    section: { marginBottom: spacing.xl },
+    section: { marginBottom: 32 },
     sectionTitle: {
-        fontFamily: fonts.bodySemiBold, fontSize: 14,
-        color: colors.textMuted, textTransform: 'uppercase',
-        letterSpacing: 1, marginBottom: spacing.md,
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        marginBottom: 16,
+        paddingHorizontal: 4,
+        opacity: 0.7,
     },
 
-    // Toggle Row
     toggleRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: colors.surface, borderRadius: borderRadius.md,
-        padding: spacing.md, marginBottom: spacing.sm,
-        borderWidth: 1, borderColor: colors.border,
+        padding: 16,
     },
-    toggleInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.md },
+    toggleInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 16 },
     toggleIconWrap: {
-        width: 36, height: 36, borderRadius: 18,
+        width: 36, height: 36, borderRadius: 12,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.sm,
+        marginRight: 16,
     },
     toggleText: { flex: 1 },
     toggleTitle: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16,
-        color: colors.textPrimary, marginBottom: 2,
+        fontSize: 16, marginBottom: 2,
     },
     toggleDescription: {
-        fontFamily: fonts.body, fontSize: 13,
-        color: colors.textMuted,
+        fontSize: 13,
+        opacity: 0.6,
+    },
+    divider: {
+        height: 1,
     },
 
-    // Time Picker
     timePickerButton: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: colors.surface, borderRadius: borderRadius.md,
-        padding: spacing.md, borderWidth: 1, borderColor: colors.border,
+        padding: 16,
     },
     timePickerLabel: {
-        fontFamily: fonts.body, fontSize: 16, color: colors.textPrimary,
+        fontSize: 16,
     },
     timePickerValue: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.gold,
+        fontSize: 16,
     },
     timeGrid: {
         flexDirection: 'row', flexWrap: 'wrap',
-        marginTop: spacing.sm, gap: spacing.sm,
+        marginTop: 12, gap: 8,
     },
     timeChip: {
-        paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-        backgroundColor: colors.surface, borderRadius: borderRadius.full,
-        borderWidth: 1, borderColor: colors.border,
-    },
-    timeChipActive: {
-        backgroundColor: colors.gold + '20', borderColor: colors.gold,
+        paddingHorizontal: 16, paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
     },
     timeChipText: {
-        fontFamily: fonts.body, fontSize: 14, color: colors.textMuted,
-    },
-    timeChipTextActive: {
-        fontFamily: fonts.bodySemiBold, color: colors.gold,
+        fontSize: 13,
     },
 
-    // Snooze Button
     snoozeButton: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        backgroundColor: colors.surface, borderRadius: borderRadius.md,
-        padding: spacing.md, borderWidth: 1, borderColor: colors.border,
+        padding: 16,
     },
-
     snoozeButtonText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.textPrimary,
+        fontSize: 16,
     },
 });

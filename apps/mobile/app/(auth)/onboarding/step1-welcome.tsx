@@ -1,34 +1,25 @@
-/**
- * Step1Welcome — Onboarding welcome screen
- * 
- * Matches Journey/Loading screen design language:
- * - GlassCard for premium feel
- * - Orbital ring animations
- * - Ambient blobs for depth
- * - Lucide icons throughout
- * - Consistent spacing & typography
- */
-
 import React from 'react';
 import { 
     View, 
     Text, 
     StyleSheet, 
-    Pressable, 
-    ScrollView,
+    Pressable,
+    Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { 
     FadeInDown, 
-    FadeInUp,
+    FadeIn,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, ArrowRight, Shield, Zap } from 'lucide-react-native';
 import { useTheme } from '../../../context/ThemeContext';
-import { fonts, spacing, borderRadius } from '../../../constants/theme';
-import GlassCard from '../../../components/ui/GlassCard';
-import AmbientBackground, { OrbitRing, PulseRing } from '../../../components/ui/AmbientBackground';
+import { fonts, spacing } from '../../../constants/theme';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
+import PremiumLogo from '../../../components/ui/PremiumLogo';
+import LiquidCTA from '../../../components/ui/LiquidCTA';
+import { haptics } from '../../../services/haptics';
+
+const { height } = Dimensions.get('window');
 
 export default function Step1Welcome() {
     const { colors } = useTheme();
@@ -39,116 +30,78 @@ export default function Step1Welcome() {
     };
 
     const handleSignIn = () => {
+        haptics.light();
         router.push('/(auth)/sign-in');
+    };
+
+    const handleSignUp = () => {
+        haptics.light();
+        router.push('/(auth)/sign-up');
     };
 
     return (
         <SafeAreaView 
             style={[styles.container, { backgroundColor: colors.void }]} 
-            edges={['top']}
+            edges={['top', 'bottom']}
         >
-            <AmbientBackground />
+            <AmbientBackground minimal={true} />
 
-            <ScrollView 
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-                scrollEnabled={false}
-            >
+            <View style={styles.content}>
                 {/* ─── Hero Section ─── */}
                 <Animated.View 
-                    entering={FadeInUp.duration(900).springify().delay(200)} 
+                    entering={FadeIn.duration(1200).delay(200)} 
                     style={styles.heroSection}
                 >
-                    <View style={styles.iconZone}>
-                        {/* Orbital rings */}
-                        <OrbitRing size={140} duration={7000} delay={300} />
-                        <OrbitRing size={180} duration={11000} delay={500} />
+                    <PremiumLogo delay={400} scale={1.1} />
+                </Animated.View>
 
-                        {/* Pulse halos */}
-                        <PulseRing size={120} delay={700} />
-                        <PulseRing size={150} delay={1200} />
-
-                        {/* Icon container */}
-                        <View style={[styles.iconContainer, { backgroundColor: `${colors.gold}12`, borderColor: `${colors.gold}25` }]}>
-                            <LinearGradient
-                                colors={[colors.gold, `${colors.gold}E8`]}
-                                style={styles.iconGradient}
-                            >
-                                <Sparkles size={36} color={colors.void} strokeWidth={2} />
-                            </LinearGradient>
-                        </View>
+                {/* ─── Quote Section ─── */}
+                <Animated.View 
+                    entering={FadeInDown.duration(1000).delay(1200).springify()}
+                    style={styles.quoteSection}
+                >
+                    <Text style={[styles.quote, { color: colors.textPrimary }]}>
+                        "Excellence is not an act, but a habit."
+                    </Text>
+                    <View style={[styles.divider, { backgroundColor: colors.gold }]} />
+                    <View style={styles.taglineReveal}>
+                        <Text style={[styles.tagline, { color: colors.textSecondary }]}>
+                            Refinement in every detail. 
+                        </Text>
+                        <Text style={[styles.tagline, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>
+                            Exclusivity in every experience.
+                        </Text>
                     </View>
                 </Animated.View>
 
-                {/* ─── Title Section ─── */}
-                <Animated.View 
-                    entering={FadeInDown.duration(800).delay(400).springify()}
-                    style={styles.titleSection}
-                >
-                    <Text style={[styles.title, { color: colors.textPrimary }]}>
-                        Welcome to <Text style={[styles.highlight, { color: colors.gold }]}>VinR</Text>
-                    </Text>
-                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                        The most exclusive loyalty network for high-end experiences and refined tastes.
-                    </Text>
-                </Animated.View>
-
-                {/* ─── Benefits Card ─── */}
-                <Animated.View 
-                    entering={FadeInDown.duration(800).delay(600).springify()}
-                >
-                    <GlassCard accent="gold" elevated noAnimation>
-                        <View style={styles.benefitsGrid}>
-                            {[
-                                { Icon: Shield, label: 'Premium Security', desc: 'Bank-level encryption' },
-                                { Icon: Zap, label: 'Instant Access', desc: 'Curated experiences' },
-                            ].map((item, i) => (
-                                <View key={i} style={styles.benefitItem}>
-                                    <View style={[
-                                        styles.benefitIconWrap, 
-                                        { backgroundColor: `${colors.gold}15` }
-                                    ]}>
-                                        <item.Icon size={20} color={colors.gold} strokeWidth={2} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.benefitLabel, { color: colors.textPrimary }]}>
-                                            {item.label}
-                                        </Text>
-                                        <Text style={[styles.benefitDesc, { color: colors.textMuted }]}>
-                                            {item.desc}
-                                        </Text>
-                                    </View>
-                                </View>
-                            ))}
-                        </View>
-                    </GlassCard>
-                </Animated.View>
-
-                {/* ─── CTA Button ─── */}
-                <Animated.View 
-                    entering={FadeInDown.duration(800).delay(800).springify()}
-                    style={styles.ctaSection}
-                >
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.button,
-                            pressed && styles.buttonPressed,
-                            { backgroundColor: colors.gold, shadowColor: colors.gold }
-                        ]}
-                        onPress={handleNext}
+                {/* ─── CTA Section ─── */}
+                <View style={styles.bottomSection}>
+                    <Animated.View 
+                        entering={FadeInDown.duration(800).delay(2000).springify()}
+                        style={styles.ctaAlign}
                     >
-                        <Text style={[styles.buttonText, { color: colors.void }]}>Enter Excellence</Text>
-                        <ArrowRight size={18} color={colors.void} strokeWidth={2.5} />
-                    </Pressable>
+                        <LiquidCTA 
+                            onPress={handleNext} 
+                            label="Begin Your Journey" 
+                            delay={2400} 
+                        />
 
-                    {/* Sign In Link */}
-                    <Pressable onPress={handleSignIn} style={({ pressed }) => [pressed && { opacity: 0.6 }]}>
-                        <Text style={[styles.signInText, { color: colors.textMuted }]}>
-                            Already a member? <Text style={[{ color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Sign In</Text>
-                        </Text>
-                    </Pressable>
-                </Animated.View>
-            </ScrollView>
+                        <View style={styles.authLinks}>
+                            <Pressable onPress={handleSignUp} style={styles.authLink}>
+                                <Text style={styles.authTextBase}>
+                                    New here? <Text style={[styles.authTextHighlight, { color: colors.gold }]}>Sign Up</Text>
+                                </Text>
+                            </Pressable>
+                            <View style={[styles.linkSeparator, { backgroundColor: colors.border }]} />
+                            <Pressable onPress={handleSignIn} style={styles.authLink}>
+                                <Text style={styles.authTextBase}>
+                                    Member? <Text style={[styles.authTextHighlight, { color: colors.gold }]}>Sign In</Text>
+                                </Text>
+                            </Pressable>
+                        </View>
+                    </Animated.View>
+                </View>
+            </View>
         </SafeAreaView>
     );
 }
@@ -158,121 +111,78 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        flexGrow: 1,
-        justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.lg,
-        paddingBottom: spacing.xl,
+        flex: 1,
+        justifyContent: 'center',
+        paddingHorizontal: spacing.xl,
     },
     
     // Hero
     heroSection: {
         alignItems: 'center',
-        marginBottom: spacing.xl,
-    },
-    iconZone: {
-        width: 160,
-        height: 160,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    iconContainer: {
-        padding: 6,
-        borderRadius: 36,
-        borderWidth: 1,
-    },
-    iconGradient: {
-        width: 84,
-        height: 84,
-        borderRadius: 28,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#D4AF37',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 8,
+        marginBottom: height * 0.05,
     },
 
-    // Title
-    titleSection: {
+    // Quote
+    quoteSection: {
+        alignItems: 'center',
+        marginBottom: height * 0.08,
+    },
+    quote: {
+        fontFamily: 'PlayfairDisplay_700Bold',
+        fontSize: 28,
+        lineHeight: 38,
+        textAlign: 'center',
+        fontStyle: 'italic',
         marginBottom: spacing.lg,
     },
-    title: {
-        fontFamily: fonts.display,
-        fontSize: 36,
-        lineHeight: 44,
-        fontWeight: '700',
-        textAlign: 'center',
-        marginBottom: spacing.sm,
+    divider: {
+        width: 40,
+        height: 1.5,
+        marginBottom: spacing.lg,
+        opacity: 0.6,
     },
-    highlight: {
-        fontWeight: '900',
+    taglineReveal: {
+        alignItems: 'center',
+        gap: 4,
     },
-    subtitle: {
+    tagline: {
         fontFamily: fonts.body,
         fontSize: 16,
         lineHeight: 24,
         textAlign: 'center',
-        paddingHorizontal: spacing.sm,
-    },
-
-    // Benefits
-    benefitsGrid: {
-        gap: spacing.md,
-    },
-    benefitItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-    },
-    benefitIconWrap: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    benefitLabel: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 15,
-        marginBottom: 2,
-    },
-    benefitDesc: {
-        fontFamily: fonts.body,
-        fontSize: 13,
-    },
-
-    // CTA
-    ctaSection: {
-        gap: spacing.md,
-        marginTop: spacing.lg,
-    },
-    button: {
-        height: 60,
-        borderRadius: borderRadius.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing.sm,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.35,
-        shadowRadius: 16,
-        elevation: 8,
-    },
-    buttonPressed: {
-        transform: [{ scale: 0.96 }],
-        opacity: 0.9,
-    },
-    buttonText: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 16,
         letterSpacing: 0.5,
     },
-    signInText: {
+
+    // Bottom
+    bottomSection: {
+        width: '100%',
+    },
+    ctaAlign: {
+        alignItems: 'center',
+    },
+    authLinks: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 24,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+    },
+    authLink: {
+        paddingHorizontal: 8,
+    },
+    authTextBase: {
         fontFamily: fonts.body,
         fontSize: 14,
-        textAlign: 'center',
-        paddingVertical: spacing.sm,
+        color: 'rgba(255,255,255,0.4)',
+    },
+    authTextHighlight: {
+        fontFamily: fonts.bodySemiBold,
+    },
+    linkSeparator: {
+        width: 1,
+        height: 14,
+        opacity: 0.2,
     },
 });

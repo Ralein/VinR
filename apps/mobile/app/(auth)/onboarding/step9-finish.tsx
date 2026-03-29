@@ -1,29 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../../../constants/theme';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import { AuthService } from '../../../services/auth';
-import Animated, { FadeInDown, FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Sparkles, ChevronRight } from 'lucide-react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { ChevronRight, Check } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import VinRLogo from '../../../components/ui/VinRLogo';
+
+import PremiumLogo from '../../../components/ui/PremiumLogo';
+
+const { width, height } = Dimensions.get('window');
 
 export default function Step9Finish() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const { name, age, focusAreas, completeOnboarding } = useOnboardingStore();
+    const { name, focusAreas, completeOnboarding } = useOnboardingStore();
     const [saving, setSaving] = useState(false);
 
     const focusLabels = focusAreas.map(id => {
         switch(id) {
-            case 'anxiety': return 'Reduced Anxiety';
-            case 'focus': return 'Better Focus';
-            case 'sleep': return 'Deep Sleep';
-            case 'growth': return 'Personal Growth';
-            default: return id;
+            case 'stress': return 'Stress Reduction';
+            case 'focus': return 'Mental Focus';
+            case 'self_care': return 'Daily Self-Care';
+            case 'discipline': return 'Discipline';
+            case 'productivity': return 'Productivity';
+            case 'mindfulness': return 'Mindfulness';
+            default: return id.replace('_', ' ');
         }
     });
 
@@ -31,20 +38,14 @@ export default function Step9Finish() {
         if (saving) return;
         setSaving(true);
         try {
-            // Persist onboarding data + mark complete on the backend
             await AuthService.updateProfile({
                 name: name || undefined,
-                age: age || undefined,
-                primaryReason: focusAreas[0] || undefined,
                 relaxationMethods: focusAreas,
                 onboardingComplete: true,
             });
-            // Mark complete in local onboarding store
             completeOnboarding();
-            // RootNavigator will auto-redirect to (tabs) when user.onboardingComplete becomes true
         } catch (error) {
             console.error('Failed to save onboarding:', error);
-            // Even if API fails, let them through — data is saved locally
             completeOnboarding();
             router.replace('/(tabs)');
         } finally {
@@ -53,73 +54,77 @@ export default function Step9Finish() {
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={false} />
             
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
-                <Animated.View 
-                    entering={ZoomIn.duration(1000).springify()}
-                    style={styles.celebrationContainer}
-                >
-                    <View style={styles.circle}>
-                        <Sparkles size={48} color={theme.colors.gold} />
-                    </View>
-                    <View style={styles.glow} />
-                </Animated.View>
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 60 : 40), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
+                <View style={styles.logoContainer}>
+                    <PremiumLogo />
+                </View>
                 
-                <Animated.View entering={FadeInDown.delay(400).duration(800)}>
-                    <Text style={styles.title}>You're all set, {name}!</Text>
-                    <Text style={styles.subtitle}>
-                        Your personalized path is ready. Let's begin your journey to a calmer mind.
-                    </Text>
-                </Animated.View>
+                <View style={styles.textContainer}>
+                    <Animated.Text 
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
+                    >
+                        Welcome to the Circle, {name}.
+                    </Animated.Text>
+                    <Animated.Text 
+                        entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
+                    >
+                        Your personalized path is established. Precision and refinement await you within the VinR sanctuary.
+                    </Animated.Text>
+                </View>
 
                 <Animated.View 
-                    entering={FadeInUp.delay(800).duration(800)}
+                    entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}
                     style={styles.summaryWrapper}
                 >
-                    <GlassCard accent="gold" glow={true} style={styles.summaryCard}>
-                        <Text style={styles.summaryTitle}>Core Focus</Text>
-                        <View style={styles.badgeContainer}>
-                            {focusLabels.length > 0 ? (
-                                focusLabels.map((label, index) => (
-                                    <View key={index} style={styles.badge}>
-                                        <View style={styles.dot} />
-                                        <Text style={styles.badgeText}>{label}</Text>
-                                    </View>
-                                ))
-                            ) : (
-                                <Text style={styles.summaryText}>Balance & Clarity</Text>
-                            )}
+                    <GlassCard accent="gold" glow={true}>
+                        <View style={styles.summaryCard}>
+                            <Text style={[styles.summaryTitle, { color: colors.gold }]}>ESTABLISHED INTENT</Text>
+                            <View style={styles.badgeContainer}>
+                                {focusLabels.length > 0 ? (
+                                    focusLabels.map((label, index) => (
+                                        <View key={index} style={[styles.badge, { borderColor: `${colors.gold}30`, backgroundColor: `${colors.void}80` }]}>
+                                            <Check size={12} color={colors.gold} style={{ marginRight: 8 }} strokeWidth={4} />
+                                            <Text style={[styles.badgeText, { color: colors.textPrimary }]}>{label}</Text>
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text style={[styles.summaryText, { color: colors.textPrimary }]}>Standard Excellence</Text>
+                                )}
+                            </View>
                         </View>
                     </GlassCard>
                 </Animated.View>
-            </View>
 
-            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
-                <Animated.View entering={FadeInDown.delay(1200)}>
-                    <Pressable
-                        style={[styles.button, saving && { opacity: 0.7 }]}
-                        onPress={handleFinish}
-                        disabled={saving}
-                    >
-                        <LinearGradient
-                            colors={[theme.colors.gold, theme.colors.goldLight]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.buttonGradient}
+                <View style={styles.footer}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(1000).springify().damping(15)}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.button,
+                                { backgroundColor: colors.gold },
+                                (pressed || saving) && styles.buttonPressed
+                            ]}
+                            onPress={handleFinish}
+                            disabled={saving}
                         >
                             {saving ? (
-                                <ActivityIndicator size="small" color={theme.colors.void} />
+                                <ActivityIndicator size="small" color={colors.void} />
                             ) : (
                                 <>
-                                    <Text style={styles.buttonText}>Enter Your Sanctuary</Text>
-                                    <ChevronRight size={20} color={theme.colors.void} />
+                                    <Text style={[styles.buttonText, { color: colors.void }]}>Enter Your Sanctuary</Text>
+                                    <ChevronRight size={20} color={colors.void} strokeWidth={3} />
                                 </>
                             )}
-                        </LinearGradient>
-                    </Pressable>
-                </Animated.View>
+                        </Pressable>
+                    </Animated.View>
+                </View>
             </View>
         </View>
     );
@@ -128,61 +133,51 @@ export default function Step9Finish() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
-    celebrationContainer: {
-        marginBottom: 40,
-        position: 'relative',
-    },
-    circle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: theme.colors.surface,
+    logoContainer: {
+        height: 120,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.borderGold,
-        zIndex: 1,
+        marginBottom: 40,
     },
-    glow: {
-        position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        backgroundColor: theme.colors.gold,
-        opacity: 0.1,
-        top: -20,
-        left: -20,
+    textContainer: {
+        alignItems: 'center',
+        marginBottom: 40,
     },
     title: {
-        ...theme.typography.h1,
+        fontFamily: 'PlayfairDisplay_700Bold',
+        fontSize: 32,
+        lineHeight: 40,
         textAlign: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 16,
+        lineHeight: 24,
         textAlign: 'center',
-        marginBottom: 40,
+        opacity: 0.8,
+        paddingHorizontal: 10,
     },
     summaryWrapper: {
         width: '100%',
+        marginBottom: 'auto',
     },
     summaryCard: {
         padding: 24,
         alignItems: 'center',
     },
     summaryTitle: {
-        ...theme.typography.label,
-        color: theme.colors.gold,
-        marginBottom: 16,
+        fontFamily: 'DMSans_700Bold',
+        fontSize: 12,
+        letterSpacing: 2,
+        marginBottom: 20,
+        opacity: 0.7,
     },
     badgeContainer: {
         flexDirection: 'row',
@@ -193,49 +188,39 @@ const styles = StyleSheet.create({
     badge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.void,
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingVertical: 10,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-    dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: theme.colors.gold,
-        marginRight: 8,
     },
     badgeText: {
-        ...theme.typography.bodySm,
-        color: theme.colors.textPrimary,
+        fontFamily: 'DMSans_500Medium',
+        fontSize: 14,
     },
     summaryText: {
-        ...theme.typography.body,
-        color: theme.colors.textPrimary,
+        fontFamily: 'DMSans_500Medium',
+        fontSize: 16,
     },
     footer: {
-        padding: 24,
-        
+        width: '100%',
+        marginTop: 20,
     },
     button: {
         width: '100%',
-        height: 60,
-        borderRadius: 30,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        height: 64,
+        borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
     },
+    buttonPressed: {
+        transform: [{ scale: 0.98 }],
+        opacity: 0.9,
+    },
     buttonText: {
-        ...theme.typography.bodySemiBold,
-        color: theme.colors.void,
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
+        letterSpacing: 0.5,
     },
 });
-

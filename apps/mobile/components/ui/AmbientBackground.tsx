@@ -15,22 +15,24 @@ import { useTheme } from '../../context/ThemeContext';
 
 const { height } = Dimensions.get('window');
 
-export function AmbientBlob({ color, size, top, left, right, bottom, delay: d, duration }: {
+export function AmbientBlob({ color, size, top, left, right, bottom, delay: d, duration, minimal = false }: {
     color: string; size: number; top?: number; left?: number; right?: number; bottom?: number;
-    delay: number; duration: number;
+    delay: number; duration: number; minimal?: boolean;
 }) {
-    const scale = useSharedValue(0.85);
+    const scale = useSharedValue(minimal ? 1 : 0.85);
     const op    = useSharedValue(0);
 
     useEffect(() => {
-        op.value    = withDelay(d, withTiming(1, { duration: 1400 }));
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1.15, { duration, easing: Easing.inOut(Easing.sin) }),
-                withTiming(0.85, { duration, easing: Easing.inOut(Easing.sin) })
-            ), -1, true
-        );
-    }, []);
+        op.value    = withDelay(d, withTiming(minimal ? 0.35 : 1, { duration: 1400 }));
+        if (!minimal) {
+            scale.value = withRepeat(
+                withSequence(
+                    withTiming(1.15, { duration, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(0.85, { duration, easing: Easing.inOut(Easing.sin) })
+                ), -1, true
+            );
+        }
+    }, [minimal]);
 
     const style = useAnimatedStyle(() => ({
         opacity: op.value,
@@ -114,12 +116,14 @@ export function PulseRing({ size, delay: d, color = 'rgba(212,175,55,0.5)' }: { 
 export default function AmbientBackground({
     // Defaults for standard screens (Midnight Gold + deep lavender)
     topColor = 'rgba(212,175,55,0.04)',
+    minimal = false,
     blobs = [
         { color: 'rgba(212,175,55,0.05)', size: 380, top: -80, left: -100, delay: 200, duration: 5400 },
         { color: 'rgba(123,94,248,0.06)', size: 300, top: height * 0.6, right: -80, delay: 400, duration: 6600 }
     ]
 }: {
     topColor?: string;
+    minimal?: boolean;
     blobs?: { color: string; size: number; top?: number; left?: number; right?: number; bottom?: number; delay: number; duration: number; }[];
 }) {
     const { colors } = useTheme();
@@ -134,7 +138,7 @@ export default function AmbientBackground({
                 end={{ x: 0.5, y: 1 }}
             />
             {blobs.map((blob, idx) => (
-                <AmbientBlob key={`blob-${idx}`} {...blob} />
+                <AmbientBlob key={`blob-${idx}`} {...blob} minimal={minimal} />
             ))}
         </View>
     );

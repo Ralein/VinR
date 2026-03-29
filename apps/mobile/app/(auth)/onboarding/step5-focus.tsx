@@ -8,31 +8,41 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, { 
     FadeInDown,
     FadeInRight,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import { 
+    ArrowLeft, 
+    ArrowRight, 
+    Check,
+    Wind,
+    Target,
+    Sparkles,
+    Shield,
+    Zap,
+    Brain
+} from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const GOALS = [
-    { id: 'stress', label: 'Reduce Stress & Anxiety', icon: '🧘', color: '#E1BEE7' },
-    { id: 'focus', label: 'Sharpen Focus', icon: '🎯', color: '#BBDEFB' },
-    { id: 'self_care', label: 'Daily Self-Care', icon: '✨', color: '#FFF9C4' },
-    { id: 'discipline', label: 'Build Discipline', icon: '⚔️', color: '#FFCCBC' },
-    { id: 'productivity', label: 'Boost Productivity', icon: '⚡', color: '#C8E6C9' },
-    { id: 'mindfulness', label: 'Daily Mindfulness', icon: '🌿', color: '#DCEDC8' },
+    { id: 'stress', label: 'Reduce Stress & Anxiety', icon: Wind },
+    { id: 'focus', label: 'Sharpen Focus', icon: Target },
+    { id: 'self_care', label: 'Daily Self-Care', icon: Sparkles },
+    { id: 'discipline', label: 'Build Discipline', icon: Shield },
+    { id: 'productivity', label: 'Boost Productivity', icon: Zap },
+    { id: 'mindfulness', label: 'Daily Mindfulness', icon: Brain },
 ];
 
 export default function Step5Focus() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { focusAreas, setFocusAreas } = useOnboardingStore();
@@ -52,26 +62,29 @@ export default function Step5Focus() {
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={5} totalSteps={9} />
                     
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
-                        What's your focus?
+                        Focus your intent
                     </Animated.Text>
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        Select the areas you'd like to improve. We'll personalize your daily journey based on your choices.
+                        What disciplines shall we refine? Your choice shapes your daily VinR experience.
                     </Animated.Text>
                 </View>
 
@@ -82,68 +95,73 @@ export default function Step5Focus() {
                 >
                     {GOALS.map((goal, index) => {
                         const isSelected = focusAreas.includes(goal.id);
+                        const Icon = goal.icon;
                         return (
                             <Animated.View 
                                 key={goal.id}
-                                entering={FadeInRight.duration(600).delay(500 + index * 100).springify()}
+                                entering={FadeInDown.duration(1000).delay(600 + index * 50).springify().damping(15)}
                                 style={styles.goalWrapper}
                             >
-                                <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.goalCard,
-                                            pressed && styles.goalCardPressed
-                                        ]}
-                                        onPress={() => toggleGoal(goal.id)}
-                                    >
-                                        <View style={[styles.iconContainer, { backgroundColor: goal.color + '20' }]}>
-                                            <Text style={styles.icon}>{goal.icon}</Text>
+                                <Pressable
+                                    onPress={() => toggleGoal(goal.id)}
+                                    style={({ pressed }) => [
+                                        styles.goalPressable,
+                                        pressed && styles.goalPressed
+                                    ]}
+                                >
+                                    <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                        <View style={styles.goalCard}>
+                                            <View style={[styles.iconContainer, { backgroundColor: isSelected ? `${colors.gold}15` : colors.surface }]}>
+                                                <Icon size={24} color={isSelected ? colors.gold : colors.textGhost} strokeWidth={1.5} />
+                                            </View>
+                                            <Text style={[
+                                                styles.label,
+                                                { color: isSelected ? colors.gold : colors.textPrimary },
+                                                isSelected && styles.labelSelected
+                                            ]}>
+                                                {goal.label}
+                                            </Text>
+                                            
+                                            <View style={[
+                                                styles.checkbox,
+                                                { borderColor: isSelected ? colors.gold : colors.border },
+                                                isSelected && { backgroundColor: colors.gold }
+                                            ]}>
+                                                {isSelected && <Check size={12} color={colors.void} strokeWidth={4} />}
+                                            </View>
                                         </View>
-                                        <Text style={[
-                                            styles.label,
-                                            isSelected && styles.labelSelected
-                                        ]}>
-                                            {goal.label}
-                                        </Text>
-                                        
-                                        <View style={[
-                                            styles.checkbox,
-                                            isSelected && styles.checkboxSelected
-                                        ]}>
-                                            {isSelected && <Check size={12} color={theme.colors.void} strokeWidth={4} />}
-                                        </View>
-                                    </Pressable>
-                                </GlassCard>
+                                    </GlassCard>
+                                </Pressable>
                             </Animated.View>
                         );
                     })}
                 </ScrollView>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                focusAreas.length === 0 && styles.buttonDisabled,
-                                pressed && focusAreas.length > 0 && styles.buttonPressed
+                                focusAreas.length > 0 
+                                    ? { backgroundColor: colors.gold } 
+                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+                                pressed && focusAreas.length > 0 && styles.buttonPressed,
+                                focusAreas.length === 0 && styles.buttonDisabled
                             ]}
                             onPress={handleNext}
                             disabled={focusAreas.length === 0}
                         >
-                            <LinearGradient
-                                colors={focusAreas.length > 0 ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={[
-                                    styles.buttonText,
-                                    focusAreas.length === 0 && { color: '#666' }
-                                ]}>
-                                    Set Focus
-                                </Text>
-                                <ArrowRight size={20} color={focusAreas.length > 0 ? theme.colors.void : '#666'} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[
+                                styles.buttonText,
+                                { color: focusAreas.length > 0 ? colors.void : colors.textGhost }
+                            ]}>
+                                Set Focus
+                            </Text>
+                            <ArrowRight 
+                                size={20} 
+                                color={focusAreas.length > 0 ? colors.void : colors.textGhost} 
+                                strokeWidth={3} 
+                            />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -155,11 +173,10 @@ export default function Step5Focus() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
         marginBottom: 16,
@@ -172,17 +189,17 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     scrollView: {
         flex: 1,
@@ -194,14 +211,16 @@ const styles = StyleSheet.create({
     goalWrapper: {
         width: '100%',
     },
+    goalPressable: {
+        width: '100%',
+    },
+    goalPressed: {
+        transform: [{ scale: 0.985 }],
+    },
     goalCard: {
-        padding: 20,
+        padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        position: 'relative',
-    },
-    goalCardPressed: {
-        transform: [{ scale: 0.98 }],
     },
     iconContainer: {
         width: 48,
@@ -211,17 +230,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 16,
     },
-    icon: {
-        fontSize: 24,
-    },
     label: {
         fontFamily: 'DMSans_500Medium',
         fontSize: 16,
-        color: theme.colors.textPrimary,
         flex: 1,
     },
     labelSelected: {
-        color: theme.colors.gold,
         fontFamily: 'DMSans_700Bold',
     },
     checkbox: {
@@ -229,25 +243,17 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    checkboxSelected: {
-        backgroundColor: theme.colors.gold,
-        borderColor: theme.colors.gold,
-    },
     footer: {
+        width: '100%',
         marginTop: 20,
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -258,12 +264,11 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonDisabled: {
-        opacity: 0.5,
+        opacity: 0.3,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

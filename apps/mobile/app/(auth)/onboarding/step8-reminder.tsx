@@ -7,25 +7,28 @@ import {
     ScrollView,
     Switch,
     Platform,
+    Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, {
     FadeInDown,
     FadeIn,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight, Bell, Calendar, Trophy } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
+const { width, height } = Dimensions.get('window');
+
 export default function Step8Reminder() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const { notificationsEnabled, setNotificationsEnabled, reminderTime, setReminderTime } = useOnboardingStore();
+    const { notificationsEnabled, setNotificationsEnabled } = useOnboardingStore();
     const [isEnabled, setIsEnabled] = useState(notificationsEnabled);
 
     const toggleSwitch = (value: boolean) => {
@@ -34,30 +37,33 @@ export default function Step8Reminder() {
     };
 
     const handleNext = () => {
-        router.push('/(auth)/onboarding/step9-finish');
+        router.push('/onboarding/step9-finish');
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={8} totalSteps={9} />
 
                     <Animated.Text
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
-                        Stay Consistent
+                        Maintain the rhythm
                     </Animated.Text>
                     <Animated.Text
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        Gentle reminders help you maintain your momentum and reach your milestones faster.
+                        A soft nudge to keep you aligned with your standards. Reminders help anchor your daily discipline.
                     </Animated.Text>
                 </View>
 
@@ -67,72 +73,68 @@ export default function Step8Reminder() {
                     contentContainerStyle={styles.scrollContent}
                 >
                     <Animated.View
-                        entering={FadeInDown.duration(800).delay(600).springify()}
+                        entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
                     >
                         <GlassCard accent={isEnabled ? 'gold' : undefined} glow={isEnabled} style={styles.card}>
                             <View style={styles.iconContainer}>
-                                <View style={styles.iconCircle}>
-                                    <Bell size={32} color={theme.colors.gold} strokeWidth={1.5} />
+                                <View style={[styles.iconCircle, { backgroundColor: isEnabled ? `${colors.gold}15` : colors.surface, borderColor: isEnabled ? colors.gold : colors.border }]}>
+                                    <Bell size={32} color={isEnabled ? colors.gold : colors.textGhost} strokeWidth={1.5} />
                                 </View>
                             </View>
 
                             <View style={styles.toggleRow}>
                                 <View style={styles.toggleTextContainer}>
-                                    <Text style={styles.toggleTitle}>Daily Practice Reminders</Text>
-                                    <Text style={styles.toggleSub}>
-                                        We'll send a soft nudge to help you stay on track.
+                                    <Text style={[styles.toggleTitle, { color: colors.textPrimary }]}>Presence Notifications</Text>
+                                    <Text style={[styles.toggleSub, { color: colors.textSecondary, opacity: 0.6 }]}>
+                                        Receive a refined cue for your daily practice.
                                     </Text>
                                 </View>
                                 <Switch
-                                    trackColor={{ false: '#3D4560', true: theme.colors.gold }}
-                                    thumbColor={Platform.OS === 'ios' ? undefined : (isEnabled ? '#fff' : '#f4f3f4')}
-                                    ios_backgroundColor="#3D4560"
+                                    trackColor={{ false: colors.elevated, true: colors.gold }}
+                                    thumbColor={Platform.OS === 'ios' ? undefined : (isEnabled ? colors.textPrimary : colors.surface)}
+                                    ios_backgroundColor={colors.elevated}
                                     onValueChange={toggleSwitch}
                                     value={isEnabled}
                                 />
                             </View>
 
                             {isEnabled && (
-                                <Animated.View entering={FadeIn.duration(400)} style={styles.detailRow}>
-                                    <Calendar size={18} color={theme.colors.gold} style={{ marginRight: 8 }} />
-                                    <Text style={styles.detailText}>Default time: 9:00 AM</Text>
+                                <Animated.View entering={FadeIn.duration(400)} style={[styles.detailRow, { borderTopColor: colors.border }]}>
+                                    <Calendar size={18} color={colors.gold} style={{ marginRight: 8 }} strokeWidth={2} />
+                                    <Text style={[styles.detailText, { color: colors.gold }]}>Scheduled for 9:00 AM daily</Text>
                                 </Animated.View>
                             )}
                         </GlassCard>
                     </Animated.View>
 
                     <Animated.View
-                        entering={FadeInDown.duration(800).delay(800).springify()}
+                        entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}
                     >
-                        <GlassCard style={styles.quoteBox} accent="gold">
-                            <Trophy size={20} color={theme.colors.gold} style={styles.quoteIcon} />
-                            <Text style={styles.quoteText}>
-                                "Consistency is what transforms average into excellence."
-                            </Text>
+                        <GlassCard accent="gold">
+                            <View style={styles.quoteBox}>
+                                <Trophy size={20} color={colors.gold} style={styles.quoteIcon} strokeWidth={1.5} />
+                                <Text style={[styles.quoteText, { color: colors.gold }]}>
+                                    "Consistency is what transforms average into excellence."
+                                </Text>
+                            </View>
                         </GlassCard>
                     </Animated.View>
                 </ScrollView>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(1000).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
+                                { backgroundColor: colors.gold },
                                 pressed && styles.buttonPressed
                             ]}
                             onPress={handleNext}
                         >
-                            <LinearGradient
-                                colors={[theme.colors.gold, theme.colors.goldLight]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={styles.buttonText}>
-                                    {isEnabled ? 'Enable & Continue' : 'Continue'}
-                                </Text>
-                                <ArrowRight size={20} color={theme.colors.void} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[styles.buttonText, { color: colors.void }]}>
+                                {isEnabled ? 'Enable & Continue' : 'Continue'}
+                            </Text>
+                            <ArrowRight size={20} color={colors.void} strokeWidth={3} />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -144,11 +146,10 @@ export default function Step8Reminder() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
         marginBottom: 8,
@@ -161,17 +162,17 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     scrollView: {
         flex: 1,
@@ -191,11 +192,9 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: theme.colors.goldMuted,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: theme.colors.borderGold,
     },
     toggleRow: {
         flexDirection: 'row',
@@ -208,12 +207,10 @@ const styles = StyleSheet.create({
     },
     toggleTitle: {
         fontFamily: 'DMSans_600SemiBold',
-        color: theme.colors.textPrimary,
         fontSize: 18,
     },
     toggleSub: {
         fontFamily: 'DMSans_400Regular',
-        color: theme.colors.textMuted,
         fontSize: 14,
         marginTop: 4,
     },
@@ -223,10 +220,8 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingTop: 20,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.07)',
     },
     detailText: {
-        color: theme.colors.gold,
         fontFamily: 'DMSans_600SemiBold',
         fontSize: 15,
     },
@@ -235,28 +230,25 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     quoteIcon: {
-        marginBottom: 8,
+        marginBottom: 12,
         opacity: 0.6,
     },
     quoteText: {
-        fontFamily: 'CormorantGaramond_300Light_Italic',
-        color: theme.colors.gold,
+        fontFamily: 'DMSans_400Regular',
+        fontStyle: 'italic',
         fontSize: 16,
         textAlign: 'center',
         lineHeight: 24,
         opacity: 0.8,
     },
     footer: {
+        width: '100%',
         marginTop: 10,
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -267,9 +259,8 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

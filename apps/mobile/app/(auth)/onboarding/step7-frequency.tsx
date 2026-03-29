@@ -5,62 +5,64 @@ import {
     StyleSheet, 
     Pressable, 
     ScrollView,
+    Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, { 
     FadeInDown,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, ArrowRight, Clock } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
+const { width, height } = Dimensions.get('window');
+
 const COMMITMENTS = [
-    { id: '1-2', label: '1-2 days / week', sub: 'Starting slow and steady' },
-    { id: '3-5', label: '3-5 days / week', sub: 'Building a consistent habit' },
-    { id: 'daily', label: 'Every day', sub: 'Total lifestyle transformation' },
+    { id: '1-2', label: '1-2 days / week', sub: 'The balanced introduction' },
+    { id: '3-5', label: '3-5 days / week', sub: 'The path of discipline' },
+    { id: 'daily', label: 'Every day', sub: 'The standard of excellence' },
 ];
 
 export default function Step7Frequency() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { dailyTime, setDailyTime } = useOnboardingStore();
-
-    // Note: Reusing dailyTime store key for commitment frequency for now 
-    // to maintain compatibility with existing store structure if possible,
-    // or we can update the store later.
     
     const handleNext = () => {
         if (dailyTime) {
-            router.push('/(auth)/onboarding/step8-reminder');
+            router.push('/onboarding/step8-reminder');
         }
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 40, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={7} totalSteps={9} />
                     
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
-                        Commitment
+                        Define your pace
                     </Animated.Text>
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        How often do you want to practice? We'll help you stay on track with gentle reminders.
+                        Consistency is the bedrock of refinement. How often shall you dedicate yourself to VinR?
                     </Animated.Text>
                 </View>
 
@@ -74,67 +76,70 @@ export default function Step7Frequency() {
                         return (
                             <Animated.View 
                                 key={item.id}
-                                entering={FadeInDown.duration(600).delay(500 + index * 100).springify()}
+                                entering={FadeInDown.duration(1000).delay(600 + index * 100).springify().damping(15)}
                                 style={styles.optionWrapper}
                             >
-                                <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.optionCard,
-                                            pressed && styles.optionCardPressed
-                                        ]}
-                                        onPress={() => setDailyTime(item.id)}
-                                    >
-                                        <View style={styles.optionInfo}>
-                                            <Text style={[
-                                                styles.optionLabel,
-                                                isSelected && styles.optionLabelSelected
+                                <Pressable
+                                    onPress={() => setDailyTime(item.id)}
+                                    style={({ pressed }) => [
+                                        styles.optionPressable,
+                                        pressed && styles.optionPressed
+                                    ]}
+                                >
+                                    <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                        <View style={styles.optionCard}>
+                                            <View style={styles.optionInfo}>
+                                                <Text style={[
+                                                    styles.optionLabel,
+                                                    { color: isSelected ? colors.gold : colors.textPrimary },
+                                                    isSelected && styles.optionLabelSelected
+                                                ]}>
+                                                    {item.label}
+                                                </Text>
+                                                <Text style={[styles.optionSub, { color: colors.textSecondary, opacity: 0.6 }]}>
+                                                    {item.sub}
+                                                </Text>
+                                            </View>
+                                            
+                                            <View style={[
+                                                styles.radio,
+                                                { borderColor: isSelected ? colors.gold : colors.border },
                                             ]}>
-                                                {item.label}
-                                            </Text>
-                                            <Text style={styles.optionSub}>
-                                                {item.sub}
-                                            </Text>
+                                                {isSelected && <View style={[styles.radioInner, { backgroundColor: colors.gold }]} />}
+                                            </View>
                                         </View>
-                                        
-                                        <View style={[
-                                            styles.radio,
-                                            isSelected && styles.radioSelected
-                                        ]}>
-                                            {isSelected && <View style={styles.radioInner} />}
-                                        </View>
-                                    </Pressable>
-                                </GlassCard>
+                                    </GlassCard>
+                                </Pressable>
                             </Animated.View>
                         );
                     })}
                 </ScrollView>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                !dailyTime && styles.buttonDisabled,
-                                pressed && dailyTime && styles.buttonPressed
+                                dailyTime 
+                                    ? { backgroundColor: colors.gold } 
+                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+                                pressed && dailyTime && styles.buttonPressed,
+                                !dailyTime && styles.buttonDisabled
                             ]}
                             onPress={handleNext}
                             disabled={!dailyTime}
                         >
-                            <LinearGradient
-                                colors={dailyTime ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={[
-                                    styles.buttonText,
-                                    !dailyTime && { color: '#666' }
-                                ]}>
-                                    Set Goal
-                                </Text>
-                                <ArrowRight size={20} color={dailyTime ? theme.colors.void : '#666'} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[
+                                styles.buttonText,
+                                { color: dailyTime ? colors.void : colors.textGhost }
+                            ]}>
+                                Set Frequency
+                            </Text>
+                            <ArrowRight 
+                                size={20} 
+                                color={dailyTime ? colors.void : colors.textGhost} 
+                                strokeWidth={3} 
+                            />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -146,11 +151,10 @@ export default function Step7Frequency() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
         marginBottom: 8,
@@ -163,17 +167,17 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     scrollView: {
         flex: 1,
@@ -184,63 +188,54 @@ const styles = StyleSheet.create({
     optionWrapper: {
         marginBottom: 16,
     },
+    optionPressable: {
+        width: '100%',
+    },
+    optionPressed: {
+        transform: [{ scale: 0.985 }],
+    },
     optionCard: {
         padding: 24,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'relative',
-    },
-    optionCardPressed: {
-        transform: [{ scale: 0.98 }],
     },
     optionInfo: {
         flex: 1,
     },
     optionLabel: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.textPrimary,
-        marginBottom: 4,
+        marginBottom: 6,
     },
     optionLabelSelected: {
-        color: theme.colors.gold,
+        fontFamily: 'DMSans_700Bold',
     },
     optionSub: {
         fontFamily: 'DMSans_400Regular',
         fontSize: 14,
-        color: theme.colors.textSecondary,
     },
     radio: {
         width: 24,
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 16,
-    },
-    radioSelected: {
-        borderColor: theme.colors.gold,
     },
     radioInner: {
         width: 12,
         height: 12,
         borderRadius: 6,
-        backgroundColor: theme.colors.gold,
     },
     footer: {
+        width: '100%',
         marginTop: 10,
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -251,12 +246,11 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonDisabled: {
-        opacity: 0.5,
+        opacity: 0.3,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

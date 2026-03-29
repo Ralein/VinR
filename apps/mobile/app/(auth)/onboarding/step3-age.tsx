@@ -10,26 +10,27 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, { 
     FadeInDown, 
+    FadeIn,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function Step3Age() {
+    const { colors, fonts, borderRadius, spacing } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const [age, setAge] = useState('');
 
     const handleNext = () => {
-        if (age.length > 0) {
+        if (age.length > 0 && isAgeValid) {
             router.push('/onboarding/step4-avatar');
         }
     };
@@ -39,77 +40,88 @@ export default function Step3Age() {
     return (
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.void }]}
         >
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={3} totalSteps={9} />
                     
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
                         How old are you?
                     </Animated.Text>
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        Your age helps us personalize your journey and connect you with the right community.
+                        VinR experiences are tailored to your stage of life.
                     </Animated.Text>
                 </View>
 
                 <Animated.View 
-                    entering={FadeInDown.duration(800).delay(600).springify()}
+                    entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
                     style={styles.inputSection}
                 >
                     <GlassCard accent={isAgeValid ? 'gold' : undefined} shimmer={age.length > 0} >
                         <View style={styles.ageInputContainer}>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { color: colors.gold }]}
                                 placeholder="00"
-                                placeholderTextColor="rgba(212,168,83,0.2)"
+                                placeholderTextColor={`${colors.gold}20`}
                                 value={age}
                                 onChangeText={(text) => setAge(text.replace(/[^0-9]/g, '').slice(0, 2))}
                                 keyboardType="number-pad"
                                 maxLength={2}
                                 autoFocus
-                                selectionColor={theme.colors.gold}
+                                selectionColor={colors.gold}
                             />
-                            <Text style={styles.yearsText}>years old</Text>
+                            <Text style={[styles.yearsText, { color: colors.textSecondary }]}>years</Text>
                         </View>
                     </GlassCard>
+                    {!isAgeValid && age.length === 2 && (
+                        <Animated.Text 
+                            entering={FadeIn}
+                            style={[styles.errorText, { color: colors.crimson }]}
+                        >
+                            Must be 13 or older.
+                        </Animated.Text>
+                    )}
                 </Animated.View>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                !isAgeValid && styles.buttonDisabled,
-                                pressed && isAgeValid && styles.buttonPressed
+                                isAgeValid 
+                                    ? { backgroundColor: colors.gold } 
+                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+                                pressed && isAgeValid && styles.buttonPressed,
+                                !isAgeValid && styles.buttonDisabled
                             ]}
                             onPress={handleNext}
                             disabled={!isAgeValid}
                         >
-                            <LinearGradient
-                                colors={isAgeValid ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={[
-                                    styles.buttonText,
-                                    !isAgeValid && { color: '#666' }
-                                ]}>
-                                    Continue
-                                </Text>
-                                <ArrowRight size={20} color={isAgeValid ? theme.colors.void : '#666'} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[
+                                styles.buttonText,
+                                { color: isAgeValid ? colors.void : colors.textGhost }
+                            ]}>
+                                Continue
+                            </Text>
+                            <ArrowRight 
+                                size={20} 
+                                color={isAgeValid ? colors.void : colors.textGhost} 
+                                strokeWidth={3} 
+                            />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -121,14 +133,13 @@ export default function Step3Age() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
-        marginTop: 0,
+        marginBottom: 0,
     },
     backButton: {
         width: 44,
@@ -138,57 +149,52 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     inputSection: {
-        marginTop: 80,
+        marginTop: 60,
         flex: 1,
         alignItems: 'center',
     },
     ageInputContainer: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        paddingHorizontal: 24,
+        paddingHorizontal: 32,
         paddingVertical: 12,
-        gap: 16,
     },
     input: {
         fontFamily: 'DMSans_700Bold',
-        fontSize: 120,
-        color: theme.colors.gold,
+        fontSize: 100,
         textAlign: 'center',
-        minWidth: 150,
-        // Using a subtle text shadow for a more premium look
-        textShadowColor: 'rgba(212,168,83,0.4)',
-        textShadowOffset: { width: 0, height: 4 },
-        textShadowRadius: 10,
+        minWidth: 120,
     },
     yearsText: {
-        ...theme.typography.h3,
-        color: theme.colors.textSecondary,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 24,
+        marginLeft: 16,
+    },
+    errorText: {
+        marginTop: 16,
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 14,
     },
     footer: {
-        marginTop: 'auto',
+        width: '100%',
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -199,12 +205,11 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonDisabled: {
-        opacity: 0.5,
+        opacity: 0.3,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });
