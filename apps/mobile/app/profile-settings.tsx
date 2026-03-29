@@ -16,6 +16,7 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuthStore } from '../stores/authStore';
+import { useOnboardingStore } from '../stores/onboardingStore';
 import api from '../services/api';
 import { deleteItemAsync } from '../utils/storage';
 import GlassCard from '../components/ui/GlassCard';
@@ -25,6 +26,7 @@ export default function ProfileSettingsScreen() {
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const signOut = useAuthStore((s) => s.signOut);
+    const onboarding = useOnboardingStore();
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -106,7 +108,7 @@ export default function ProfileSettingsScreen() {
                         <ProfileRow
                             Icon={User}
                             label="Legal Name"
-                            value={user?.name || '—'}
+                            value={onboarding.name || user?.name || '—'}
                             iconColor={colors.gold}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -119,22 +121,22 @@ export default function ProfileSettingsScreen() {
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Calendar}
-                            label="Age Threshold"
-                            value={user?.age || '—'}
+                            label="Age"
+                            value={onboarding.age || user?.age || '—'}
                             iconColor={colors.emerald}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Target}
                             label="Primary Directive"
-                            value={user?.primaryReason || '—'}
+                            value={onboarding.identity || user?.primaryReason || '—'}
                             iconColor={colors.lavender}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Leaf}
                             label="Relaxation Nodes"
-                            value={user?.relaxationMethods?.join(', ') || '—'}
+                            value={onboarding.focusAreas?.join(', ') || user?.relaxationMethods?.join(', ') || '—'}
                             iconColor={colors.emerald}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -146,27 +148,13 @@ export default function ProfileSettingsScreen() {
                         />
                     </GlassCard>
 
-                    {/* Timezone */}
-                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Chronal Sync</Text>
-                    <GlassCard accent="gold">
-                        <View style={styles.row}>
-                             <View style={[styles.rowIcon, { backgroundColor: `#FFFFFF05` }]}>
-                                <Calendar size={18} color={colors.textSecondary} strokeWidth={1.8} />
-                            </View>
-                            <View style={styles.rowTextContainer}>
-                                <Text style={[styles.rowLabel, { color: colors.textSecondary, fontFamily: fonts.bodySemiBold }]}>Current Timezone</Text>
-                                <Text style={[styles.rowValue, { color: colors.textPrimary, fontFamily: fonts.body }]}>{user?.timezone || 'Universal UTC'}</Text>
-                            </View>
-                        </View>
-                    </GlassCard>
-
                     {/* Danger Zone */}
-                    <Text style={[styles.sectionTitle, { color: colors.crimson, fontFamily: fonts.bodySemiBold }]}>Protocol Termination</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.crimson, fontFamily: fonts.bodySemiBold }]}>Delete Account</Text>
                     <GlassCard accent="crimson" glow={true}>
                         <View style={styles.dangerInfo}>
                             <AlertTriangle size={20} color={colors.crimson} strokeWidth={2} />
                             <Text style={[styles.dangerText, { color: colors.textSecondary, fontFamily: fonts.body }]}>
-                                Account termination is irreversible. Every path established, session recorded, and insight generated will be permanently discarded.
+                                Account deletion is permanent and irreversible. All your data will be erased.
                             </Text>
                         </View>
                         <Pressable 
@@ -177,8 +165,10 @@ export default function ProfileSettingsScreen() {
                             ]} 
                             onPress={handleDeleteAccount}
                         >
-                            <Trash2 size={18} color="#fff" />
-                            <Text style={[styles.deleteButtonText, { fontFamily: fonts.bodySemiBold }]}>Terminate State</Text>
+                            <View style={styles.deleteButtonInner}>
+                                <Trash2 size={18} color="#fff" />
+                                <Text style={[styles.deleteButtonText, { fontFamily: fonts.bodySemiBold }]}>Delete Account</Text>
+                            </View>
                         </Pressable>
                     </GlassCard>
 
@@ -197,17 +187,17 @@ export default function ProfileSettingsScreen() {
                     <GlassCard accent="crimson" glow={true} style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <AlertTriangle size={24} color={colors.crimson} />
-                            <Text style={[styles.modalTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>Confirm Termination</Text>
+                            <Text style={[styles.modalTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>Confirm Deletion</Text>
                             <Pressable onPress={() => setShowDeleteModal(false)} style={[styles.modalClose, { backgroundColor: `#FFFFFF10` }]}>
                                 <X size={20} color={colors.textSecondary} />
                             </Pressable>
                         </View>
                         <Text style={[styles.modalDesc, { color: colors.textSecondary, fontFamily: fonts.body }]}>
-                            Enter <Text style={{ fontFamily: fonts.bodySemiBold, color: colors.crimson }}>TERMINATE</Text> to permanently erase your existence from the sanctuary.
+                            Enter <Text style={{ fontFamily: fonts.bodySemiBold, color: colors.crimson }}>DELETE</Text> to permanently erase your data from the sanctuary.
                         </Text>
                         <TextInput
                             style={[styles.modalInput, { backgroundColor: `${colors.void}90`, borderColor: colors.border, color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}
-                            placeholder="TERMINATE"
+                            placeholder="DELETE"
                             placeholderTextColor={`${colors.textSecondary}40`}
                             value={deleteConfirmText}
                             onChangeText={setDeleteConfirmText}
@@ -216,22 +206,26 @@ export default function ProfileSettingsScreen() {
                         />
                         <View style={styles.modalActions}>
                             <Pressable
-                                style={[styles.modalCancelBtn, { backgroundColor: `#FFFFFF05` }]}
+                                style={[styles.modalCancelBtn, { backgroundColor: `#FFFFFF08`, borderColor: colors.border, borderWidth: 1 }]}
                                 onPress={() => setShowDeleteModal(false)}
                             >
-                                <Text style={[styles.modalCancelText, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>Abort</Text>
+                                <View style={styles.buttonInnerCentered}>
+                                    <Text style={[styles.modalCancelText, { color: colors.textSecondary, fontFamily: fonts.bodySemiBold }]}>Cancel</Text>
+                                </View>
                             </Pressable>
                             <Pressable
                                 style={[
                                     styles.modalDeleteBtn,
                                     { backgroundColor: colors.crimson },
-                                    deleteConfirmText.trim().toUpperCase() !== 'TERMINATE' && { opacity: 0.4 },
+                                    deleteConfirmText.trim().toUpperCase() !== 'DELETE' && { opacity: 0.3, backgroundColor: '#444' },
                                 ]}
                                 onPress={executeDelete}
-                                disabled={deleteConfirmText.trim().toUpperCase() !== 'TERMINATE'}
+                                disabled={deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
                             >
-                                <Trash2 size={16} color="#fff" />
-                                <Text style={[styles.modalDeleteText, { fontFamily: fonts.bodySemiBold }]}>Confirm</Text>
+                                <View style={styles.buttonInnerCentered}>
+                                    <Trash2 size={16} color="#fff" style={{ marginRight: 8 }} />
+                                    <Text style={[styles.modalDeleteText, { fontFamily: fonts.bodySemiBold }]}>Delete</Text>
+                                </View>
                             </Pressable>
                         </View>
                     </GlassCard>
@@ -359,15 +353,19 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     deleteButton: {
-        flexDirection: 'row', alignItems: 'center',
-        justifyContent: 'center',
         margin: 16, marginTop: 0,
-        paddingVertical: 14,
         borderRadius: 12,
-        gap: 8,
+        overflow: 'hidden',
+    },
+    deleteButtonInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        gap: 10,
     },
     deleteButtonText: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#ffffff',
     },
     modalOverlay: {
@@ -378,18 +376,18 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     modalContent: {
-        width: '100%',
-        maxWidth: 400,
-        padding: 24,
+        width: '90%',
+        maxWidth: 340,
+        padding: 20,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        marginBottom: 20,
+        gap: 10,
+        marginBottom: 16,
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 18,
         flex: 1,
     },
     modalClose: {
@@ -397,45 +395,52 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     modalDesc: {
-        fontSize: 14,
-        lineHeight: 22,
-        marginBottom: 20,
+        fontSize: 13,
+        lineHeight: 20,
+        marginBottom: 16,
         opacity: 0.8,
     },
     modalInput: {
         borderRadius: 12,
         borderWidth: 1,
         paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingVertical: 12,
         fontSize: 18,
-        letterSpacing: 4,
+        letterSpacing: 2,
         textAlign: 'center',
-        marginBottom: 24,
+        marginBottom: 20,
     },
     modalActions: {
         flexDirection: 'row',
         gap: 12,
+        alignItems: 'center',
     },
     modalCancelBtn: {
         flex: 1,
-        paddingVertical: 14,
+        height: 48,
         borderRadius: 12,
-        alignItems: 'center',
+        justifyContent: 'center',
     },
     modalCancelText: {
-        fontSize: 15,
+        fontSize: 14,
+        textAlign: 'center',
     },
     modalDeleteBtn: {
+        flex: 1.5,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    buttonInnerCentered: {
         flex: 1,
         flexDirection: 'row',
-        paddingVertical: 14,
-        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        width: '100%',
     },
     modalDeleteText: {
-        fontSize: 15,
+        fontSize: 14,
         color: '#ffffff',
     },
 });
