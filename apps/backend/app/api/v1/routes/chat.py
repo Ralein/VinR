@@ -12,7 +12,8 @@ from app.services.chat_service import (
     clear_chat_history,
     generate_buddy_response,
 )
-from app.services.elevenlabs_service import text_to_speech, audio_bytes_to_data_uri
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+from app.services.audio_service import transcribe_audio_whisper
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -102,6 +103,22 @@ async def send_message(
             created_at=buddy_msg.created_at.isoformat(),
         ),
     )
+
+
+@router.post("/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+):
+    """Voice to text using Groq Whisper."""
+    try:
+        content = await file.read()
+        text = await transcribe_audio_whisper(content, filename=file.filename)
+        if not text:
+            raise HTTPException(status_code=400, detail="Transcription failed")
+        return {"text": text}
+    except Exception as e:
+        print(f"⚠️ Transcribe route error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/history")
