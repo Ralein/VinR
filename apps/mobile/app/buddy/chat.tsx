@@ -1,28 +1,28 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    FlatList, 
-    TextInput, 
-    Pressable, 
-    KeyboardAvoidingView, 
-    Platform, 
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TextInput,
+    Pressable,
+    KeyboardAvoidingView,
+    Platform,
     ActivityIndicator,
     Dimensions,
     Alert,
     ScrollView,
-    Clipboard
+    Clipboard,
+    Keyboard
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { 
-    ChevronLeft, 
-    Mic, 
-    Send, 
-    MoreVertical, 
-    Play, 
-    Trash2, 
-    Lock,
+import {
+    ChevronLeft,
+    Mic,
+    Send,
+    MoreVertical,
+    Play,
+    Trash2,
     ChevronUp,
     Copy,
     Reply,
@@ -38,11 +38,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { SafeBlurView } from '../../components/ui/SafeBlurView';
 import { PERSONAS, Persona } from '../../constants/personas';
-import Animated, { 
-    FadeIn, 
-    FadeInUp, 
-    FadeOut, 
-    SlideInRight, 
+import Animated, {
+    FadeIn,
+    FadeInUp,
+    FadeOut,
+    SlideInRight,
     SlideInLeft,
     useSharedValue,
     useAnimatedStyle,
@@ -55,9 +55,11 @@ import Animated, {
     ZoomIn,
     BounceIn,
     SlideInUp,
-    FadeInDown
+    FadeInDown,
+    runOnJS
 } from 'react-native-reanimated';
-import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
+// ── File-1 gesture API ──────────────────────────────────────────────────────
+import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import AudioService from '../../services/audio_service';
 
@@ -66,13 +68,12 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // Haptic wrapper
 const triggerHaptic = async (style: 'light' | 'medium' | 'heavy' = 'medium') => {
     try {
-        const styleEnum = style === 'light' ? Haptics.ImpactFeedbackStyle.Light : 
-                          style === 'medium' ? Haptics.ImpactFeedbackStyle.Medium : 
-                          Haptics.ImpactFeedbackStyle.Heavy;
+        const styleEnum =
+            style === 'light' ? Haptics.ImpactFeedbackStyle.Light :
+            style === 'medium' ? Haptics.ImpactFeedbackStyle.Medium :
+            Haptics.ImpactFeedbackStyle.Heavy;
         await Haptics.impactAsync(styleEnum);
-    } catch (e) {
-        // Fallback
-    }
+    } catch (e) { /* fallback */ }
 };
 
 interface Message {
@@ -91,21 +92,19 @@ interface MessageAction {
     type: 'edit' | 'delete' | 'copy' | 'reply';
 }
 
-const Waveform = ({ color }: { color: string }) => {
-    return (
-        <View style={styles.waveformContainer}>
-            {[40, 70, 50, 90, 60, 85, 45, 75, 55, 80].map((h, i) => (
-                <View 
-                    key={i} 
-                    style={[
-                        styles.waveBar, 
-                        { height: `${h}%`, backgroundColor: color, opacity: i % 2 === 0 ? 1 : 0.6 }
-                    ]} 
-                />
-            ))}
-        </View>
-    );
-};
+const Waveform = ({ color }: { color: string }) => (
+    <View style={styles.waveformContainer}>
+        {[8, 14, 10, 18, 12, 17, 9, 15, 11, 16].map((h, i) => (
+            <View
+                key={i}
+                style={[
+                    styles.waveBar,
+                    { height: h, backgroundColor: color, opacity: i % 2 === 0 ? 1 : 0.6 }
+                ]}
+            />
+        ))}
+    </View>
+);
 
 export default function ChatScreen() {
     const { persona: personaId } = useLocalSearchParams();
@@ -113,7 +112,7 @@ export default function ChatScreen() {
     const insets = useSafeAreaInsets();
     const { colors, isDark } = useTheme();
     const [persona, setPersona] = useState<string>(personaId as string || 'vinr');
-    
+
     useEffect(() => {
         if (personaId) setPersona(personaId as string);
     }, [personaId]);
@@ -122,7 +121,6 @@ export default function ChatScreen() {
         if (id === persona) return;
         setPersona(id);
         triggerHaptic('medium');
-        
         const pName = PERSONAS.find(p => p.id === id)?.name;
         setMessages(prev => [...prev, {
             id: Date.now().toString(),
@@ -132,12 +130,12 @@ export default function ChatScreen() {
             isRead: true
         }]);
     };
-    
+
     const [messages, setMessages] = useState<Message[]>([
-        { 
-            id: '1', 
-            text: `Hey! I'm ${PERSONAS.find((p: Persona) => p.id === persona)?.name}. How can I help you today?`, 
-            sender: 'ai', 
+        {
+            id: '1',
+            text: `Hey! I'm ${PERSONAS.find((p: Persona) => p.id === persona)?.name}. How can I help you today?`,
+            sender: 'ai',
             timestamp: new Date(),
             isRead: true
         }
@@ -146,20 +144,27 @@ export default function ChatScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
+    // isLocked lives as BOTH a shared value (for gesture worklet) and React state (for render)
+    const isLockedSV = useSharedValue(false);
     const [isLocked, setIsLocked] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [showMessageActions, setShowMessageActions] = useState<string | null>(null);
-    
+
     const flatListRef = useRef<FlatList>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Animation Values
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
+        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+        return () => { show.remove(); hide.remove(); };
+    }, []);
+
+    // ── Animation values ────────────────────────────────────────────────────
     const micScale = useSharedValue(1);
     const dragX = useSharedValue(0);
     const dragY = useSharedValue(0);
-    const lockProgress = useSharedValue(0);
-    const cancelProgress = useSharedValue(0);
 
     useEffect(() => {
         if (isLoading) {
@@ -184,7 +189,6 @@ export default function ChatScreen() {
         const mins = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
-
         if (mins < 1) return 'just now';
         if (mins < 60) return `${mins}m ago`;
         if (hours < 24) return `${hours}h ago`;
@@ -192,25 +196,22 @@ export default function ChatScreen() {
         return date.toLocaleDateString();
     };
 
-    // Recording Logic
+    // ── Recording logic (from file 1) ───────────────────────────────────────
     const startRecording = async () => {
         const hasPermission = await AudioService.requestPermissions();
         if (!hasPermission) {
             Alert.alert('Permission Required', 'Please enable microphone access to record voice messages.');
             return;
         }
-
         const started = await AudioService.startRecording();
         if (started) {
             setIsRecording(true);
             setRecordingTime(0);
             setIsLocked(false);
+            isLockedSV.value = false;
             dragX.value = 0;
             dragY.value = 0;
-            cancelProgress.value = 0;
-            lockProgress.value = 0;
             triggerHaptic('medium');
-            
             timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
@@ -220,10 +221,12 @@ export default function ChatScreen() {
     const stopAndSend = async () => {
         if (timerRef.current) clearInterval(timerRef.current);
         const uri = await AudioService.stopRecording();
+        isLockedSV.value = false;
+        dragX.value = 0;
+        dragY.value = 0;
         setIsRecording(false);
         setIsLocked(false);
         setRecordingTime(0);
-        
         if (uri) {
             triggerHaptic('heavy');
             processVoiceMessage(uri);
@@ -233,6 +236,9 @@ export default function ChatScreen() {
     const cancelRecording = async () => {
         if (timerRef.current) clearInterval(timerRef.current);
         await AudioService.stopRecording();
+        isLockedSV.value = false;
+        dragX.value = 0;
+        dragY.value = 0;
         setIsRecording(false);
         setIsLocked(false);
         setRecordingTime(0);
@@ -251,12 +257,9 @@ export default function ChatScreen() {
         };
         setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
-
         try {
             const transcribedText = await AudioService.transcribeAudio(uri);
-            if (transcribedText) {
-                handleSend(transcribedText);
-            }
+            if (transcribedText) handleSend(transcribedText);
         } catch (error) {
             console.error('Processing voice message failed:', error);
         } finally {
@@ -281,7 +284,7 @@ export default function ChatScreen() {
             setInput('');
             setReplyingTo(null);
         }
-        
+
         setIsLoading(true);
         triggerHaptic('light');
 
@@ -306,7 +309,6 @@ export default function ChatScreen() {
     const handleMessageAction = async (messageId: string, action: string) => {
         const message = messages.find(m => m.id === messageId);
         if (!message) return;
-
         switch (action) {
             case 'copy':
                 await Clipboard.setString(message.text);
@@ -325,74 +327,73 @@ export default function ChatScreen() {
         setShowMessageActions(null);
     };
 
-    // Gesture Handlers
-    const onGestureEvent = (event: any) => {
-        if (!isRecording || isLocked) return;
-        
-        const { translationX, translationY } = event.nativeEvent;
-        dragX.value = translationX;
-        dragY.value = translationY;
+    // ── Gesture.Pan — reads shared values so worklet never sees stale state ──
+    const panGesture = Gesture.Pan()
+        .onBegin(() => {
+            // onBegin runs on the JS thread already for Gesture API when no worklet,
+            // but we call runOnJS explicitly for async functions
+            runOnJS(startRecording)();
+        })
+        .onUpdate((e) => {
+            // All reads use shared values — never stale React state
+            if (isLockedSV.value) return;
 
-        if (translationX < -100) {
-            cancelRecording();
-        }
-        
-        if (translationY < -80) {
-            setIsLocked(true);
-            triggerHaptic('heavy');
-            dragY.value = withSpring(0);
-        }
+            dragX.value = e.translationX;
+            dragY.value = e.translationY;
 
-        cancelProgress.value = Math.min(Math.abs(translationX) / 100, 1);
-        lockProgress.value = Math.min(Math.abs(translationY) / 80, 1);
-    };
 
-    const onHandlerStateChange = (event: any) => {
-        if (event.nativeEvent.state === State.END || event.nativeEvent.state === State.CANCELLED) {
-            if (isRecording && !isLocked) {
-                if (dragX.value < -100) {
-                    cancelRecording();
-                } else {
-                    stopAndSend();
-                }
+            // Swipe left past threshold → cancel
+            if (e.translationX < -100) {
+                runOnJS(cancelRecording)();
             }
-        }
-    };
 
-    // Animated Styles
+            // Swipe up past threshold → lock
+            if (e.translationY < -80) {
+                isLockedSV.value = true;
+                runOnJS(setIsLocked)(true);
+                runOnJS(triggerHaptic)('heavy');
+                dragX.value = 0;
+                dragY.value = 0;
+            }
+        })
+        .onEnd(() => {
+            // If locked, user must tap send/trash buttons manually — don't auto-send
+            if (isLockedSV.value) return;
+            if (dragX.value <= -100) {
+                runOnJS(cancelRecording)();
+            } else {
+                runOnJS(stopAndSend)();
+            }
+        });
+
+    // ── Animated styles ─────────────────────────────────────────────────────
     const animatedMicStyle = useAnimatedStyle(() => ({
         transform: [
-            { scale: isRecording ? withSpring(1.5) : micScale.value },
-            { translateX: isLocked ? 0 : dragX.value },
-            { translateY: isLocked ? 0 : dragY.value }
+            { scale: micScale.value },
+            // Use shared value so translateX/Y update without re-render
+            { translateX: isLockedSV.value ? 0 : dragX.value },
+            { translateY: isLockedSV.value ? 0 : dragY.value }
         ]
     }));
 
-    const lockIndicatorStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: interpolate(lockProgress.value, [0, 1], [0, -20]) }],
-        opacity: interpolate(lockProgress.value, [0, 0.8], [1, 0.2])
-    }));
 
-    const cancelIndicatorStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: interpolate(cancelProgress.value, [0, 1], [0, -20]) }],
-        opacity: interpolate(cancelProgress.value, [0, 0.8], [1, 0])
-    }));
 
+    // ── Render message (file 2 UI) ───────────────────────────────────────────
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
         const pData = PERSONAS.find((p: Persona) => p.id === persona);
         const isSelected = selectedMessage === item.id;
 
         return (
-            <Animated.View 
+            <Animated.View
                 entering={isUser ? SlideInRight.springify() : SlideInLeft.springify()}
                 style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperAi]}
             >
                 {!isUser && (
                     <View style={[
-                        styles.aiAvatar, 
-                        { 
-                            borderColor: colors.gold, 
+                        styles.aiAvatar,
+                        {
+                            borderColor: colors.gold,
                             backgroundColor: isDark ? colors.surface : colors.void,
                             shadowColor: colors.gold,
                             shadowOffset: { width: 0, height: 2 },
@@ -404,19 +405,19 @@ export default function ChatScreen() {
                         {pData && <pData.icon size={18} color={colors.gold} strokeWidth={2.5} />}
                     </View>
                 )}
-                
-                <Pressable 
+
+                <Pressable
                     onLongPress={() => {
                         setShowMessageActions(item.id);
                         triggerHaptic('medium');
                     }}
                     onPress={() => setShowMessageActions(null)}
                     style={[
-                        styles.msgBubble, 
-                        isUser 
-                            ? [styles.msgBubbleUser, { backgroundColor: colors.sapphire }] 
-                            : [styles.msgBubbleAi, { 
-                                backgroundColor: colors.surface, 
+                        styles.msgBubble,
+                        isUser
+                            ? [styles.msgBubbleUser, { backgroundColor: colors.sapphire }]
+                            : [styles.msgBubbleAi, {
+                                backgroundColor: colors.surface,
                                 borderColor: isDark ? 'rgba(184,131,42,0.2)' : 'rgba(184,131,42,0.15)',
                                 borderWidth: 1
                             }],
@@ -426,9 +427,9 @@ export default function ChatScreen() {
                     {replyingTo?.id === item.id && (
                         <View style={[styles.replyIndicator, { borderLeftColor: colors.gold }]} />
                     )}
-                    
+
                     <Text style={[
-                        styles.msgText, 
+                        styles.msgText,
                         isUser ? styles.msgTextUser : { color: colors.textPrimary }
                     ]}>
                         {item.text}
@@ -443,8 +444,8 @@ export default function ChatScreen() {
 
                     {item.isVoice && (
                         <View style={[
-                            styles.playBtn, 
-                            { 
+                            styles.playBtn,
+                            {
                                 borderTopColor: item.sender === 'user' ? 'rgba(255,255,255,0.2)' : colors.gold + '20',
                                 backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.1)' : colors.gold + '10',
                                 borderRadius: 12,
@@ -452,22 +453,17 @@ export default function ChatScreen() {
                                 marginTop: 10
                             }
                         ]}>
-                            <Pressable 
-                                style={{ 
-                                    width: 32, 
-                                    height: 32, 
-                                    borderRadius: 16, 
+                            <Pressable
+                                style={{
+                                    width: 32, height: 32, borderRadius: 16,
                                     backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.2)' : colors.gold,
-                                    alignItems: 'center', 
-                                    justifyContent: 'center' 
+                                    alignItems: 'center', justifyContent: 'center'
                                 }}
                                 onPress={() => AudioService.playRecording(item.audioUri!)}
                             >
                                 <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
                             </Pressable>
-                            
                             <Waveform color={item.sender === 'user' ? '#FFFFFF' : colors.gold} />
-                            
                             <Text style={[
                                 styles.playText,
                                 { color: item.sender === 'user' ? '#FFFFFF' : colors.textPrimary }
@@ -486,7 +482,7 @@ export default function ChatScreen() {
 
                 {/* Message Action Menu */}
                 {showMessageActions === item.id && (
-                    <Animated.View 
+                    <Animated.View
                         entering={ZoomIn.springify()}
                         style={[
                             styles.actionMenu,
@@ -494,16 +490,16 @@ export default function ChatScreen() {
                             isUser ? styles.actionMenuRight : styles.actionMenuLeft
                         ]}
                     >
-                        <Pressable 
+                        <Pressable
                             style={[styles.actionMenuItem, { borderBottomColor: colors.border }]}
                             onPress={() => handleMessageAction(item.id, 'copy')}
                         >
                             <Copy size={16} color={colors.gold} />
                             <Text style={[styles.actionMenuText, { color: colors.textPrimary }]}>Copy</Text>
                         </Pressable>
-                        
+
                         {!isUser && (
-                            <Pressable 
+                            <Pressable
                                 style={[styles.actionMenuItem, { borderBottomColor: colors.border }]}
                                 onPress={() => handleMessageAction(item.id, 'reply')}
                             >
@@ -511,8 +507,8 @@ export default function ChatScreen() {
                                 <Text style={[styles.actionMenuText, { color: colors.textPrimary }]}>Reply</Text>
                             </Pressable>
                         )}
-                        
-                        <Pressable 
+
+                        <Pressable
                             style={[styles.actionMenuItem, { borderBottomColor: 'transparent' }]}
                             onPress={() => handleMessageAction(item.id, 'delete')}
                         >
@@ -525,18 +521,60 @@ export default function ChatScreen() {
         );
     };
 
+    // ── Recording row: file-1 layout (trash + send buttons) ─────────────────
+    // ── Recording row ────────────────────────────────────────────────────────
+    const renderRecordingRow = () => (
+        <View style={styles.recordingRow}>
+            {/* Cancel */}
+            <Pressable
+                onPress={cancelRecording}
+                style={[styles.lockedActionBtn, { backgroundColor: isLocked ? colors.crimson + '20' : 'transparent' }]}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+                <Trash2 size={isLocked ? 22 : 20} color={colors.crimson} />
+            </Pressable>
+
+            {/* Timer */}
+            <View style={styles.recordingIndicatorRow}>
+                <Animated.View style={[styles.recordingDot, { backgroundColor: colors.crimson }]} entering={BounceIn} />
+                <Text style={[styles.recordingTimer, { color: colors.textPrimary }]}>
+                    {formatTime(recordingTime)}
+                </Text>
+            </View>
+
+            <View style={styles.flexFill} />
+
+            {/* Send */}
+            <Pressable
+                onPress={stopAndSend}
+                style={[styles.lockedActionBtn, { backgroundColor: isLocked ? colors.sapphire + '20' : 'transparent' }]}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+                <Send size={isLocked ? 22 : 20} color={colors.sapphire} />
+            </Pressable>
+        </View>
+    );
+
+    // ── Root render ──────────────────────────────────────────────────────────
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
+
+            {/* File-2 outer structure: View > SafeBlurView header > persona strip > KAV */}
             <View style={[styles.container, { backgroundColor: colors.void }]}>
-                {/* Header */}
-                <SafeBlurView 
-                    intensity={isDark ? 85 : 35} 
+
+                {/* Header (file 2) */}
+                <SafeBlurView
+                    intensity={isDark ? 85 : 35}
                     style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}
                 >
-                    <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                    <Pressable
+                        onPress={() => router.back()}
+                        style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+                    >
                         <ChevronLeft color={colors.textPrimary} size={28} />
                     </Pressable>
+
                     <View style={styles.headerTitleContainer}>
                         <View style={styles.headerTextWrapper}>
                             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
@@ -548,44 +586,47 @@ export default function ChatScreen() {
                             </View>
                         </View>
                     </View>
-                    <Pressable style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+
+                    <Pressable
+                        style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+                    >
                         <MoreVertical color={colors.textPrimary} size={20} />
                     </Pressable>
                 </SafeBlurView>
 
-                {/* Persona Switcher */}
-                <ScrollView 
-                    horizontal 
+                {/* Persona Switcher (file 2) */}
+                <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     style={[
-                        styles.personaContainer, 
-                        { 
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(184,131,42,0.02)', 
+                        styles.personaContainer,
+                        {
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(184,131,42,0.02)',
                             borderColor: colors.border
                         }
                     ]}
                     contentContainerStyle={styles.personaScrollContent}
                 >
                     {PERSONAS.map((p) => (
-                        <Pressable 
+                        <Pressable
                             key={p.id}
                             onPress={() => changePersona(p.id)}
                             style={[
                                 styles.personaTab,
-                                persona === p.id && { 
+                                persona === p.id && {
                                     backgroundColor: isDark ? 'rgba(184,131,42,0.2)' : 'rgba(184,131,42,0.12)',
                                     borderColor: colors.gold,
                                     borderWidth: 1.5,
                                 }
                             ]}
                         >
-                            <p.icon 
-                                size={15} 
-                                color={persona === p.id ? colors.gold : colors.textGhost} 
+                            <p.icon
+                                size={15}
+                                color={persona === p.id ? colors.gold : colors.textGhost}
                                 strokeWidth={persona === p.id ? 2.5 : 2}
                             />
                             <Text style={[
-                                styles.personaTabText, 
+                                styles.personaTabText,
                                 { color: persona === p.id ? colors.textPrimary : colors.textGhost },
                                 persona === p.id && { fontWeight: '700' }
                             ]}>
@@ -595,10 +636,11 @@ export default function ChatScreen() {
                     ))}
                 </ScrollView>
 
-                <KeyboardAvoidingView 
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                {/* KAV wraps only messages + input (file 2) */}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'android' ? (keyboardOpen ? 'padding' : undefined) : 'padding'}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                    keyboardVerticalOffset={keyboardOpen ? -18 : 0}
                 >
                     {/* Messages List */}
                     <FlatList
@@ -611,7 +653,9 @@ export default function ChatScreen() {
                         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
                         ListEmptyComponent={
                             <Animated.View entering={FadeInUp} style={styles.emptyState}>
-                                <View style={[styles.emptyIcon, { backgroundColor: isDark ? 'rgba(184,131,42,0.1)' : 'rgba(184,131,42,0.08)' }]}>
+                                <View style={[styles.emptyIcon, {
+                                    backgroundColor: isDark ? 'rgba(184,131,42,0.1)' : 'rgba(184,131,42,0.08)'
+                                }]}>
                                     <Smile size={32} color={colors.gold} />
                                 </View>
                                 <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Start a conversation</Text>
@@ -621,144 +665,126 @@ export default function ChatScreen() {
                         ListFooterComponent={isLoading ? (
                             <Animated.View entering={FadeInUp} style={styles.typingContainer}>
                                 <View style={[
-                                    styles.aiAvatar, 
-                                    { 
-                                        borderColor: colors.gold, 
-                                        backgroundColor: isDark ? colors.surface : colors.void
-                                    }
+                                    styles.aiAvatar,
+                                    { borderColor: colors.gold, backgroundColor: isDark ? colors.surface : colors.void }
                                 ]}>
-                                    {PERSONAS.find((p: Persona) => p.id === persona)?.icon && 
-                                        React.createElement(PERSONAS.find((p: Persona) => p.id === persona)!.icon, 
-                                        { size: 16, color: colors.gold, strokeWidth: 2.5 })}
+                                    {PERSONAS.find((p: Persona) => p.id === persona)?.icon &&
+                                        React.createElement(
+                                            PERSONAS.find((p: Persona) => p.id === persona)!.icon,
+                                            { size: 16, color: colors.gold, strokeWidth: 2.5 }
+                                        )}
                                 </View>
                                 <View style={styles.typingDots}>
-                                    {[0, 1, 2].map((i) => (
-                                        <Animated.View
-                                            key={i}
-                                            entering={FadeIn.delay(i * 200)}
-                                            style={[styles.dot, { backgroundColor: colors.gold }]}
-                                        />
-                                    ))}
+                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
+                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
+                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
                                 </View>
                             </Animated.View>
                         ) : null}
                     />
 
-                    {/* Bottom Area */}
-                    <SafeBlurView 
-                        intensity={isDark ? 85 : 80} 
+                    {/* Bottom input area — plain View avoids Android BlurView rendering as opaque grey */}
+                    <View
                         style={[
-                            styles.inputContainer, 
-                            { 
+                            styles.inputContainer,
+                            {
                                 borderTopColor: colors.border,
-                                paddingBottom: Math.max(insets.bottom, 12)
+                                backgroundColor: isDark ? colors.surface : colors.void,
+                                paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
                             }
                         ]}
                     >
+                        {/* Reply preview (file 2) */}
                         {replyingTo && (
-                            <Animated.View 
-                                entering={FadeInDown.springify()}
-                                exiting={FadeOut}
-                                style={[styles.replyPreview, { backgroundColor: colors.surface, borderLeftColor: colors.gold }]}
+                            <Animated.View
+                                entering={FadeInDown.springify().damping(20)}
+                                style={[
+                                    styles.replyPreview,
+                                    {
+                                        backgroundColor: colors.surface,
+                                        borderColor: colors.border,
+                                        borderLeftColor: colors.gold
+                                    }
+                                ]}
                             >
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[styles.replyTitle, { color: colors.gold }]}>Replying to {replyingTo.sender === 'user' ? 'yourself' : 'VinR Buddy'}</Text>
-                                    <Text style={[styles.replyText, { color: colors.textMuted }]} numberOfLines={1}>{replyingTo.text}</Text>
+                                <View style={styles.replyPreviewContent}>
+                                    <Text style={[styles.replyLabel, { color: colors.gold }]}>
+                                        Replying to {replyingTo.sender === 'user' ? 'You' : 'AI'}
+                                    </Text>
+                                    <Text style={[styles.replyText, { color: colors.textPrimary }]} numberOfLines={1}>
+                                        {replyingTo.text}
+                                    </Text>
                                 </View>
-                                <Pressable onPress={() => setReplyingTo(null)}>
+                                <Pressable hitSlop={10} onPress={() => setReplyingTo(null)}>
                                     <X size={16} color={colors.textMuted} />
                                 </Pressable>
                             </Animated.View>
                         )}
 
-                        <View style={styles.inputInner}>
-                            {isRecording ? (
-                                <View style={styles.recordingRow}>
-                                    {/* Left Side Action: Always Trash/Delete when recording */}
-                                    <Pressable 
-                                        onPress={cancelRecording} 
-                                        style={[
-                                            styles.lockedActionBtn, 
-                                            { backgroundColor: isLocked ? colors.crimson + '20' : 'transparent' }
-                                        ]}
-                                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                                    >
-                                        <Trash2 size={isLocked ? 22 : 20} color={colors.crimson} />
-                                    </Pressable>
+                        <View style={[
+                            styles.inputInner,
+                            {
+                                borderColor: colors.border,
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
+                            }
+                        ]}>
+                            {/*
+                             * CRITICAL: The GestureDetector + mic must stay mounted
+                             * throughout recording so the pan gesture stays active.
+                             * We show the recording overlay on top and hide the text input,
+                             * rather than swapping the whole block.
+                             */}
 
-                                    <View style={styles.recordingIndicator}>
-                                        <Animated.View style={[styles.recordingDot, { backgroundColor: colors.crimson }]} />
-                                        <Text style={[styles.recordingTime, { color: colors.textPrimary }]}>{formatTime(recordingTime)}</Text>
-                                    </View>
+                            {/* Recording overlay — shown during recording */}
+                            {isRecording && renderRecordingRow()}
 
-                                    <View style={styles.flexFill}>
-                                        {!isLocked && (
-                                            <Animated.View style={[styles.cancelContainer, cancelIndicatorStyle]}>
-                                                <ChevronLeft size={14} color={colors.textMuted} />
-                                                <Text style={[styles.cancelText, { color: colors.textMuted }]}>Slide to cancel</Text>
-                                            </Animated.View>
-                                        )}
-                                    </View>
-
-                                    {/* Right Side Action: Send if locked, Lock indicator if not */}
-                                    {isLocked ? (
-                                        <Pressable 
-                                            onPress={stopAndSend} 
-                                            style={[styles.lockedActionBtn, { backgroundColor: colors.sapphire }]}
-                                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                                        >
-                                            <Send size={22} color="#FFF" />
-                                        </Pressable>
-                                    ) : (
-                                        <Animated.View style={[styles.lockContainer, lockIndicatorStyle]}>
-                                            <Lock size={14} color={colors.gold} />
-                                            <Text style={[styles.lockText, { color: colors.gold }]}>Slide up to lock</Text>
-                                        </Animated.View>
-                                    )}
-                                </View>
-                            ) : (
-                                <>
-                                    <TextInput
-                                        style={[styles.input, { color: colors.textPrimary }]}
-                                        placeholder="Message..."
-                                        placeholderTextColor={colors.textMuted}
-                                        value={input}
-                                        onChangeText={setInput}
-                                        multiline
-                                        editable={!isLoading}
-                                    />
-
-                                    <View style={styles.rightIconsRow}>
-                                        {input.trim() === '' ? (
-                                            <PanGestureHandler
-                                                onGestureEvent={onGestureEvent}
-                                                onHandlerStateChange={onHandlerStateChange}
-                                            >
-                                                <Animated.View style={[styles.micActionBtn, animatedMicStyle]}>
-                                                    <Pressable 
-                                                        onPressIn={startRecording}
-                                                        style={styles.micPressable}
-                                                    >
-                                                        <Mic size={22} color={colors.gold} />
-                                                    </Pressable>
-                                                </Animated.View>
-                                            </PanGestureHandler>
-                                        ) : (
-                                            <Animated.View entering={ZoomIn.springify()}>
-                                                <Pressable 
-                                                    style={[styles.actionBtn, { backgroundColor: colors.sapphire, width: 40, height: 40, borderRadius: 20 }]}
-                                                    onPress={() => handleSend()}
-                                                    disabled={isLoading}
-                                                >
-                                                    <Send size={20} color="#FFFFFF" style={{ marginLeft: 2 }} />
-                                                </Pressable>
-                                            </Animated.View>
-                                        )}
-                                    </View>
-                                </>
+                            {/* Text input row — hidden (not unmounted) during recording */}
+                            {!isRecording && (
+                                <TextInput
+                                    style={[styles.input, { color: colors.textPrimary }]}
+                                    placeholder="Message..."
+                                    placeholderTextColor={colors.textMuted}
+                                    value={input}
+                                    onChangeText={setInput}
+                                    multiline
+                                    editable={!isLoading}
+                                />
                             )}
+
+                            {/* Right side: mic (always mounted when no text) or send button */}
+                            <View style={styles.rightIconsRow}>
+                                {/* Mic — stays mounted during recording so gesture stays alive */}
+                                {(input.trim() === '' || isRecording) ? (
+                                    <GestureDetector gesture={panGesture}>
+                                        <Animated.View style={[
+                                            styles.micActionBtn,
+                                            animatedMicStyle,
+                                            // During recording the mic moves with finger;
+                                            // hide the icon itself but keep the hit area
+                                            isRecording && { opacity: 0, position: 'absolute', right: 0 }
+                                        ]}>
+                                            <View style={styles.micPressable}>
+                                                <Mic size={22} color={colors.gold} />
+                                            </View>
+                                        </Animated.View>
+                                    </GestureDetector>
+                                ) : (
+                                    <Animated.View entering={ZoomIn.springify()}>
+                                        <Pressable
+                                            style={[styles.actionBtn, {
+                                                backgroundColor: colors.sapphire,
+                                                width: 40, height: 40, borderRadius: 20
+                                            }]}
+                                            onPress={() => handleSend()}
+                                            disabled={isLoading}
+                                        >
+                                            <Send size={20} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                                        </Pressable>
+                                    </Animated.View>
+                                )}
+                            </View>
                         </View>
-                    </SafeBlurView>
+                    </View>
                 </KeyboardAvoidingView>
             </View>
         </GestureHandlerRootView>
@@ -767,39 +793,22 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+
+    // Header
     header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, zIndex: 100 },
     backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     headerTitleContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
     headerTextWrapper: { alignItems: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
     onlineText: { fontSize: 11, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.3 },
-    
-    // Persona Tabs
-    personaContainer: { 
-        paddingHorizontal: 16, 
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        maxHeight: 60
-    },
-    personaScrollContent: {
-        gap: 10,
-        paddingHorizontal: 4
-    },
-    personaTab: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 24,
-        gap: 6,
-        minWidth: 100
-    },
-    personaTabText: {
-        fontSize: 13,
-        fontWeight: '600',
-    },
 
-    // Chat Content
+    // Persona Tabs
+    personaContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, maxHeight: 60 },
+    personaScrollContent: { gap: 10, paddingHorizontal: 4 },
+    personaTab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 24, gap: 6, minWidth: 100 },
+    personaTabText: { fontSize: 13, fontWeight: '600' },
+
+    // Chat content
     chatContent: { padding: 20, gap: 16 },
     emptyState: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
     emptyIcon: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
@@ -807,7 +816,7 @@ const styles = StyleSheet.create({
     emptySubtitle: { fontSize: 14, textAlign: 'center' },
 
     // Messages
-    msgWrapper: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginBottom: 8 },
+    msgWrapper: { flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
     msgWrapperUser: { justifyContent: 'flex-end' },
     msgWrapperAi: { justifyContent: 'flex-start' },
     aiAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, marginBottom: 2 },
@@ -815,39 +824,38 @@ const styles = StyleSheet.create({
     msgBubbleUser: { borderBottomRightRadius: 4 },
     msgBubbleAi: { borderBottomLeftRadius: 4, borderWidth: 1 },
     msgBubbleSelected: { shadowOpacity: 0.3, shadowRadius: 6 },
-    msgText: { fontSize: 16, lineHeight: 24 },
+    msgText: { fontSize: 16, lineHeight: 24, marginBottom: 4 },
     msgTextUser: { color: '#FFFFFF', fontWeight: '500' },
-    msgTimestamp: { fontSize: 10, marginTop: 4, opacity: 0.7 },
-    replyIndicator: { width: 3, height: '100%', borderLeftWidth: 3, marginRight: 8, borderRadius: 1 },
-    
-    // Play Button
+    msgTimestamp: { fontSize: 11, marginTop: 4 },
+    replyIndicator: { width: 3, borderLeftWidth: 3, marginRight: 8, borderRadius: 1 },
+
+    // Voice message
     playBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1 },
     playText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-    
-    // Read Receipt
     readReceipt: { marginTop: 4, alignItems: 'flex-end', opacity: 0.8 },
-    waveformContainer: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 20, flex: 1, marginHorizontal: 8 },
-    waveBar: { width: 2, borderRadius: 1 },
+    waveformContainer: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 24, flex: 1, marginHorizontal: 8 },
+    waveBar: { width: 3, borderRadius: 2 },
 
-    // Action Menu
+    // Action menu
     actionMenu: { position: 'absolute', borderRadius: 12, overflow: 'hidden', shadowOpacity: 0.2, shadowRadius: 8, elevation: 5, zIndex: 1000 },
     actionMenuRight: { right: 0, bottom: 50 },
     actionMenuLeft: { left: 0, bottom: 50 },
     actionMenuItem: { paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1 },
     actionMenuText: { fontSize: 13, fontWeight: '600' },
 
-    // Typing Indicator
+    // Typing indicator
     typingContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 8, marginTop: 8 },
     typingDots: { flexDirection: 'row', gap: 4 },
     dot: { width: 6, height: 6, borderRadius: 3 },
 
-    // Reply Preview
-    replyPreview: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, marginHorizontal: 16, marginBottom: 8, borderRadius: 12, borderLeftWidth: 3, borderTopWidth: 1, borderRightWidth: 1, borderBottomWidth: 1 },
-    replyTitle: { fontSize: 11, fontWeight: '700', marginBottom: 2 },
+    // Reply preview
+    replyPreview: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, marginHorizontal: 4, marginBottom: 8, borderRadius: 12, borderLeftWidth: 3, borderTopWidth: 1, borderRightWidth: 1, borderBottomWidth: 1 },
+    replyPreviewContent: { flex: 1 },
+    replyLabel: { fontSize: 11, fontWeight: '700', marginBottom: 2, textTransform: 'uppercase' },
     replyText: { fontSize: 14, fontWeight: '500' },
 
-    // Input
-    inputContainer: { paddingTop: 12, paddingHorizontal: 12, borderTopWidth: 1 },
+    // Input area
+    inputContainer: { paddingTop: 12, paddingHorizontal: 12, borderTopWidth: StyleSheet.hairlineWidth },
     inputInner: { flexDirection: 'row', alignItems: 'center', borderRadius: 28, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 4, minHeight: 48 },
     input: { flex: 1, fontSize: 16, maxHeight: 120, paddingTop: 8, paddingBottom: 8, marginHorizontal: 8 },
     actionBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -855,15 +863,11 @@ const styles = StyleSheet.create({
     micActionBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     micPressable: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
 
-    // Recording
+    // Recording row (file-1 layout)
     recordingRow: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, height: 40 },
-    recordingIndicator: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
+    recordingIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
     recordingDot: { width: 8, height: 8, borderRadius: 4 },
-    recordingTime: { fontSize: 15, fontWeight: '600' },
+    recordingTimer: { fontSize: 15, fontWeight: '600' },
     flexFill: { flex: 1 },
-    cancelContainer: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'center' },
-    cancelText: { fontSize: 13, fontWeight: '500' },
-    lockContainer: { alignItems: 'center', position: 'absolute', bottom: 45, right: 0, left: 0 },
-    lockText: { fontSize: 10, fontWeight: '700', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
     lockedActionBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 });
