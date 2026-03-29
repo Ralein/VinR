@@ -15,13 +15,11 @@ import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useTheme } from '../../../context/ThemeContext';
 import Animated, {
-    FadeInDown,
     FadeIn,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withDelay,
-    withSpring,
 } from 'react-native-reanimated';
 import { ArrowLeft, Bell, Calendar, Trophy } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
@@ -40,16 +38,12 @@ export default function Step8Reminder() {
     // Animations
     const headerOp = useSharedValue(0);
     const titleOp = useSharedValue(0);
-    const titleY = useSharedValue(20);
     const subtitleOp = useSharedValue(0);
-    const subtitleY = useSharedValue(20);
 
     useEffect(() => {
         headerOp.value = withDelay(80, withTiming(1, { duration: 400 }));
         titleOp.value = withDelay(200, withTiming(1, { duration: 500 }));
-        titleY.value = withDelay(200, withSpring(0, { stiffness: 90, damping: 15 }));
         subtitleOp.value = withDelay(350, withTiming(1, { duration: 500 }));
-        subtitleY.value = withDelay(350, withSpring(0, { stiffness: 90, damping: 15 }));
     }, []);
 
     const headerStyle = useAnimatedStyle(() => ({
@@ -58,12 +52,10 @@ export default function Step8Reminder() {
 
     const titleStyle = useAnimatedStyle(() => ({
         opacity: titleOp.value,
-        transform: [{ translateY: titleY.value }],
     }));
 
     const subtitleStyle = useAnimatedStyle(() => ({
         opacity: subtitleOp.value,
-        transform: [{ translateY: subtitleY.value }],
     }));
 
     const toggleSwitch = (value: boolean) => {
@@ -120,7 +112,7 @@ export default function Step8Reminder() {
                     contentContainerStyle={styles.scrollContent}
                 >
                     <Animated.View
-                        entering={FadeInDown.duration(800).delay(500).springify().damping(15)}
+                        entering={FadeIn.duration(800).delay(500)}
                     >
                         <GlassCard
                             accent={isEnabled ? 'gold' : undefined}
@@ -193,7 +185,7 @@ export default function Step8Reminder() {
                     </Animated.View>
 
                     <Animated.View
-                        entering={FadeInDown.duration(800).delay(700).springify().damping(15)}
+                        entering={FadeIn.duration(800).delay(700)}
                     >
                         <GlassCard accent="gold">
                             <View style={styles.quoteBox}>

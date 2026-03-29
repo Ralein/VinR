@@ -8,7 +8,7 @@
 import React, { useEffect } from 'react';
 import { View, Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, {
-    FadeInDown,
+    FadeIn,
     useSharedValue,
     useAnimatedStyle,
     withRepeat,
@@ -156,7 +156,7 @@ export default function GlassCard({
     if (noAnimation) return wrappedContent;
 
     return (
-        <Animated.View entering={FadeInDown.delay(delay).duration(450).springify()}>
+        <Animated.View entering={FadeIn.delay(delay).duration(400)}>
             {wrappedContent}
         </Animated.View>
     );

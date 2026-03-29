@@ -11,15 +11,12 @@ import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { useTheme } from '../../../context/ThemeContext';
 import { AuthService } from '../../../services/auth';
 import Animated, {
-    FadeInDown,
+    FadeIn,
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withDelay,
-    withSpring,
 } from 'react-native-reanimated';
-import { Check } from 'lucide-react-native';
-import GlassCard from '../../../components/ui/GlassCard';
 import PremiumLogo from '../../../components/ui/PremiumLogo';
 import { OnboardingBackground } from '../../../components/ui/OnboardingBackground';
 import { LiquidCTA } from '../../../components/ui/LiquidCTA';
@@ -36,20 +33,12 @@ export default function Step9Finish() {
     // Animations
     const logoOp = useSharedValue(0);
     const titleOp = useSharedValue(0);
-    const titleY = useSharedValue(20);
     const subtitleOp = useSharedValue(0);
-    const subtitleY = useSharedValue(20);
-    const summaryOp = useSharedValue(0);
-    const summaryY = useSharedValue(20);
 
     useEffect(() => {
         logoOp.value = withDelay(100, withTiming(1, { duration: 600 }));
         titleOp.value = withDelay(300, withTiming(1, { duration: 500 }));
-        titleY.value = withDelay(300, withSpring(0, { stiffness: 90, damping: 15 }));
         subtitleOp.value = withDelay(450, withTiming(1, { duration: 500 }));
-        subtitleY.value = withDelay(450, withSpring(0, { stiffness: 90, damping: 15 }));
-        summaryOp.value = withDelay(650, withTiming(1, { duration: 500 }));
-        summaryY.value = withDelay(650, withSpring(0, { stiffness: 90, damping: 15 }));
     }, []);
 
     const logoStyle = useAnimatedStyle(() => ({
@@ -59,30 +48,11 @@ export default function Step9Finish() {
 
     const titleStyle = useAnimatedStyle(() => ({
         opacity: titleOp.value,
-        transform: [{ translateY: titleY.value }],
     }));
 
     const subtitleStyle = useAnimatedStyle(() => ({
         opacity: subtitleOp.value,
-        transform: [{ translateY: subtitleY.value }],
     }));
-
-    const summaryStyle = useAnimatedStyle(() => ({
-        opacity: summaryOp.value,
-        transform: [{ translateY: summaryY.value }],
-    }));
-
-    const focusLabels = focusAreas.map((id) => {
-        switch (id) {
-            case 'stress': return 'Stress Reduction';
-            case 'focus': return 'Mental Focus';
-            case 'self_care': return 'Daily Self-Care';
-            case 'discipline': return 'Discipline';
-            case 'productivity': return 'Productivity';
-            case 'mindfulness': return 'Mindfulness';
-            default: return id.replace('_', ' ');
-        }
-    });
 
     const handleFinish = async () => {
         if (saving) return;
@@ -111,7 +81,7 @@ export default function Step9Finish() {
                 style={[
                     styles.content,
                     {
-                        paddingTop: insets.top + (height > 800 ? 60 : 40),
+                        paddingTop: insets.top + (height > 800 ? 100 : 60),
                         paddingBottom: insets.bottom + 20,
                     },
                 ]}
@@ -133,47 +103,7 @@ export default function Step9Finish() {
                     </Animated.View>
                 </View>
 
-                <Animated.View style={[styles.summaryWrapper, summaryStyle]}>
-                    <GlassCard accent="gold" glow={true}>
-                        <View style={styles.summaryCard}>
-                            <Text style={[styles.summaryTitle, { color: colors.gold }]}>
-                                ESTABLISHED INTENT
-                            </Text>
-                            <View style={styles.badgeContainer}>
-                                {focusLabels.length > 0 ? (
-                                    focusLabels.map((label, index) => (
-                                        <View
-                                            key={index}
-                                            style={[
-                                                styles.badge,
-                                                {
-                                                    borderColor: `${colors.gold}30`,
-                                                    backgroundColor: `${colors.void}80`,
-                                                },
-                                            ]}
-                                        >
-                                            <Check
-                                                size={12}
-                                                color={colors.gold}
-                                                style={{ marginRight: 8 }}
-                                                strokeWidth={4}
-                                            />
-                                            <Text style={[styles.badgeText, { color: colors.textPrimary }]}>
-                                                {label}
-                                            </Text>
-                                        </View>
-                                    ))
-                                ) : (
-                                    <Text style={[styles.summaryText, { color: colors.textPrimary }]}>
-                                        Standard Excellence
-                                    </Text>
-                                )}
-                            </View>
-                        </View>
-                    </GlassCard>
-                </Animated.View>
-
-                <View style={[styles.footer, { paddingBottom: 16 }]}>
+                <View style={[styles.footer, { paddingBottom: 16, marginTop: 'auto' }]}>
                     <LiquidCTA
                         label="ENTER YOUR SANCTUARY"
                         delay={1000}
@@ -199,7 +129,7 @@ const styles = StyleSheet.create({
         height: 120,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 60,
     },
     textContainer: {
         alignItems: 'center',
@@ -219,43 +149,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         opacity: 0.8,
         paddingHorizontal: 10,
-    },
-    summaryWrapper: {
-        width: '100%',
-        marginBottom: 'auto',
-    },
-    summaryCard: {
-        padding: 24,
-        alignItems: 'center',
-    },
-    summaryTitle: {
-        fontFamily: 'DMSans_700Bold',
-        fontSize: 12,
-        letterSpacing: 2,
-        marginBottom: 20,
-        opacity: 0.7,
-    },
-    badgeContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    badge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    badgeText: {
-        fontFamily: 'DMSans_500Medium',
-        fontSize: 14,
-    },
-    summaryText: {
-        fontFamily: 'DMSans_500Medium',
-        fontSize: 16,
     },
     footer: {
         width: '100%',
