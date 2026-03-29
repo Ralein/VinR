@@ -83,6 +83,7 @@ interface Message {
     timestamp: Date;
     audioUri?: string;
     isVoice?: boolean;
+    duration?: number;
     isRead?: boolean;
     reactions?: string[];
 }
@@ -94,12 +95,12 @@ interface MessageAction {
 
 const Waveform = ({ color }: { color: string }) => (
     <View style={styles.waveformContainer}>
-        {[8, 14, 10, 18, 12, 17, 9, 15, 11, 16].map((h, i) => (
+        {[8, 14, 10, 18, 12, 17, 9, 15, 11, 16, 12, 14, 8, 15, 12, 18, 10, 14, 9].map((h, i) => (
             <View
                 key={i}
                 style={[
                     styles.waveBar,
-                    { height: h, backgroundColor: color, opacity: i % 2 === 0 ? 1 : 0.6 }
+                    { height: h, backgroundColor: color, opacity: i % 2 === 0 ? 0.9 : 0.5 }
                 ]}
             />
         ))}
@@ -221,6 +222,7 @@ export default function ChatScreen() {
     const stopAndSend = async () => {
         if (timerRef.current) clearInterval(timerRef.current);
         const uri = await AudioService.stopRecording();
+        const duration = recordingTime;
         isLockedSV.value = false;
         dragX.value = 0;
         dragY.value = 0;
@@ -229,7 +231,7 @@ export default function ChatScreen() {
         setRecordingTime(0);
         if (uri) {
             triggerHaptic('heavy');
-            processVoiceMessage(uri);
+            processVoiceMessage(uri, duration);
         }
     };
 
@@ -245,7 +247,7 @@ export default function ChatScreen() {
         triggerHaptic('light');
     };
 
-    const processVoiceMessage = async (uri: string) => {
+    const processVoiceMessage = async (uri: string, duration?: number) => {
         const userMsg: Message = {
             id: Date.now().toString(),
             text: 'Voice message',
@@ -253,6 +255,7 @@ export default function ChatScreen() {
             timestamp: new Date(),
             audioUri: uri,
             isVoice: true,
+            duration: duration || 0,
             isRead: true
         };
         setMessages(prev => [...prev, userMsg]);
@@ -326,6 +329,13 @@ export default function ChatScreen() {
         }
         setShowMessageActions(null);
     };
+
+    // Enforce max voice message length of 1:00 (60 seconds)
+    useEffect(() => {
+        if (isRecording && recordingTime >= 60) {
+            stopAndSend();
+        }
+    }, [isRecording, recordingTime]);
 
     // ── Gesture.Pan — reads shared values so worklet never sees stale state ──
     const panGesture = Gesture.Pan()
@@ -446,29 +456,36 @@ export default function ChatScreen() {
                         <View style={[
                             styles.playBtn,
                             {
-                                borderTopColor: item.sender === 'user' ? 'rgba(255,255,255,0.2)' : colors.gold + '20',
-                                backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.1)' : colors.gold + '10',
-                                borderRadius: 12,
-                                padding: 8,
-                                marginTop: 10
+                                borderTopColor: 'transparent',
+                                backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.15)' : colors.gold + '15',
+                                borderRadius: 100, // full pill shape
+                                padding: 6,
+                                paddingRight: 16,
+                                marginTop: 8,
+                                minWidth: 220 // Forces the pill to be horizontally wide like a native audio message
                             }
                         ]}>
                             <Pressable
                                 style={{
                                     width: 32, height: 32, borderRadius: 16,
-                                    backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.2)' : colors.gold,
-                                    alignItems: 'center', justifyContent: 'center'
+                                    backgroundColor: item.sender === 'user' ? '#FFFFFF' : colors.gold,
+                                    alignItems: 'center', justifyContent: 'center',
+                                    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3
                                 }}
                                 onPress={() => AudioService.playRecording(item.audioUri!)}
                             >
-                                <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
+                                <Play color={item.sender === 'user' ? colors.sapphire : colors.void} size={14} fill={item.sender === 'user' ? colors.sapphire : colors.void} style={{ marginLeft: 2 }} />
                             </Pressable>
-                            <Waveform color={item.sender === 'user' ? '#FFFFFF' : colors.gold} />
+                            
+                            <View style={{ flex: 1, marginHorizontal: 12 }}>
+                                <Waveform color={item.sender === 'user' ? 'rgba(255,255,255,0.9)' : colors.textPrimary} />
+                            </View>
+                            
                             <Text style={[
                                 styles.playText,
-                                { color: item.sender === 'user' ? '#FFFFFF' : colors.textPrimary }
+                                { color: item.sender === 'user' ? '#FFFFFF' : colors.textPrimary, fontSize: 12 }
                             ]}>
-                                0:12
+                                {item.duration ? formatTime(item.duration) : '0:00'}
                             </Text>
                         </View>
                     )}
@@ -647,9 +664,9 @@ export default function ChatScreen() {
 
                 {/* KAV wraps only messages + input (file 2) */}
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'android' ? (keyboardOpen ? 'padding' : undefined) : 'padding'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={0}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
                     {/* Messages List */}
                     <FlatList
@@ -839,10 +856,10 @@ const styles = StyleSheet.create({
     replyIndicator: { width: 3, borderLeftWidth: 3, marginRight: 8, borderRadius: 1 },
 
     // Voice message
-    playBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1 },
-    playText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+    playBtn: { flexDirection: 'row', alignItems: 'center' },
+    playText: { fontWeight: '700', letterSpacing: 0.3 },
     readReceipt: { marginTop: 4, alignItems: 'flex-end', opacity: 0.8 },
-    waveformContainer: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 24, flex: 1, marginHorizontal: 8 },
+    waveformContainer: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     waveBar: { width: 3, borderRadius: 2 },
 
     // Action menu
