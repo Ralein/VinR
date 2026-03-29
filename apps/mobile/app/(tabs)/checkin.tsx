@@ -24,6 +24,7 @@ import { config } from '../../constants/config';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import MoodOrb, { type MoodOption } from '../../components/ui/MoodOrb';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 export default function CheckinScreen() {
     const { colors } = useTheme();
@@ -66,6 +67,7 @@ export default function CheckinScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+            <AmbientBackground />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.flex}

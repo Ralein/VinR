@@ -10,18 +10,21 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/Colors';
-import { Typography } from '../../../constants/Typography';
+import { theme } from '../../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import Animated, { 
     FadeInDown, 
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 const { width } = Dimensions.get('window');
 
 export default function Step3Age() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [age, setAge] = useState('');
 
@@ -38,10 +41,11 @@ export default function Step3Age() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={styles.container}
         >
-            <View style={styles.content}>
+            <AmbientBackground />
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={Colors.textSecondary} />
+                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
                     </Pressable>
                     <ProgressDots currentStep={3} totalSteps={9} />
                     
@@ -63,20 +67,22 @@ export default function Step3Age() {
                     entering={FadeInDown.duration(800).delay(600).springify()}
                     style={styles.inputSection}
                 >
-                    <View style={styles.ageInputContainer}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="00"
-                            placeholderTextColor="rgba(212, 175, 55, 0.2)"
-                            value={age}
-                            onChangeText={(text) => setAge(text.replace(/[^0-9]/g, '').slice(0, 2))}
-                            keyboardType="number-pad"
-                            maxLength={2}
-                            autoFocus
-                            selectionColor={Colors.gold}
-                        />
-                        <Text style={styles.yearsText}>years old</Text>
-                    </View>
+                    <GlassCard accent={isAgeValid ? 'gold' : undefined} shimmer={age.length > 0} >
+                        <View style={styles.ageInputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="00"
+                                placeholderTextColor="rgba(212,168,83,0.2)"
+                                value={age}
+                                onChangeText={(text) => setAge(text.replace(/[^0-9]/g, '').slice(0, 2))}
+                                keyboardType="number-pad"
+                                maxLength={2}
+                                autoFocus
+                                selectionColor={theme.colors.gold}
+                            />
+                            <Text style={styles.yearsText}>years old</Text>
+                        </View>
+                    </GlassCard>
                 </Animated.View>
 
                 <View style={styles.footer}>
@@ -91,7 +97,7 @@ export default function Step3Age() {
                             disabled={!isAgeValid}
                         >
                             <LinearGradient
-                                colors={isAgeValid ? [Colors.gold, '#B8860B'] : ['#333', '#222']}
+                                colors={isAgeValid ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.buttonGradient}
@@ -102,7 +108,7 @@ export default function Step3Age() {
                                 ]}>
                                     Continue
                                 </Text>
-                                <ArrowRight size={20} color={isAgeValid ? Colors.void : '#666'} strokeWidth={3} />
+                                <ArrowRight size={20} color={isAgeValid ? theme.colors.void : '#666'} strokeWidth={3} />
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
@@ -115,13 +121,11 @@ export default function Step3Age() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.void,
+        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
     },
     header: {
         marginTop: 0,
@@ -134,14 +138,14 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...Typography.h2,
-        color: Colors.textPrimary,
+        ...theme.typography.h2,
+        color: theme.colors.textPrimary,
         marginTop: 32,
         fontSize: 32,
     },
     subtitle: {
-        ...Typography.body,
-        color: Colors.textSecondary,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         marginTop: 12,
         fontSize: 16,
         lineHeight: 24,
@@ -154,22 +158,24 @@ const styles = StyleSheet.create({
     ageInputContainer: {
         flexDirection: 'row',
         alignItems: 'baseline',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
         gap: 16,
     },
     input: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 120,
-        color: Colors.gold,
+        color: theme.colors.gold,
         textAlign: 'center',
         minWidth: 150,
         // Using a subtle text shadow for a more premium look
-        textShadowColor: 'rgba(212, 175, 55, 0.4)',
+        textShadowColor: 'rgba(212,168,83,0.4)',
         textShadowOffset: { width: 0, height: 4 },
         textShadowRadius: 10,
     },
     yearsText: {
-        ...Typography.h3,
-        color: Colors.textSecondary,
+        ...theme.typography.h3,
+        color: theme.colors.textSecondary,
         fontSize: 24,
     },
     footer: {
@@ -198,7 +204,7 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 18,
-        color: Colors.void,
+        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

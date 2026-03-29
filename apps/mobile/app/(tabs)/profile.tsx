@@ -27,6 +27,8 @@ import {
     EmotionSlice,
     InsightCard,
 } from '../../hooks/useAnalytics';
+import AmbientBackground from '../../components/ui/AmbientBackground';
+import GlassCard from '../../components/ui/GlassCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 64;
@@ -182,12 +184,14 @@ function EmotionDonut({ distribution }: { distribution: EmotionSlice[] }) {
 function StatCard({ value, label, Icon, color }: { value: number; label: string; Icon: any; color: string }) {
     const { colors } = useTheme();
     return (
-        <View style={[statStyles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[statStyles.iconWrap, { backgroundColor: `${color}15` }]}>
-                <Icon size={18} color={color} strokeWidth={1.8} />
-            </View>
-            <Text style={[statStyles.value, { color: colors.textPrimary }]}>{value}</Text>
-            <Text style={[statStyles.label, { color: colors.textMuted }]}>{label}</Text>
+        <View style={statStyles.cardWrapper}>
+            <GlassCard noAnimation accent="gold" style={[{ padding: spacing.md }, statStyles.cardInner]}>
+                <View style={[statStyles.iconWrap, { backgroundColor: `${color}15` }]}>
+                    <Icon size={18} color={color} strokeWidth={1.8} />
+                </View>
+                <Text style={[statStyles.value, { color: colors.textPrimary }]}>{value}</Text>
+                <Text style={[statStyles.label, { color: colors.textMuted }]}>{label}</Text>
+            </GlassCard>
         </View>
     );
 }
@@ -197,11 +201,15 @@ function StatCard({ value, label, Icon, color }: { value: number; label: string;
 function InsightCardView({ insight }: { insight: InsightCard }) {
     const { colors } = useTheme();
     return (
-        <View style={[insightStyles.card, { backgroundColor: colors.surface, borderColor: colors.goldGlow }]}>
-            <View style={[insightStyles.iconWrap, { backgroundColor: `${colors.gold}15` }]}>
-                <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
-            </View>
-            <Text style={[insightStyles.text, { color: colors.textPrimary }]}>{insight.text}</Text>
+        <View style={{ marginBottom: spacing.sm }}>
+            <GlassCard glow shimmer accent="gold" style={{ padding: spacing.md }}>
+                <View style={insightStyles.contentRow}>
+                    <View style={[insightStyles.iconWrap, { backgroundColor: `${colors.gold}15` }]}>
+                        <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
+                    </View>
+                    <Text style={[insightStyles.text, { color: colors.textPrimary }]}>{insight.text}</Text>
+                </View>
+            </GlassCard>
         </View>
     );
 }
@@ -219,6 +227,7 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground />
             <ScrollView
                 contentContainerStyle={styles.scroll}
                 showsVerticalScrollIndicator={false}
@@ -283,7 +292,7 @@ export default function ProfileScreen() {
                         {/* Mood Trend Chart */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Mood Trend</Text>
-                            <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <GlassCard style={styles.chartCardWrapper}>
                                 <MoodLineChart trends={trends?.mood_trends || []} />
                                 <View style={styles.legendRow}>
                                     <View style={styles.legendItem}>
@@ -295,30 +304,34 @@ export default function ProfileScreen() {
                                         <Text style={[styles.legendText, { color: colors.textMuted }]}>Streak day</Text>
                                     </View>
                                 </View>
-                            </View>
+                            </GlassCard>
                         </View>
 
                         {/* Emotion Distribution */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Emotional Dashboard</Text>
-                            <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <GlassCard style={styles.chartCardWrapper}>
                                 <EmotionDonut distribution={trends?.emotion_distribution || []} />
-                            </View>
+                            </GlassCard>
                         </View>
 
                         {/* Streak Correlation */}
                         {trends?.streak_correlation && trends.streak_correlation.improvement_percent > 0 && (
-                            <View style={[styles.correlationCard, { backgroundColor: colors.surface, borderColor: colors.emerald + '30' }]}>
-                                <View style={[styles.correlationIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
-                                    <BarChart2 size={22} color={colors.emerald} strokeWidth={1.8} />
-                                </View>
-                                <Text style={[styles.correlationText, { color: colors.textPrimary }]}>
-                                    You feel{' '}
-                                    <Text style={[styles.correlationHighlight, { color: colors.emerald }]}>
-                                        {trends.streak_correlation.improvement_percent}% better
-                                    </Text>{' '}
-                                    on days you complete your habit.
-                                </Text>
+                            <View style={{ marginHorizontal: spacing.lg, marginBottom: spacing.lg }}>
+                                <GlassCard accent="emerald" glow style={{ padding: spacing.md }}>
+                                    <View style={styles.correlationRow}>
+                                        <View style={[styles.correlationIconWrap, { backgroundColor: `${colors.emerald}15` }]}>
+                                            <BarChart2 size={22} color={colors.emerald} strokeWidth={1.8} />
+                                        </View>
+                                        <Text style={[styles.correlationText, { color: colors.textPrimary }]}>
+                                            You feel{' '}
+                                            <Text style={[styles.correlationHighlight, { color: colors.emerald }]}>
+                                                {trends.streak_correlation.improvement_percent}% better
+                                            </Text>{' '}
+                                            on days you complete your habit.
+                                        </Text>
+                                    </View>
+                                </GlassCard>
                             </View>
                         )}
 
@@ -395,9 +408,10 @@ const styles = StyleSheet.create({
         fontFamily: fonts.display, fontSize: 20,
         marginBottom: spacing.md,
     },
-    chartCard: {
-        borderRadius: borderRadius.lg,
-        padding: spacing.md, borderWidth: 1,
+    chartCardWrapper: {
+        paddingTop: spacing.md,
+        paddingBottom: spacing.md,
+        paddingHorizontal: 0,
     },
     legendRow: {
         flexDirection: 'row', justifyContent: 'center',
@@ -408,11 +422,8 @@ const styles = StyleSheet.create({
     legendText: {
         fontFamily: fonts.body, fontSize: 12,
     },
-    correlationCard: {
+    correlationRow: {
         flexDirection: 'row', alignItems: 'center',
-        marginHorizontal: spacing.lg, marginBottom: spacing.lg,
-        borderRadius: borderRadius.lg,
-        padding: spacing.md, borderWidth: 1,
         gap: spacing.sm,
     },
     correlationIconWrap: {
@@ -489,10 +500,12 @@ const donutStyles = StyleSheet.create({
 });
 
 const statStyles = StyleSheet.create({
-    card: {
-        flex: 1, alignItems: 'center',
-        borderRadius: borderRadius.md, paddingVertical: spacing.md,
-        marginHorizontal: 4, borderWidth: 1,
+    cardWrapper: {
+        flex: 1,
+        marginHorizontal: 4,
+    },
+    cardInner: {
+        alignItems: 'center',
     },
     iconWrap: {
         width: 36, height: 36, borderRadius: 18,
@@ -509,11 +522,8 @@ const statStyles = StyleSheet.create({
 });
 
 const insightStyles = StyleSheet.create({
-    card: {
+    contentRow: {
         flexDirection: 'row', alignItems: 'flex-start',
-        borderRadius: borderRadius.md,
-        padding: spacing.md, marginBottom: spacing.sm,
-        borderWidth: 1,
         gap: spacing.sm,
     },
     iconWrap: {

@@ -6,6 +6,8 @@ import { ChevronLeft, Wind, Activity } from 'lucide-react-native';
 import { fonts, spacing } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
 import BreathingAnimation, { BreathingPattern } from '../../components/BreathingAnimation';
+import AmbientBackground from '../../components/ui/AmbientBackground';
+import GlassCard from '../../components/ui/GlassCard';
 
 export default function ImmediateReliefScreen() {
     const router = useRouter();
@@ -19,7 +21,8 @@ export default function ImmediateReliefScreen() {
 
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.void }]}>
-            <View style={[styles.root, { backgroundColor: colors.void }]}>
+            <AmbientBackground />
+            <View style={[styles.root]}>
                 {/* Custom Header */}
                 <View style={styles.header}>
                     <TouchableOpacity
@@ -63,35 +66,37 @@ export default function ImmediateReliefScreen() {
                         <BreathingAnimation pattern={activePattern} isActive={isBreathing} />
                     </View>
 
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={toggleBreathing}
-                        activeOpacity={0.8}
-                    >
-                        <BlurView intensity={20} tint="dark" style={styles.actionButtonBlur}>
+                    <GlassCard accent="gold" elevated>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={toggleBreathing}
+                            activeOpacity={0.8}
+                        >
                             <Text style={[styles.actionButtonText, { color: colors.gold }]}>
                                 {isBreathing ? "Pause Exercise" : "Start Exercise"}
                             </Text>
-                        </BlurView>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
+                    </GlassCard>
 
-                    <View style={styles.infoCard}>
-                        {activePattern === 'box' ? (
-                            <>
-                                <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>Box Breathing (4-4-4-4)</Text>
-                                <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
-                                    Box breathing, also known as four-square breathing, involves exhaling to a count of four, holding your lungs empty for a four-count, inhaling at the same pace, and holding air in your lungs for a count of four before exhaling and beginning the pattern anew.
-                                </Text>
-                            </>
-                        ) : (
-                            <>
-                                <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>4-7-8 Breathing</Text>
-                                <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
-                                    The 4-7-8 breathing technique, also known as "relaxing breath," involves breathing in for 4 seconds, holding the breath for 7 seconds, and exhaling for 8 seconds. This breathing pattern aims to reduce anxiety or help people get to sleep.
-                                </Text>
-                            </>
-                        )}
-                    </View>
+                    <GlassCard shimmer>
+                        <View style={styles.infoCard}>
+                            {activePattern === 'box' ? (
+                                <>
+                                    <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>Box Breathing (4-4-4-4)</Text>
+                                    <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
+                                        Box breathing, also known as four-square breathing, involves exhaling to a count of four, holding your lungs empty for a four-count, inhaling at the same pace, and holding air in your lungs for a count of four before exhaling and beginning the pattern anew.
+                                    </Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>4-7-8 Breathing</Text>
+                                    <Text style={[styles.infoDescription, { color: colors.textGhost }]}>
+                                        The 4-7-8 breathing technique, also known as "relaxing breath," involves breathing in for 4 seconds, holding the breath for 7 seconds, and exhaling for 8 seconds. This breathing pattern aims to reduce anxiety or help people get to sleep.
+                                    </Text>
+                                </>
+                            )}
+                        </View>
+                    </GlassCard>
                 </ScrollView>
             </View>
         </SafeAreaView>
@@ -171,28 +176,16 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xl,
     },
     actionButton: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        marginBottom: spacing.xl,
-    },
-    actionButtonBlur: {
         paddingVertical: spacing.md,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(212, 168, 83, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(212, 168, 83, 0.2)',
     },
     actionButtonText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
     },
     infoCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: 20,
-        padding: spacing.lg,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
+        padding: spacing.sm,
     },
     infoTitle: {
         fontFamily: fonts.bodySemiBold,

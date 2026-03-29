@@ -19,6 +19,7 @@ import { fonts, spacing, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { useGlint, Glint } from '../../hooks/useGlint';
 import { haptics } from '../../services/haptics';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_H * 0.72;
@@ -111,6 +112,7 @@ export default function GlintScreen() {
     if (!loading && glints.length === 0 && !error) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+                <AmbientBackground />
                 <View style={styles.emptyState}>
                     <Animated.View entering={FadeIn.duration(500)} style={styles.emptyInner}>
                         <View style={[styles.emptyIcon, { backgroundColor: `${colors.gold}12` }]}>
@@ -137,6 +139,7 @@ export default function GlintScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+            <AmbientBackground />
             {/* Header */}
             <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.header}>
                 <View style={styles.headerLeft}>

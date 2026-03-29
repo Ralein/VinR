@@ -11,8 +11,8 @@ import {
     Keyboard
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/Colors';
-import { Typography } from '../../../constants/Typography';
+import { theme } from '../../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import Animated, { 
     FadeIn, 
@@ -25,10 +25,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, ArrowRight, Check } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Step2Name() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [name, setName] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -49,7 +52,7 @@ export default function Step2Name() {
             borderColor: interpolateColor(
                 focusAnim.value,
                 [0, 1],
-                ['rgba(212, 175, 55, 0.2)', Colors.gold]
+                ['rgba(212,168,83,0.2)', theme.colors.gold]
             ),
             backgroundColor: interpolateColor(
                 focusAnim.value,
@@ -66,7 +69,8 @@ export default function Step2Name() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={styles.container}
         >
-            <View style={styles.content}>
+            <AmbientBackground />
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <View style={styles.header}>
                     <ProgressDots currentStep={2} totalSteps={9} />
                     <Animated.Text 
@@ -87,28 +91,30 @@ export default function Step2Name() {
                     entering={FadeInDown.duration(800).delay(600).springify()}
                     style={styles.inputSection}
                 >
-                    <Animated.View style={[styles.inputContainer, inputBorderStyle]}>
-                        <View style={styles.iconWrapper}>
-                            <User size={22} color={isFocused ? Colors.gold : Colors.textGhost} />
+                    <GlassCard accent={isFocused ? 'gold' : undefined} shimmer={isFocused}>
+                        <View style={styles.inputContainer}>
+                            <View style={styles.iconWrapper}>
+                                <User size={22} color={isFocused ? theme.colors.gold : theme.colors.textGhost} />
+                            </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Your Name"
+                                placeholderTextColor={theme.colors.textGhost}
+                                value={name}
+                                onChangeText={setName}
+                                onFocus={() => setIsFocused(true)}
+                                onBlur={() => setIsFocused(false)}
+                                autoFocus
+                                autoCorrect={false}
+                                selectionColor={theme.colors.gold}
+                            />
+                            {isNameValid && (
+                                <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.validBadge}>
+                                    <Check size={14} color={theme.colors.gold} strokeWidth={4} />
+                                </Animated.View>
+                            )}
                         </View>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Your Name"
-                            placeholderTextColor={Colors.textGhost}
-                            value={name}
-                            onChangeText={setName}
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
-                            autoFocus
-                            autoCorrect={false}
-                            selectionColor={Colors.gold}
-                        />
-                        {isNameValid && (
-                            <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.validBadge}>
-                                <Check size={14} color={Colors.gold} strokeWidth={4} />
-                            </Animated.View>
-                        )}
-                    </Animated.View>
+                    </GlassCard>
                 </Animated.View>
 
                 <View style={styles.footer}>
@@ -123,7 +129,7 @@ export default function Step2Name() {
                             disabled={!isNameValid}
                         >
                             <LinearGradient
-                                colors={isNameValid ? [Colors.gold, '#B8860B'] : ['#333', '#222']}
+                                colors={isNameValid ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.buttonGradient}
@@ -134,7 +140,7 @@ export default function Step2Name() {
                                 ]}>
                                     Continue
                                 </Text>
-                                <ArrowRight size={20} color={isNameValid ? Colors.void : '#666'} strokeWidth={3} />
+                                <ArrowRight size={20} color={isNameValid ? theme.colors.void : '#666'} strokeWidth={3} />
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
@@ -147,26 +153,24 @@ export default function Step2Name() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.void,
+        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
     },
     header: {
         marginTop: 20,
     },
     title: {
-        ...Typography.h2,
-        color: Colors.textPrimary,
+        ...theme.typography.h2,
+        color: theme.colors.textPrimary,
         marginTop: 32,
         fontSize: 32,
     },
     subtitle: {
-        ...Typography.body,
-        color: Colors.textSecondary,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         marginTop: 12,
         fontSize: 16,
         lineHeight: 24,
@@ -178,17 +182,14 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 72,
-        borderRadius: 20,
-        borderWidth: 1.5,
-        paddingHorizontal: 20,
+        paddingVertical: 12,
         gap: 12,
     },
     iconWrapper: {
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: 'rgba(212, 175, 55, 0.05)',
+        backgroundColor: theme.colors.goldMuted,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -196,14 +197,14 @@ const styles = StyleSheet.create({
         flex: 1,
         fontFamily: 'DMSans_500Medium',
         fontSize: 18,
-        color: Colors.textPrimary,
+        color: theme.colors.textPrimary,
         height: '100%',
     },
     validBadge: {
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+        backgroundColor: theme.colors.goldGlow,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 18,
-        color: Colors.void,
+        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

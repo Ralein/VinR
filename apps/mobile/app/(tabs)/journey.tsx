@@ -32,6 +32,7 @@ import { MarkCompleteSheet } from '../../components/streaks/MarkCompleteSheet';
 import { MilestoneModal } from '../../components/streaks/MilestoneModal';
 import ProgressRing from '../../components/ui/ProgressRing';
 import GlassCard from '../../components/ui/GlassCard';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 const TOTAL_DAYS = 21;
 
@@ -156,6 +157,7 @@ export default function JourneyScreen() {
     if (!isLoading && !activeStreakId) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+                <AmbientBackground />
                 <View style={styles.emptyState}>
                     <Animated.View entering={FadeIn.duration(600)} style={styles.emptyInner}>
                         <View style={[styles.emptyIconWrap, { backgroundColor: `${colors.gold}10`, borderColor: `${colors.gold}30` }]}>
@@ -180,6 +182,7 @@ export default function JourneyScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+            <AmbientBackground />
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                 {/* Streak Header */}

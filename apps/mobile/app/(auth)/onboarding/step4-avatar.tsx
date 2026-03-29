@@ -8,8 +8,8 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/Colors';
-import { Typography } from '../../../constants/Typography';
+import { theme } from '../../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import Animated, { 
@@ -18,6 +18,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +33,7 @@ const AVATARS = [
 ];
 
 export default function Step4Avatar() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { avatarId, setAvatarId } = useOnboardingStore();
 
@@ -42,10 +45,11 @@ export default function Step4Avatar() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.content}>
+            <AmbientBackground />
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={Colors.textSecondary} />
+                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
                     </Pressable>
                     <ProgressDots currentStep={4} totalSteps={9} />
                     
@@ -76,34 +80,28 @@ export default function Step4Avatar() {
                                 entering={FadeInRight.duration(600).delay(500 + index * 100).springify()}
                                 style={styles.avatarWrapper}
                             >
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.avatarCard,
-                                        isSelected && styles.avatarCardSelected,
-                                        pressed && styles.avatarCardPressed
-                                    ]}
-                                    onPress={() => setAvatarId(avatar.id)}
-                                >
-                                    {isSelected && (
-                                        <View style={styles.checkIcon}>
-                                            <Check size={12} color={Colors.void} strokeWidth={4} />
-                                        </View>
-                                    )}
-                                    <Text style={styles.emoji}>{avatar.emoji}</Text>
-                                    <Text style={[
-                                        styles.label,
-                                        isSelected && styles.labelSelected
-                                    ]}>
-                                        {avatar.label}
-                                    </Text>
-                                    
-                                    {isSelected && (
-                                        <LinearGradient
-                                            colors={['rgba(212, 175, 55, 0.2)', 'transparent']}
-                                            style={styles.cardGradient}
-                                        />
-                                    )}
-                                </Pressable>
+                                <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.avatarCard,
+                                            pressed && styles.avatarCardPressed
+                                        ]}
+                                        onPress={() => setAvatarId(avatar.id)}
+                                    >
+                                        {isSelected && (
+                                            <View style={styles.checkIcon}>
+                                                <Check size={12} color={theme.colors.void} strokeWidth={4} />
+                                            </View>
+                                        )}
+                                        <Text style={styles.emoji}>{avatar.emoji}</Text>
+                                        <Text style={[
+                                            styles.label,
+                                            isSelected && styles.labelSelected
+                                        ]}>
+                                            {avatar.label}
+                                        </Text>
+                                    </Pressable>
+                                </GlassCard>
                             </Animated.View>
                         );
                     })}
@@ -121,7 +119,7 @@ export default function Step4Avatar() {
                             disabled={!avatarId}
                         >
                             <LinearGradient
-                                colors={avatarId ? [Colors.gold, '#B8860B'] : ['#333', '#222']}
+                                colors={avatarId ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.buttonGradient}
@@ -132,7 +130,7 @@ export default function Step4Avatar() {
                                 ]}>
                                     Continue
                                 </Text>
-                                <ArrowRight size={20} color={avatarId ? Colors.void : '#666'} strokeWidth={3} />
+                                <ArrowRight size={20} color={avatarId ? theme.colors.void : '#666'} strokeWidth={3} />
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
@@ -145,13 +143,11 @@ export default function Step4Avatar() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.void,
+        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
     },
     header: {
         marginBottom: 24,
@@ -164,14 +160,14 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...Typography.h2,
-        color: Colors.textPrimary,
+        ...theme.typography.h2,
+        color: theme.colors.textPrimary,
         marginTop: 32,
         fontSize: 32,
     },
     subtitle: {
-        ...Typography.body,
-        color: Colors.textSecondary,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         marginTop: 12,
         fontSize: 16,
         lineHeight: 24,
@@ -190,31 +186,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     avatarCard: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: 24,
         padding: 24,
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
         height: 160,
         justifyContent: 'center',
         position: 'relative',
-        overflow: 'hidden',
-    },
-    avatarCardSelected: {
-        borderColor: Colors.gold,
-        backgroundColor: '#252115',
     },
     avatarCardPressed: {
         transform: [{ scale: 0.97 }],
-    },
-    cardGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: -1,
     },
     checkIcon: {
         position: 'absolute',
@@ -223,7 +202,7 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: Colors.gold,
+        backgroundColor: theme.colors.gold,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -234,11 +213,11 @@ const styles = StyleSheet.create({
     label: {
         fontFamily: 'DMSans_500Medium',
         fontSize: 14,
-        color: Colors.textSecondary,
+        color: theme.colors.textSecondary,
         textAlign: 'center',
     },
     labelSelected: {
-        color: Colors.gold,
+        color: theme.colors.gold,
         fontFamily: 'DMSans_700Bold',
     },
     footer: {
@@ -267,7 +246,7 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 18,
-        color: Colors.void,
+        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

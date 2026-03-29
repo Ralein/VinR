@@ -8,8 +8,8 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/Colors';
-import { Typography } from '../../../constants/Typography';
+import { theme } from '../../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import Animated, { 
@@ -18,6 +18,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight, User } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +35,7 @@ const IDENTITIES = [
 ];
 
 export default function Step6Identity() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { identity, setIdentity } = useOnboardingStore();
 
@@ -44,10 +47,11 @@ export default function Step6Identity() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.content}>
+            <AmbientBackground />
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={Colors.textSecondary} />
+                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
                     </Pressable>
                     <ProgressDots currentStep={6} totalSteps={9} />
                     
@@ -79,29 +83,23 @@ export default function Step6Identity() {
                                     entering={FadeInRight.duration(600).delay(500 + index * 50).springify()}
                                     style={styles.gridItem}
                                 >
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.identityCard,
-                                            isSelected && styles.identityCardSelected,
-                                            pressed && styles.identityCardPressed
-                                        ]}
-                                        onPress={() => setIdentity(item.id)}
-                                    >
-                                        <Text style={styles.icon}>{item.icon}</Text>
-                                        <Text style={[
-                                            styles.cardLabel,
-                                            isSelected && styles.cardLabelSelected
-                                        ]}>
-                                            {item.label}
-                                        </Text>
-                                        
-                                        {isSelected && (
-                                            <LinearGradient
-                                                colors={['rgba(212, 175, 55, 0.15)', 'transparent']}
-                                                style={styles.cardGradient}
-                                            />
-                                        )}
-                                    </Pressable>
+                                    <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                        <Pressable
+                                            style={({ pressed }) => [
+                                                styles.identityCard,
+                                                pressed && styles.identityCardPressed
+                                            ]}
+                                            onPress={() => setIdentity(item.id)}
+                                        >
+                                            <Text style={styles.icon}>{item.icon}</Text>
+                                            <Text style={[
+                                                styles.cardLabel,
+                                                isSelected && styles.cardLabelSelected
+                                            ]}>
+                                                {item.label}
+                                            </Text>
+                                        </Pressable>
+                                    </GlassCard>
                                 </Animated.View>
                             );
                         })}
@@ -120,7 +118,7 @@ export default function Step6Identity() {
                             disabled={!identity}
                         >
                             <LinearGradient
-                                colors={identity ? [Colors.gold, '#B8860B'] : ['#333', '#222']}
+                                colors={identity ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.buttonGradient}
@@ -131,7 +129,7 @@ export default function Step6Identity() {
                                 ]}>
                                     That's Me
                                 </Text>
-                                <ArrowRight size={20} color={identity ? Colors.void : '#666'} strokeWidth={3} />
+                                <ArrowRight size={20} color={identity ? theme.colors.void : '#666'} strokeWidth={3} />
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
@@ -144,13 +142,11 @@ export default function Step6Identity() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.void,
+        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
     },
     header: {
         marginBottom: 8,
@@ -163,14 +159,14 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...Typography.h2,
-        color: Colors.textPrimary,
+        ...theme.typography.h2,
+        color: theme.colors.textPrimary,
         marginTop: 32,
         fontSize: 32,
     },
     subtitle: {
-        ...Typography.body,
-        color: Colors.textSecondary,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         marginTop: 12,
         fontSize: 16,
         lineHeight: 24,
@@ -191,32 +187,15 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     identityCard: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
         aspectRatio: 1,
         position: 'relative',
-        overflow: 'hidden',
-    },
-    identityCardSelected: {
-        borderColor: Colors.gold,
-        backgroundColor: '#252115',
     },
     identityCardPressed: {
         transform: [{ scale: 0.96 }],
-    },
-    cardGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: -1,
     },
     icon: {
         fontSize: 40,
@@ -225,11 +204,11 @@ const styles = StyleSheet.create({
     cardLabel: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 15,
-        color: Colors.textPrimary,
+        color: theme.colors.textPrimary,
         textAlign: 'center',
     },
     cardLabelSelected: {
-        color: Colors.gold,
+        color: theme.colors.gold,
     },
     footer: {
         marginTop: 10,
@@ -257,7 +236,7 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 18,
-        color: Colors.void,
+        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });
