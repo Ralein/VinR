@@ -34,7 +34,13 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "expo-av",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow VinR to access your microphone for voice check-ins."
+        }
+      ],
+      "expo-video",
       [
         "expo-notifications",
         {
