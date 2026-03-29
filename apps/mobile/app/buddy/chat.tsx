@@ -250,7 +250,7 @@ export default function ChatScreen() {
     const processVoiceMessage = async (uri: string, duration?: number) => {
         const userMsg: Message = {
             id: Date.now().toString(),
-            text: 'Voice message',
+            text: '',
             sender: 'user',
             timestamp: new Date(),
             audioUri: uri,
@@ -314,7 +314,7 @@ export default function ChatScreen() {
         if (!message) return;
         switch (action) {
             case 'copy':
-                await Clipboard.setString(message.text);
+                await Clipboard.setString(message.text || 'Voice Message');
                 Alert.alert('Copied', 'Message copied to clipboard');
                 triggerHaptic('light');
                 break;
@@ -438,12 +438,14 @@ export default function ChatScreen() {
                         <View style={[styles.replyIndicator, { borderLeftColor: colors.gold }]} />
                     )}
 
-                    <Text style={[
-                        styles.msgText,
-                        isUser ? styles.msgTextUser : { color: colors.textPrimary }
-                    ]}>
-                        {item.text}
-                    </Text>
+                    {!!item.text && (
+                        <Text style={[
+                            styles.msgText,
+                            isUser ? styles.msgTextUser : { color: colors.textPrimary }
+                        ]}>
+                            {item.text}
+                        </Text>
+                    )}
 
                     <Text style={[
                         styles.msgTimestamp,
@@ -738,7 +740,7 @@ export default function ChatScreen() {
                                         Replying to {replyingTo.sender === 'user' ? 'You' : 'AI'}
                                     </Text>
                                     <Text style={[styles.replyText, { color: colors.textPrimary }]} numberOfLines={1}>
-                                        {replyingTo.text}
+                                        {replyingTo.text || '🎤 Voice message'}
                                     </Text>
                                 </View>
                                 <Pressable hitSlop={10} onPress={() => setReplyingTo(null)}>
