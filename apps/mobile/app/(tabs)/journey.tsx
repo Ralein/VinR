@@ -122,10 +122,10 @@ export default function JourneyScreen() {
         const completedDays = new Set(dailyCompletions.map((c) => c.dayNumber));
         const statuses: Array<'completed' | 'today' | 'missed' | 'future'> = [];
         for (let i = 1; i <= TOTAL_DAYS; i++) {
-            if (completedDays.has(i)) {
+            if (completedDays.has(i) || i <= totalDaysCompleted) {
                 statuses.push('completed');
             } else if (i === totalDaysCompleted + 1) {
-                statuses.push(isCompletedToday ? 'completed' : 'today');
+                statuses.push(isCompletedToday ? 'future' : 'today');
             } else if (i < totalDaysCompleted + 1) {
                 statuses.push('missed');
             } else {

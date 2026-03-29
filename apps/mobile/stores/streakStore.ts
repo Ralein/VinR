@@ -30,6 +30,7 @@ interface StreakState {
         totalDaysCompleted: number;
         startDate: string;
         dailyCompletions: DailyCompletion[];
+        isCompletedToday: boolean;
     }) => void;
     markDayComplete: (completion: DailyCompletion) => void;
     setMilestone: (milestone: string | null) => void;
@@ -58,6 +59,7 @@ export const useStreakStore = create<StreakState>((set) => ({
             totalDaysCompleted: data.totalDaysCompleted,
             startDate: data.startDate,
             dailyCompletions: data.dailyCompletions,
+            isCompletedToday: data.isCompletedToday,
             isWinner: data.totalDaysCompleted >= JOURNEY_GOAL_DAYS,
         }),
 
