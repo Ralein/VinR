@@ -664,9 +664,9 @@ export default function ChatScreen() {
 
                 {/* KAV wraps only messages + input (file 2) */}
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                    keyboardVerticalOffset={0}
                 >
                     {/* Messages List */}
                     <FlatList
@@ -716,7 +716,7 @@ export default function ChatScreen() {
                             {
                                 borderTopColor: colors.border,
                                 backgroundColor: isDark ? colors.surface : colors.void,
-                                paddingBottom: keyboardOpen ? 12 : (insets.bottom > 0 ? insets.bottom : 12),
+                                paddingBottom: 12,
                             }
                         ]}
                     >
@@ -812,6 +812,9 @@ export default function ChatScreen() {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
+                {insets.bottom > 0 && (
+                    <View style={{ height: insets.bottom, backgroundColor: isDark ? colors.surface : colors.void }} />
+                )}
             </View>
         </GestureHandlerRootView>
     );
