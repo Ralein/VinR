@@ -542,7 +542,16 @@ export default function ChatScreen() {
                 </Text>
             </View>
 
-            <View style={styles.flexFill} />
+            <View style={[styles.flexFill, { alignItems: 'flex-end', justifyContent: 'center', paddingRight: 40 }]}>
+                {!isLocked && (
+                    <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.6 }}>
+                        <ChevronLeft size={14} color={colors.textPrimary} style={{ marginTop: 1, marginRight: 2 }} />
+                        <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '500' }}>
+                            Slide to cancel
+                        </Text>
+                    </Animated.View>
+                )}
+            </View>
 
             {/* Send */}
             <Pressable
@@ -640,7 +649,7 @@ export default function ChatScreen() {
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'android' ? (keyboardOpen ? 'padding' : undefined) : 'padding'}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={keyboardOpen ? -18 : 0}
+                    keyboardVerticalOffset={0}
                 >
                     {/* Messages List */}
                     <FlatList
@@ -690,7 +699,7 @@ export default function ChatScreen() {
                             {
                                 borderTopColor: colors.border,
                                 backgroundColor: isDark ? colors.surface : colors.void,
-                                paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
+                                paddingBottom: keyboardOpen ? 12 : (insets.bottom > 0 ? insets.bottom : 12),
                             }
                         ]}
                     >
