@@ -40,8 +40,9 @@ export const AuthService = {
                 return await this.getMe();
             }
         } catch (error: any) {
+            const detail = error?.response?.data?.detail;
             if (error?.response?.status !== 401) {
-                console.error('Sign up failed:', error);
+                console.error('Sign up failed:', detail || error.message || error);
             }
             throw error;
         } finally {

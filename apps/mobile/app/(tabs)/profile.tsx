@@ -9,7 +9,7 @@ import {
     View, Text, ScrollView, Pressable, StyleSheet,
     Dimensions, ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     MessageSquare, CalendarDays, Flame, BookText,
     BarChart2, TrendingUp, Settings, User
@@ -23,7 +23,6 @@ import {
     EmotionSlice,
     InsightCard,
 } from '../../hooks/useAnalytics';
-import AmbientBackground from '../../components/ui/AmbientBackground';
 import GlassCard from '../../components/ui/GlassCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -210,10 +209,11 @@ function InsightCardView({ insight }: { insight: InsightCard }) {
     );
 }
 
-// ──────────────────────────── Main Screen ────────────────────────────
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 export default function ProfileScreen() {
     const { colors, spacing, fonts } = useTheme();
+    const insets = useSafeAreaInsets();
     const [period, setPeriod] = useState('30d');
     const { data: summary, isLoading: loadingSummary } = useAnalyticsSummary();
     const { data: trends, isLoading: loadingTrends } = useAnalyticsTrends(period);
@@ -223,15 +223,15 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground minimal={true} />
+            <AmbientBackground hideBlobs={true} />
             <ScrollView
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}05`, borderColor: colors.gold }]}>
-                        <User size={40} color={colors.gold} strokeWidth={1} />
+                    <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}08`, borderColor: 'rgba(212,175,55,0.25)' }]}>
+                        <User size={42} color={colors.gold} strokeWidth={1} />
                     </View>
                     <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>My Journey</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: fonts.body }]}>Refinement statistics</Text>
@@ -351,7 +351,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    scroll: { paddingBottom: 100 },
+    scroll: { },
     header: {
         alignItems: 'center', paddingVertical: 40,
     },

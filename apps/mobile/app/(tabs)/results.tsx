@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import {
@@ -147,6 +147,7 @@ function TechniqueCard({
 
 export default function ResultsScreen() {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
     const plan = useCheckinStore((s) => s.plan);
     const reset = useCheckinStore((s) => s.reset);
     const [selectedItem, setSelectedItem] = useState<ReliefItem | null>(null);
@@ -173,7 +174,7 @@ export default function ResultsScreen() {
     if (!plan) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }}>
-                <AmbientBackground />
+                <AmbientBackground hideBlobs={true} />
                 <View style={styles.emptyState}>
                     <RotateCcw size={40} color={colors.textGhost} strokeWidth={1.5} />
                     <Text style={[styles.emptyText, { color: colors.textMuted }]}>
@@ -191,9 +192,9 @@ export default function ResultsScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }} edges={['top']}>
-            <AmbientBackground />
+            <AmbientBackground hideBlobs={true} />
             <ScrollView
-                contentContainerStyle={styles.content}
+                contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Reflection Card */}
@@ -359,7 +360,6 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.lg,
-        paddingBottom: spacing['2xl'],
         gap: spacing.md,
     },
     emptyState: {

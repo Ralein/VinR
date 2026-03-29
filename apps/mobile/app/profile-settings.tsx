@@ -18,7 +18,6 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
 import { deleteItemAsync } from '../utils/storage';
-import AmbientBackground from '../components/ui/AmbientBackground';
 import GlassCard from '../components/ui/GlassCard';
 
 export default function ProfileSettingsScreen() {
@@ -72,7 +71,6 @@ export default function ProfileSettingsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground minimal={true} />
             
             {/* Header */}
             <View style={styles.header}>
@@ -95,7 +93,7 @@ export default function ProfileSettingsScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Avatar & Name */}
                     <View style={styles.avatarSection}>
-                        <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}05`, borderColor: colors.gold }]}>
+                        <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}08`, borderColor: 'rgba(212,175,55,0.25)' }]}>
                             <User size={48} color={colors.gold} strokeWidth={1} />
                         </View>
                         <Text style={[styles.userName, { color: colors.textPrimary, fontFamily: fonts.display }]}>{user?.name || 'VinR Citizen'}</Text>

@@ -8,7 +8,6 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useSettingsStore } from '../store/useSettingsStore';
-import AmbientBackground from '../components/ui/AmbientBackground';
 import GlassCard from '../components/ui/GlassCard';
 
 type ThemePref = 'light' | 'system' | 'dark';
@@ -100,7 +99,6 @@ export default function SettingsScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }}>
-            <AmbientBackground minimal={true} />
             
             <View style={styles.header}>
                 <Pressable

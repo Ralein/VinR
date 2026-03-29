@@ -18,6 +18,7 @@ import Animated, {
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -52,18 +53,16 @@ export default function Step7Frequency() {
                     </Pressable>
                     <ProgressDots currentStep={7} totalSteps={9} />
                     
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
-                    >
-                        Define your pace
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        Consistency is the bedrock of refinement. How often shall you dedicate yourself to VinR?
-                    </Animated.Text>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]}>
+                            Define your pace
+                        </Text>
+                    </Animated.View>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                            Consistency is the bedrock of refinement. How often shall you dedicate yourself to VinR?
+                        </Text>
+                    </Animated.View>
                 </View>
 
                 <ScrollView 
@@ -115,31 +114,28 @@ export default function Step7Frequency() {
                     })}
                 </ScrollView>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
-                        <Pressable
+                <View style={[styles.footer, { paddingBottom: 20 }]}>
+                    <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                        <Pressable 
+                            onPress={handleNext}
                             style={({ pressed }) => [
                                 styles.button,
-                                dailyTime 
-                                    ? { backgroundColor: colors.gold } 
-                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-                                pressed && dailyTime && styles.buttonPressed,
+                                { backgroundColor: colors.gold },
+                                pressed && styles.buttonPressed,
                                 !dailyTime && styles.buttonDisabled
                             ]}
-                            onPress={handleNext}
                             disabled={!dailyTime}
                         >
-                            <Text style={[
-                                styles.buttonText,
-                                { color: dailyTime ? colors.void : colors.textGhost }
-                            ]}>
-                                Set Frequency
-                            </Text>
-                            <ArrowRight 
-                                size={20} 
-                                color={dailyTime ? colors.void : colors.textGhost} 
-                                strokeWidth={3} 
+                            <LinearGradient
+                                colors={dailyTime ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={StyleSheet.absoluteFill}
                             />
+                            <Text style={[styles.buttonText, { color: dailyTime ? colors.void : colors.textGhost }]}>
+                                SET FREQUENCY
+                            </Text>
+                            <ArrowRight size={20} color={dailyTime ? colors.void : colors.textGhost} />
                         </Pressable>
                     </Animated.View>
                 </View>

@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-native-reanimated';
 import {
@@ -88,11 +88,12 @@ export default function HomeScreen() {
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
     const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
+    const insets = useSafeAreaInsets();
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground />
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <AmbientBackground hideBlobs={true} />
+            <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]} showsVerticalScrollIndicator={false}>
 
                 {/* ── Header ───────────────────────────────── */}
                 <Animated.View entering={FadeIn.duration(350)} style={styles.headerRow}>
@@ -267,7 +268,6 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
-        paddingBottom: 130,
     },
     // Header
     headerRow: {

@@ -17,7 +17,6 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useNotificationSettings } from '../hooks/useNotificationSettings';
 import type { LucideIcon } from 'lucide-react-native';
-import AmbientBackground from '../components/ui/AmbientBackground';
 import GlassCard from '../components/ui/GlassCard';
 
 const NOTIFICATION_TYPES: {
@@ -85,7 +84,6 @@ export default function NotificationSettingsScreen() {
     if (isLoading) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-                <AmbientBackground minimal={true} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.gold} />
                 </View>
@@ -98,7 +96,6 @@ export default function NotificationSettingsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground minimal={true} />
             
             {/* Header */}
             <View style={styles.header}>

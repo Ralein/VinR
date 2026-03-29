@@ -8,6 +8,9 @@ import {
     KeyboardAvoidingView, 
     Platform,
     Dimensions,
+    ScrollView,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +24,7 @@ import Animated, {
 import { User, ArrowRight, Check } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,88 +47,92 @@ export default function Step2Name() {
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={[styles.container, { backgroundColor: colors.void }]}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
             <AmbientBackground minimal={true} />
             
-            <View style={[styles.content, { 
-                paddingTop: insets.top + (height > 800 ? 40 : 20), 
-                paddingBottom: insets.bottom + 20 
-            }]}>
-                <View style={styles.header}>
-                    <ProgressDots currentStep={2} totalSteps={9} />
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
-                        style={[styles.title, { color: colors.textPrimary }]}
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.flexFill}>
+                    <ScrollView 
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        How shall we address you?
-                    </Animated.Text>
-                    <Animated.Text 
-                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
-                        style={[styles.subtitle, { color: colors.textSecondary }]}
-                    >
-                        Excellence begins with a name.
-                    </Animated.Text>
-                </View>
-
-                <Animated.View 
-                    entering={FadeInDown.duration(1000).delay(600).springify().damping(15)}
-                    style={styles.inputSection}
-                >
-                    <GlassCard accent={isFocused ? 'gold' : undefined} glow={isFocused}>
-                        <View style={styles.inputContainer}>
-                            <View style={[styles.iconWrapper, { backgroundColor: `${colors.gold}15` }]}>
-                                <User size={22} color={isFocused ? colors.gold : colors.textGhost} strokeWidth={1.5} />
-                            </View>
-                            <TextInput
-                                style={[styles.input, { color: colors.textPrimary }]}
-                                placeholder="Full Name"
-                                placeholderTextColor={colors.textGhost}
-                                value={name}
-                                onChangeText={setName}
-                                onFocus={() => setIsFocused(true)}
-                                onBlur={() => setIsFocused(false)}
-                                autoFocus
-                                autoCorrect={false}
-                                selectionColor={colors.gold}
-                            />
-                            {isNameValid && (
-                                <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.validBadge}>
-                                    <Check size={14} color={colors.gold} strokeWidth={4} />
-                                </Animated.View>
-                            )}
+                        <View style={[styles.header, { marginTop: insets.top + 40 }]}>
+                            <ProgressDots currentStep={2} totalSteps={9} />
+                            
+                            <Animated.View entering={FadeInDown.duration(800).delay(200).springify()}>
+                                <Text style={[styles.title, { color: colors.textPrimary }]}>
+                                    How shall we address you?
+                                </Text>
+                            </Animated.View>
+                            <Animated.View entering={FadeInDown.duration(800).delay(400).springify()}>
+                                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                                    Your digital legacy begins with a name.
+                                </Text>
+                            </Animated.View>
                         </View>
-                    </GlassCard>
-                </Animated.View>
 
-                <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.button,
-                                isNameValid 
-                                    ? { backgroundColor: colors.gold } 
-                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-                                pressed && isNameValid && styles.buttonPressed,
-                                !isNameValid && styles.buttonDisabled
-                            ]}
-                            onPress={handleNext}
-                            disabled={!isNameValid}
-                        >
-                            <Text style={[
-                                styles.buttonText,
-                                { color: isNameValid ? colors.void : colors.textGhost }
-                            ]}>
-                                Continue
-                            </Text>
-                            <ArrowRight 
-                                size={20} 
-                                color={isNameValid ? colors.void : colors.textGhost} 
-                                strokeWidth={3} 
-                            />
-                        </Pressable>
-                    </Animated.View>
+                        <View style={styles.inputSection}>
+                            <Animated.View entering={FadeInDown.duration(800).delay(600).springify()}>
+                                <GlassCard accent={isFocused ? 'gold' : undefined} glow={isFocused}>
+                                    <View style={styles.inputContainer}>
+                                        <View style={[styles.iconWrapper, { backgroundColor: `${colors.gold}15` }]}>
+                                            <User size={22} color={isFocused ? colors.gold : colors.textGhost} strokeWidth={1.5} />
+                                        </View>
+                                        <TextInput
+                                            style={[styles.input, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}
+                                            placeholder="Full Name"
+                                            placeholderTextColor={colors.textGhost}
+                                            value={name}
+                                            onChangeText={setName}
+                                            onFocus={() => setIsFocused(true)}
+                                            onBlur={() => setIsFocused(false)}
+                                            autoFocus
+                                            autoCorrect={false}
+                                            selectionColor={colors.gold}
+                                        />
+                                        {isNameValid && (
+                                            <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.validBadge}>
+                                                <Check size={14} color={colors.gold} strokeWidth={4} />
+                                            </Animated.View>
+                                        )}
+                                    </View>
+                                </GlassCard>
+                            </Animated.View>
+                        </View>
+
+                        {/* Spacer to push footer to bottom in scroll area */}
+                        <View style={{ flex: 1 }} />
+                        
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+                            <Animated.View entering={FadeInDown.duration(800).delay(800).springify()}>
+                                <Pressable 
+                                    onPress={handleNext}
+                                    style={({ pressed }) => [
+                                        styles.button,
+                                        { backgroundColor: colors.gold },
+                                        pressed && styles.buttonPressed,
+                                        !isNameValid && styles.buttonDisabled
+                                    ]}
+                                    disabled={!isNameValid}
+                                >
+                                    <LinearGradient
+                                        colors={isNameValid ? [colors.goldLight, colors.gold, colors.gold] : [`${colors.gold}20`, `${colors.gold}10`]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 1 }}
+                                        style={StyleSheet.absoluteFill}
+                                    />
+                                    <Text style={[styles.buttonText, { color: isNameValid ? colors.void : colors.textGhost }]}>
+                                        CONTINUE
+                                    </Text>
+                                    <ArrowRight size={20} color={isNameValid ? colors.void : colors.textGhost} />
+                                </Pressable>
+                            </Animated.View>
+                        </View>
+                    </ScrollView>
                 </View>
-            </View>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
@@ -133,8 +141,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
+    flexFill: {
         flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
         paddingHorizontal: 28,
     },
     header: {
@@ -142,8 +153,8 @@ const styles = StyleSheet.create({
     },
     title: {
         fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 32,
-        lineHeight: 40,
+        fontSize: 34,
+        lineHeight: 42,
         marginTop: 32,
     },
     subtitle: {

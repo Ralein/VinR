@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { ChevronLeft, Wind, Activity } from 'lucide-react-native';
@@ -20,8 +21,8 @@ export default function ImmediateReliefScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.void }]}>
-            <AmbientBackground />
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.void }]} edges={['top', 'bottom']}>
+            <AmbientBackground hideBlobs={true} />
             <View style={[styles.root]}>
                 {/* Custom Header */}
                 <View style={styles.header}>

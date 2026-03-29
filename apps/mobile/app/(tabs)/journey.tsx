@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, {
     FadeIn,
@@ -90,6 +90,7 @@ function DayCell({ day, status, color }: {
 
 export default function JourneyScreen() {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
 
     const MILESTONES = useMemo(() => [
         { day: 5,  Icon: Leaf,    label: 'Day 5',  color: colors.emerald },
@@ -157,7 +158,7 @@ export default function JourneyScreen() {
     if (!isLoading && !activeStreakId) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
-                <AmbientBackground />
+                <AmbientBackground hideBlobs={true} />
                 <View style={styles.emptyState}>
                     <Animated.View entering={FadeIn.duration(600)} style={styles.emptyInner}>
                         <View style={[styles.emptyIconWrap, { backgroundColor: `${colors.gold}10`, borderColor: `${colors.gold}30` }]}>
@@ -182,8 +183,11 @@ export default function JourneyScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
-            <AmbientBackground />
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <AmbientBackground hideBlobs={true} />
+            <ScrollView
+                contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
+                showsVerticalScrollIndicator={false}
+            >
 
                 {/* Streak Header */}
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
@@ -288,7 +292,7 @@ export default function JourneyScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 60 },
+    content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
     emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
     emptyInner: { alignItems: 'center' },
     emptyIconWrap: {
