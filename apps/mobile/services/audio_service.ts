@@ -9,8 +9,9 @@ class AudioService {
         if (this.AudioModule) return this.AudioModule;
         
         // Safety check: Don't even try to import if native module is missing
-        if (!NativeModules.ExponentAV && !NativeModules.ExpoAv) {
-            console.warn('ExponentAV native module not found. Audio features disabled.');
+        // Expo SDK 55 uses 'ExpoAudio', previous use 'ExponentAV' or 'ExpoAv'
+        if (!NativeModules.ExponentAV && !NativeModules.ExpoAv && !NativeModules.ExpoAudio) {
+            console.warn('ExponentAV/ExpoAudio native module not found. Audio features disabled.');
             return null;
         }
 
@@ -103,6 +104,21 @@ class AudioService {
         } catch (error) {
             console.error('Failed to cancel recording:', error);
         }
+    }
+
+    async transcribeAudio(uri: string): Promise<string> {
+        console.log('Transcribing audio from:', uri);
+        // Mock transcription for now
+        return 'I feel a bit overwhelmed today.';
+    }
+
+    async playRecording(uri: string): Promise<void> {
+        console.log('Playing recording from:', uri);
+        const Audio = await this.getAudio();
+        if (!Audio) return;
+        
+        const { sound } = await Audio.Sound.createAsync({ uri });
+        await sound.playAsync();
     }
 }
 
