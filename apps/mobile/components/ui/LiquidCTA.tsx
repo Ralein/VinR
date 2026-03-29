@@ -56,32 +56,24 @@ export const LiquidCTA: React.FC<LiquidCTAProps> = ({
     const containerOp = useSharedValue(0);
 
     useEffect(() => {
-        containerOp.value = withDelay(delay, withTiming(1, { duration: 400 }));
+        // Remove entrance animations, set final values instantly
+        containerOp.value = 1;
 
         if (!isDisabled) {
-            borderOp.value = withDelay(delay + 150, withTiming(1, { duration: 360 }));
-            glowOp.value = withDelay(delay + 350, withTiming(1, { duration: 420 }));
-            fillW.value = withDelay(delay + 510, withTiming(CTA_W, {
-                duration: 600,
-                easing: Easing.inOut(Easing.quad),
-            }));
-            shimmerOp.value = withDelay(delay + 530, withTiming(1, { duration: 80 }));
-            shimmerX.value = withDelay(delay + 530, withTiming(CTA_W + 80, {
-                duration: 600,
-                easing: Easing.inOut(Easing.quad),
-            }));
-            labelOp.value = withDelay(delay + 1130, withTiming(1, { duration: 320 }));
-            labelSpc.value = withDelay(delay + 1130, withTiming(0.2, {
-                duration: 300,
-                easing: Easing.out(Easing.quad),
-            }));
+            borderOp.value = 1;
+            glowOp.value = 1;
+            fillW.value = CTA_W;
+            shimmerOp.value = 0;
+            shimmerX.value = CTA_W + 80;
+            labelOp.value = 1;
+            labelSpc.value = 0.5;
         } else {
-            borderOp.value = withDelay(delay + 150, withTiming(0.4, { duration: 300 }));
-            glowOp.value = withDelay(delay + 150, withTiming(0.2, { duration: 300 }));
-            fillW.value = withDelay(delay + 150, withTiming(CTA_W, { duration: 300 }));
-            labelOp.value = withDelay(delay + 150, withTiming(0.5, { duration: 300 }));
+            borderOp.value = 0.4;
+            glowOp.value = 0.2;
+            fillW.value = CTA_W;
+            labelOp.value = 0.5;
         }
-    }, [isDisabled, delay]);
+    }, [isDisabled, CTA_W]);
 
     const borderStyle = useAnimatedStyle(() => ({ opacity: borderOp.value }));
     const glowStyle = useAnimatedStyle(() => ({ opacity: glowOp.value }));
@@ -108,7 +100,7 @@ export const LiquidCTA: React.FC<LiquidCTAProps> = ({
             withSpring(0.96, { stiffness: 400 }),
             withSpring(1, animation.spring)
         );
-        setTimeout(() => onPress(), 150);
+        onPress();
     };
 
     return (
