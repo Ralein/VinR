@@ -8,14 +8,8 @@ class AudioService {
     private async getAudio(): Promise<any> {
         if (this.AudioModule) return this.AudioModule;
         
-        // Safety check: Don't even try to import if native module is missing
-        // Expo SDK 55 uses 'ExpoAudio', previous use 'ExponentAV' or 'ExpoAv'
-        if (!NativeModules.ExponentAV && !NativeModules.ExpoAv && !NativeModules.ExpoAudio) {
-            console.warn('ExponentAV/ExpoAudio native module not found. Audio features disabled.');
-            return null;
-        }
-
         try {
+            // In Expo SDK 55, modules are more robust and may not always appear in NativeModules
             const { Audio } = await import('expo-av');
             this.AudioModule = Audio;
             return Audio;
