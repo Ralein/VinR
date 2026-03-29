@@ -1,6 +1,7 @@
-import { View, StyleSheet, SafeAreaView, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -33,7 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({
               onPress={() => router.back()}
               style={[styles.backButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}
             >
-              <Ionicons name="chevron-back" size={24} color={colors.gold} />
+              <ArrowLeft size={24} color={colors.gold} strokeWidth={2} />
             </TouchableOpacity>
           )}
           {title && (
