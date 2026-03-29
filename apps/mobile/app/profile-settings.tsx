@@ -73,11 +73,11 @@ export default function ProfileSettingsScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            
+
             {/* Header */}
             <View style={styles.header}>
-                <Pressable 
-                    onPress={() => router.back()} 
+                <Pressable
+                    onPress={() => router.back()}
                     style={[styles.backButton, { backgroundColor: `#FFFFFF05`, borderColor: colors.border }]}
                 >
                     <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={1.5} />
@@ -122,7 +122,7 @@ export default function ProfileSettingsScreen() {
                         <ProfileRow
                             Icon={Calendar}
                             label="Age"
-                            value={onboarding.age || (user?.age ? user.age.toString() : null) || '—'}
+                            value={onboarding.age || user?.age || '—'}
                             iconColor={colors.emerald}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -157,12 +157,12 @@ export default function ProfileSettingsScreen() {
                                 Account deletion is permanent and irreversible. All your data will be erased.
                             </Text>
                         </View>
-                        <Pressable 
+                        <Pressable
                             style={({ pressed }) => [
-                                styles.deleteButton, 
+                                styles.deleteButton,
                                 { backgroundColor: colors.crimson },
                                 pressed && { opacity: 0.8 }
-                            ]} 
+                            ]}
                             onPress={handleDeleteAccount}
                         >
                             <View style={styles.deleteButtonInner}>
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     rowLabel: {
         fontSize: 10,
         marginBottom: 2,
-        textTransform: 'uppercase', 
+        textTransform: 'uppercase',
         letterSpacing: 1,
         opacity: 0.6,
     },
