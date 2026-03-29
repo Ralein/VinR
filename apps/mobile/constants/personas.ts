@@ -11,7 +11,7 @@ export interface Persona {
 export const PERSONAS: Persona[] = [
     {
         id: 'vinr',
-        name: 'VinR',
+        name: 'VinR Buddy',
         description: 'Your core AI companion, focused on holistic wellness and emotional support.',
         icon: Sparkles,
         color: '#E6C153', // VinR Gold
