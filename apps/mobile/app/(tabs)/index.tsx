@@ -83,7 +83,7 @@ const NUDGE_ICON_MAP: Record<string, any> = {
 // ── Main Component ─────────────────────────────────────────
 
 export default function HomeScreen() {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const [showSleepMode, setShowSleepMode] = useState(false);
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
@@ -194,7 +194,7 @@ export default function HomeScreen() {
                 <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
                     <SectionHeader title="Gratitude Journal" Icon={BookOpen} iconColor={colors.gold} delay={0} />
                     <Pressable onPress={() => router.push('/(tabs)/journal')}>
-                        <GlassCard accent="gold" elevated shimmer noAnimation>
+                        <GlassCard accent="gold" elevated shimmer noAnimation noBorder={!isDark} hideGlow={!isDark}>
                             <View style={styles.journeyCard}>
                                 <View style={[styles.journeyIconWrap, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
                                     <BookOpen size={28} color={colors.gold} strokeWidth={1.8} />

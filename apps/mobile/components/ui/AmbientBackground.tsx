@@ -107,32 +107,44 @@ export function PulseRing({ size, delay: d, color = 'rgba(212,175,55,0.5)' }: { 
 }
 
 export default function AmbientBackground({
-    // Defaults for standard screens (Midnight Gold + deep lavender)
-    topColor = 'rgba(212,175,55,0.04)',
+    topColor,
     minimal = false,
     hideBlobs = false,
-    blobs = [
-        { color: 'rgba(212,175,55,0.05)', size: 380, top: -80, left: -100, delay: 200, duration: 5400 },
-        { color: 'rgba(123,94,248,0.06)', size: 300, top: height * 0.6, right: -80, delay: 400, duration: 6600 }
-    ]
+    blobs: customBlobs
 }: {
     topColor?: string;
     minimal?: boolean;
     hideBlobs?: boolean;
     blobs?: { color: string; size: number; top?: number; left?: number; right?: number; bottom?: number; delay: number; duration: number; }[];
 }) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
+
+    // Theme-aware defaults
+    const defaultTopColor = topColor ?? (isDark ? 'rgba(212,175,55,0.04)' : 'rgba(212,175,55,0.08)');
+    
+    const defaultBlobs = [
+        { 
+            color: isDark ? 'rgba(212,175,55,0.05)' : 'rgba(212,175,55,0.06)', 
+            size: 380, top: -80, left: -100, delay: 200, duration: 5400 
+        },
+        { 
+            color: isDark ? 'rgba(123,94,248,0.06)' : 'rgba(212,175,55,0.04)', 
+            size: 300, top: height * 0.6, right: -80, delay: 400, duration: 6600 
+        }
+    ];
+
+    const finalBlobs = customBlobs ?? defaultBlobs;
 
     return (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <LinearGradient
-                colors={[topColor, 'transparent', colors.void]}
+                colors={[defaultTopColor, 'transparent', colors.void]}
                 style={StyleSheet.absoluteFill}
-                locations={[0, 0.4, 1]}
+                locations={[0, 0.45, 1]}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
             />
-            {!hideBlobs && blobs.map((blob, idx) => (
+            {!hideBlobs && finalBlobs.map((blob, idx) => (
                 <AmbientBlob key={`blob-${idx}`} {...blob} minimal={minimal} />
             ))}
         </View>

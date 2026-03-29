@@ -79,7 +79,7 @@ function TechniqueCard({
     index: number;
     accentColor: string;
 }) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { Icon, color: catColor } = getCategoryMeta(item.category);
     const difficulty = item.difficulty ?? 'easy';
     const difficultyColor =
@@ -91,15 +91,15 @@ function TechniqueCard({
         <Animated.View entering={FadeInRight.delay(200 + index * 120).duration(400)}>
             <Pressable
                 style={[styles.techniqueCard, {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                    borderColor: isDark ? colors.border : '#E8E1D0',
                 }]}
                 onPress={onPress}
             >
                 {/* Icon with glow ring */}
                 <View style={[styles.techniqueIconWrap, {
-                    backgroundColor: `${catColor}14`,
-                    borderColor: `${catColor}30`,
+                    backgroundColor: isDark ? `${catColor}14` : `${catColor}20`,
+                    borderColor: isDark ? `${catColor}30` : `${catColor}40`,
                 }]}>
                     <Icon size={22} color={catColor} strokeWidth={1.8} />
                 </View>
@@ -120,8 +120,8 @@ function TechniqueCard({
                             </Text>
                         </View>
                         <View style={[styles.difficultyChip, {
-                            backgroundColor: `${difficultyColor}18`,
-                            borderColor: `${difficultyColor}35`,
+                            backgroundColor: isDark ? `${difficultyColor}18` : `${difficultyColor}25`,
+                            borderColor: isDark ? `${difficultyColor}35` : `${difficultyColor}45`,
                         }]}>
                             <Flame size={10} color={difficultyColor} fill={difficultyColor} strokeWidth={2} />
                             <Text style={[styles.difficultyLabel, { color: difficultyColor }]}>
@@ -146,7 +146,7 @@ function TechniqueCard({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ResultsScreen() {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const plan = useCheckinStore((s) => s.plan);
     const reset = useCheckinStore((s) => s.reset);
@@ -201,8 +201,8 @@ export default function ResultsScreen() {
                 <Animated.View
                     entering={FadeInDown.delay(100).duration(500)}
                     style={[styles.reflectionCard, {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
+                        backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                        borderColor: isDark ? colors.border : '#E8E1D0',
                     }]}
                 >
                     <Text style={[styles.reflectionQuote, { color: colors.textPrimary }]}>
@@ -230,8 +230,8 @@ export default function ResultsScreen() {
                 <Animated.View
                     entering={FadeInDown.delay(500).duration(400)}
                     style={[styles.therapistBanner, {
-                        backgroundColor: colors.sapphireGlow,
-                        borderColor: `${colors.sapphire}30`,
+                        backgroundColor: isDark ? colors.sapphireGlow : '#F0F7FF',
+                        borderColor: isDark ? `${colors.sapphire}30` : `${colors.sapphire}25`,
                     }]}
                 >
                     <Heart size={18} color={colors.sapphire} strokeWidth={1.8} />
@@ -258,9 +258,10 @@ export default function ResultsScreen() {
                         </View>
                     </View>
                     <View style={[styles.pathwayCard, {
-                        backgroundColor: colors.elevated,
-                        borderColor: colors.borderGold,
+                        backgroundColor: isDark ? colors.elevated : '#F5F2EA',
+                        borderColor: isDark ? colors.borderGold : colors.border,
                         borderTopColor: colors.gold,
+                        borderWidth: isDark ? 1 : 1,
                     }]}>
                         {plan.immediateRelief.map((item, index) => (
                             <TechniqueCard
@@ -292,9 +293,10 @@ export default function ResultsScreen() {
                         </View>
                     </View>
                     <View style={[styles.pathwayCard, {
-                        backgroundColor: colors.elevated,
-                        borderColor: `${colors.emerald}25`,
+                        backgroundColor: isDark ? colors.elevated : '#F5F1E6',
+                        borderColor: isDark ? `${colors.emerald}25` : colors.border,
                         borderTopColor: colors.emerald,
+                        borderWidth: isDark ? 1 : 1,
                     }]}>
                         {plan.dailyHabits.map((item, index) => (
                             <TechniqueCard

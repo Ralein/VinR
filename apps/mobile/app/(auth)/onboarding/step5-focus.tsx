@@ -153,8 +153,8 @@ export default function Step5Focus() {
                                     ]}
                                 >
                                     <GlassCard
-                                        accent={isSelected ? 'gold' : undefined}
                                         glow={isSelected}
+                                        hideGlow={true}
                                     >
                                         <View style={styles.goalCard}>
                                             <View

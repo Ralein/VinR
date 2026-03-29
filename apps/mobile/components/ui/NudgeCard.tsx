@@ -1,10 +1,3 @@
-/**
- * NudgeCard — AI insight/recommendation card with animated gradient border
- *
- * Premium card with Lucide icon in a rounded square, gradient glow border,
- * title + message, and pressable navigation.
- */
-
 import React, { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
@@ -18,27 +11,10 @@ import Animated, {
     withSequence,
 } from 'react-native-reanimated';
 import { type LucideIcon, ChevronRight } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius, glass, animation } from '../../constants/theme';
 import { haptics } from '../../services/haptics';
+import { useTheme } from '../../context/ThemeContext';
 
 type NudgeAccent = 'gold' | 'emerald' | 'sapphire' | 'lavender' | 'crimson';
-
-const ACCENT_MAP: Record<NudgeAccent, string> = {
-    gold: colors.gold,
-    emerald: colors.emerald,
-    sapphire: colors.sapphire,
-    lavender: colors.lavender,
-    crimson: colors.crimson,
-};
-
-interface NudgeCardProps {
-    title: string;
-    message: string;
-    Icon: LucideIcon;
-    accent?: NudgeAccent;
-    onPress?: () => void;
-    delay?: number;
-}
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -50,14 +26,24 @@ export default function NudgeCard({
     onPress,
     delay = 0,
 }: NudgeCardProps) {
+    const { colors, fonts, spacing, borderRadius, glass, animation, isDark } = useTheme();
+    
+    const ACCENT_MAP: Record<NudgeAccent, string> = {
+        gold: colors.gold,
+        emerald: colors.emerald,
+        sapphire: colors.sapphire,
+        lavender: colors.lavender,
+        crimson: colors.crimson,
+    };
+
     const accentColor = ACCENT_MAP[accent];
     const scale = useSharedValue(1);
-    const borderGlow = useSharedValue(0.2);
+    const borderGlow = useSharedValue(isDark ? 0.2 : 0.1);
 
     useEffect(() => {
         // Subtle pulsing border glow
         borderGlow.value = withRepeat(
-            withTiming(0.5, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+            withTiming(isDark ? 0.5 : 0.35, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
             -1,
             true
         );
@@ -75,8 +61,8 @@ export default function NudgeCard({
         if (!onPress) return;
         haptics.light();
         scale.value = withSequence(
-            withSpring(0.97, animation.springStiff),
-            withSpring(1, animation.spring)
+            withSpring(0.97, animation?.springStiff || { stiffness: 200, damping: 20 }),
+            withSpring(1, animation?.spring || { stiffness: 100, damping: 10 })
         );
         onPress();
     };
@@ -89,16 +75,33 @@ export default function NudgeCard({
             <AnimatedPressable
                 onPress={handlePress}
                 disabled={!onPress}
-                style={[styles.card, { backgroundColor: `${accentColor}06` }, animatedBorder]}
+                style={[
+                    styles.card, 
+                    { 
+                        backgroundColor: glass.background,
+                        borderColor: glass.border,
+                        borderRadius: borderRadius.lg,
+                        padding: spacing.md,
+                        marginBottom: spacing.sm,
+                        gap: spacing.md
+                    }, 
+                    animatedBorder
+                ]}
             >
                 {/* Icon Column */}
-                <View style={[styles.iconCol, { backgroundColor: `${accentColor}15` }]}>
+                <View style={[
+                    styles.iconCol, 
+                    { 
+                        backgroundColor: `${accentColor}15`,
+                        borderRadius: borderRadius.md,
+                    }
+                ]}>
                     <Icon size={22} color={accentColor} strokeWidth={2} />
                 </View>
                 {/* Text Column */}
                 <View style={styles.textCol}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.message} numberOfLines={2}>{message}</Text>
+                    <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>{title}</Text>
+                    <Text style={[styles.message, { color: colors.textMuted, fontFamily: fonts.body }]} numberOfLines={2}>{message}</Text>
                 </View>
                 {/* Arrow */}
                 {onPress && (
@@ -109,22 +112,24 @@ export default function NudgeCard({
     );
 }
 
+interface NudgeCardProps {
+    title: string;
+    message: string;
+    Icon: LucideIcon;
+    accent?: NudgeAccent;
+    onPress?: () => void;
+    delay?: number;
+}
+
 const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.md,
-        padding: spacing.md,
-        borderRadius: borderRadius.lg,
         borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: glass.background,
-        marginBottom: spacing.sm,
     },
     iconCol: {
         width: 44,
         height: 44,
-        borderRadius: borderRadius.md,
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
@@ -134,15 +139,12 @@ const styles = StyleSheet.create({
         gap: 3,
     },
     title: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 14,
-        color: colors.textPrimary,
         letterSpacing: 0.1,
     },
     message: {
-        fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textMuted,
         lineHeight: 17,
     },
 });
+

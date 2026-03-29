@@ -115,7 +115,7 @@ export default function JournalScreen() {
                     <GlassCard accent="gold" style={{ marginBottom: spacing.md }}>
                         <View style={styles.searchContainer}>
                             <TextInput
-                                style={[styles.searchInput, { color: colors.textPrimary, backgroundColor: 'transparent', borderColor: colors.border }]}
+                                style={[styles.searchInput, { color: colors.textPrimary, backgroundColor: colors.elevated, borderColor: colors.border }]}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 placeholder="Search gratitude & reflections..."
@@ -173,7 +173,7 @@ export default function JournalScreen() {
                         style={[
                             styles.modeButton,
                             { backgroundColor: colors.surface, borderColor: colors.border },
-                            viewMode === 'write' && { backgroundColor: colors.gold + '15', borderColor: colors.gold + '50' },
+                            viewMode === 'write' && { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}50` },
                         ]}
                         onPress={() => setViewMode('write')}
                     >
@@ -192,7 +192,7 @@ export default function JournalScreen() {
                         style={[
                             styles.modeButton,
                             { backgroundColor: colors.surface, borderColor: colors.border },
-                            viewMode === 'entries' && { backgroundColor: colors.gold + '15', borderColor: colors.gold + '50' },
+                            viewMode === 'entries' && { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}50` },
                         ]}
                         onPress={() => setViewMode('entries')}
                     >

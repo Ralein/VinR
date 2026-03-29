@@ -3,7 +3,7 @@
  */
 
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 interface JournalCalendarProps {
     /** Current month string YYYY-MM */
@@ -51,6 +51,7 @@ export default function JournalCalendar({
     onPrevMonth,
     onNextMonth,
 }: JournalCalendarProps) {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const [yearStr, monthStr] = month.split('-');
     const year = parseInt(yearStr, 10);
     const monthNum = parseInt(monthStr, 10);
@@ -66,22 +67,22 @@ export default function JournalCalendar({
     for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: borderRadius.lg, padding: spacing.md }]}>
             {/* Month header */}
             <View style={styles.header}>
-                <Pressable onPress={onPrevMonth} style={styles.navButton}>
-                    <Text style={styles.navText}>‹</Text>
+                <Pressable onPress={onPrevMonth} style={[styles.navButton, { backgroundColor: colors.elevated, borderRadius: borderRadius.full }]}>
+                    <Text style={[styles.navText, { color: colors.gold }]}>‹</Text>
                 </Pressable>
-                <Text style={styles.monthLabel}>{formatMonthLabel(month)}</Text>
-                <Pressable onPress={onNextMonth} style={styles.navButton}>
-                    <Text style={styles.navText}>›</Text>
+                <Text style={[styles.monthLabel, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>{formatMonthLabel(month)}</Text>
+                <Pressable onPress={onNextMonth} style={[styles.navButton, { backgroundColor: colors.elevated, borderRadius: borderRadius.full }]}>
+                    <Text style={[styles.navText, { color: colors.gold }]}>›</Text>
                 </Pressable>
             </View>
 
             {/* Weekday labels */}
             <View style={styles.weekdayRow}>
                 {WEEKDAYS.map((day) => (
-                    <Text key={day} style={styles.weekdayLabel}>{day}</Text>
+                    <Text key={day} style={[styles.weekdayLabel, { color: colors.textGhost, fontFamily: fonts.body }]}>{day}</Text>
                 ))}
             </View>
 
@@ -102,21 +103,22 @@ export default function JournalCalendar({
                             key={dateStr}
                             style={[
                                 styles.cell,
-                                isToday && styles.cellToday,
-                                isSelected && styles.cellSelected,
+                                isToday && { borderWidth: 1, borderColor: colors.gold + '60', borderRadius: borderRadius.full },
+                                isSelected && { backgroundColor: colors.gold + '20', borderRadius: borderRadius.full },
                             ]}
                             onPress={() => onSelectDate(dateStr)}
                         >
                             <Text
                                 style={[
                                     styles.dayNumber,
-                                    isToday && styles.dayToday,
-                                    isSelected && styles.daySelected,
+                                    { color: colors.textMuted, fontFamily: fonts.body },
+                                    isToday && { color: colors.gold, fontFamily: fonts.bodySemiBold },
+                                    isSelected && { color: colors.gold, fontFamily: fonts.bodySemiBold },
                                 ]}
                             >
                                 {day}
                             </Text>
-                            {hasEntry && <View style={styles.dot} />}
+                            {hasEntry && <View style={[styles.dot, { backgroundColor: colors.gold }]} />}
                         </Pressable>
                     );
                 })}
@@ -125,50 +127,37 @@ export default function JournalCalendar({
     );
 }
 
-const CELL_SIZE = 44;
-
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.lg,
-        padding: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: spacing.md,
+        marginBottom: 16,
     },
     navButton: {
         width: 36,
         height: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.elevated,
     },
     navText: {
         fontSize: 22,
-        color: colors.gold,
         fontWeight: '600',
     },
     monthLabel: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.textPrimary,
     },
     weekdayRow: {
         flexDirection: 'row',
-        marginBottom: spacing.xs,
+        marginBottom: 8,
     },
     weekdayLabel: {
         flex: 1,
         textAlign: 'center',
-        fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textGhost,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
@@ -182,33 +171,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    cellToday: {
-        borderWidth: 1,
-        borderColor: colors.gold + '60',
-        borderRadius: borderRadius.full,
-    },
-    cellSelected: {
-        backgroundColor: colors.gold + '20',
-        borderRadius: borderRadius.full,
-    },
     dayNumber: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
-    },
-    dayToday: {
-        color: colors.gold,
-        fontFamily: fonts.bodySemiBold,
-    },
-    daySelected: {
-        color: colors.gold,
-        fontFamily: fonts.bodySemiBold,
     },
     dot: {
         width: 5,
         height: 5,
         borderRadius: 2.5,
-        backgroundColor: colors.gold,
         marginTop: 2,
     },
 });

@@ -1,7 +1,3 @@
-/**
- * EventCard v2 — Emoji-free, Lucide icon category chips + bookmark
- */
-
 import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import {
@@ -9,26 +5,8 @@ import {
     Palette, Dumbbell, Sparkles, Heart, Sun, Bookmark, MapPin,
     CalendarDays, Monitor, ExternalLink,
 } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { type EventResult } from '../../hooks/useEvents';
-
-// Map category → Lucide icon + accent color
-const CATEGORY_CONFIG: Record<string, { Icon: any; color: string }> = {
-    yoga:            { Icon: PersonStanding, color: colors.lavender },
-    meditation:      { Icon: Brain,          color: colors.sapphire },
-    breathwork:      { Icon: Wind,           color: colors.emerald  },
-    'support group': { Icon: Users,          color: colors.sapphire },
-    outdoor:         { Icon: Trees,          color: colors.emerald  },
-    hiking:          { Icon: Footprints,     color: colors.emerald  },
-    walking:         { Icon: Footprints,     color: colors.gold     },
-    'art therapy':   { Icon: Palette,        color: colors.lavender },
-    fitness:         { Icon: Dumbbell,       color: colors.crimson  },
-    wellness:        { Icon: Sparkles,       color: colors.gold     },
-    mindfulness:     { Icon: Heart,          color: colors.crimson  },
-    'self-care':     { Icon: Sun,            color: colors.gold     },
-    social:          { Icon: Users,          color: colors.emerald  },
-};
-const DEFAULT_CONFIG = { Icon: Sparkles, color: colors.gold };
 
 interface EventCardProps {
     event: EventResult;
@@ -37,6 +15,26 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
+    const { colors, fonts, spacing, borderRadius, isDark } = useTheme();
+
+    // Map category → Lucide icon + accent color
+    const CATEGORY_CONFIG: Record<string, { Icon: any; color: string }> = {
+        yoga:            { Icon: PersonStanding, color: colors.lavender },
+        meditation:      { Icon: Brain,          color: colors.sapphire },
+        breathwork:      { Icon: Wind,           color: colors.emerald  },
+        'support group': { Icon: Users,          color: colors.sapphire },
+        outdoor:         { Icon: Trees,          color: colors.emerald  },
+        hiking:          { Icon: Footprints,     color: colors.emerald  },
+        walking:         { Icon: Footprints,     color: colors.gold     },
+        'art therapy':   { Icon: Palette,        color: colors.lavender },
+        fitness:         { Icon: Dumbbell,       color: colors.crimson  },
+        wellness:        { Icon: Sparkles,       color: colors.gold     },
+        mindfulness:     { Icon: Heart,          color: colors.crimson  },
+        'self-care':     { Icon: Sun,            color: colors.gold     },
+        social:          { Icon: Users,          color: colors.emerald  },
+    };
+    const DEFAULT_CONFIG = { Icon: Sparkles, color: colors.gold };
+
     const cfg = CATEGORY_CONFIG[event.category || ''] ?? DEFAULT_CONFIG;
     const { Icon: CatIcon, color: catColor } = cfg;
 
@@ -51,12 +49,21 @@ export default function EventCard({ event, isBookmarked, onBookmarkToggle }: Eve
             onPressOut={() => { scale.value = 1; }}
             onPress={() => event.url && Linking.openURL(event.url)}
         >
-            <Animated.View style={[styles.container, animStyle]}>
-                {/* Top row */}
+            <Animated.View style={[
+                styles.container, 
+                { 
+                    backgroundColor: isDark ? colors.surface : '#FAF8F4', 
+                    borderColor: isDark ? colors.border : '#E8E1D0',
+                    borderRadius: borderRadius.lg,
+                    padding: spacing.md,
+                    marginBottom: spacing.sm,
+                }, 
+                animStyle
+            ]}>
                 <View style={styles.topRow}>
-                    <View style={[styles.categoryChip, { backgroundColor: `${catColor}12`, borderColor: `${catColor}25` }]}>
+                    <View style={[styles.categoryChip, { backgroundColor: isDark ? `${catColor}12` : `${catColor}15`, borderColor: isDark ? `${catColor}25` : `${catColor}30`, borderRadius: borderRadius.full }]}>
                         <CatIcon size={12} color={catColor} strokeWidth={2} />
-                        <Text style={[styles.categoryText, { color: catColor }]}>
+                        <Text style={[styles.categoryText, { color: catColor, fontFamily: fonts.bodySemiBold }]}>
                             {event.category || 'wellness'}
                         </Text>
                     </View>
@@ -78,39 +85,39 @@ export default function EventCard({ event, isBookmarked, onBookmarkToggle }: Eve
                 </View>
 
                 {/* Name */}
-                <Text style={styles.name} numberOfLines={2}>{event.name}</Text>
+                <Text style={[styles.name, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]} numberOfLines={2}>{event.name}</Text>
 
                 {/* Description */}
                 {event.description && (
-                    <Text style={styles.description} numberOfLines={2}>{event.description}</Text>
+                    <Text style={[styles.description, { color: colors.textMuted, fontFamily: fonts.body, marginBottom: spacing.sm }]} numberOfLines={2}>{event.description}</Text>
                 )}
 
                 {/* Details row */}
-                <View style={styles.detailsRow}>
+                <View style={[styles.detailsRow, { gap: spacing.md }]}>
                     {event.venue && (
                         <View style={styles.detail}>
                             <MapPin size={11} color={colors.textGhost} strokeWidth={1.8} />
-                            <Text style={styles.detailText} numberOfLines={1}>{event.venue}</Text>
+                            <Text style={[styles.detailText, { color: colors.textGhost, fontFamily: fonts.body }]} numberOfLines={1}>{event.venue}</Text>
                         </View>
                     )}
                     {event.date && (
                         <View style={styles.detail}>
                             <CalendarDays size={11} color={colors.textGhost} strokeWidth={1.8} />
-                            <Text style={styles.detailText} numberOfLines={1}>{event.date}</Text>
+                            <Text style={[styles.detailText, { color: colors.textGhost, fontFamily: fonts.body }]} numberOfLines={1}>{event.date}</Text>
                         </View>
                     )}
                     {event.distance_miles != null && (
-                        <View style={styles.distanceBadge}>
-                            <Text style={styles.distanceText}>{event.distance_miles.toFixed(1)} mi</Text>
+                        <View style={[styles.distanceBadge, { backgroundColor: `${colors.gold}15`, borderRadius: borderRadius.full, paddingHorizontal: spacing.sm }]}>
+                            <Text style={[styles.distanceText, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>{event.distance_miles.toFixed(1)} mi</Text>
                         </View>
                     )}
                 </View>
 
                 {/* Virtual badge */}
                 {event.is_virtual && (
-                    <View style={styles.virtualBadge}>
+                    <View style={[styles.virtualBadge, { backgroundColor: `${colors.sapphire}12`, borderRadius: borderRadius.sm, paddingHorizontal: spacing.sm, marginTop: spacing.sm }]}>
                         <Monitor size={11} color={colors.sapphire} strokeWidth={2} />
-                        <Text style={styles.virtualText}>Virtual Event</Text>
+                        <Text style={[styles.virtualText, { color: colors.sapphire, fontFamily: fonts.bodySemiBold }]}>Virtual Event</Text>
                     </View>
                 )}
             </Animated.View>
@@ -120,30 +127,23 @@ export default function EventCard({ event, isBookmarked, onBookmarkToggle }: Eve
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.lg,
-        padding: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border,
-        marginBottom: spacing.sm,
     },
     topRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: spacing.sm,
+        marginBottom: 8,
     },
     categoryChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        borderRadius: borderRadius.full,
         paddingHorizontal: 9,
         paddingVertical: 3,
         borderWidth: 1,
     },
     categoryText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 11,
         textTransform: 'capitalize',
         letterSpacing: 0.2,
@@ -154,57 +154,39 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     name: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 15,
-        color: colors.textPrimary,
         marginBottom: 4,
         lineHeight: 21,
     },
     description: {
-        fontFamily: fonts.body,
         fontSize: 13,
-        color: colors.textMuted,
         lineHeight: 19,
-        marginBottom: spacing.sm,
     },
     detailsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         alignItems: 'center',
-        gap: spacing.md,
     },
     detail: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     detailText: {
-        fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textGhost,
         maxWidth: 120,
     },
     distanceBadge: {
-        backgroundColor: `${colors.gold}15`,
-        borderRadius: borderRadius.full,
-        paddingHorizontal: spacing.sm,
         paddingVertical: 2,
     },
     distanceText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 11,
-        color: colors.gold,
     },
     virtualBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
-        marginTop: spacing.sm,
-        backgroundColor: `${colors.sapphire}12`,
-        borderRadius: borderRadius.sm,
-        paddingHorizontal: spacing.sm,
         paddingVertical: 3,
         alignSelf: 'flex-start',
     },
     virtualText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 11,
-        color: colors.sapphire,
     },
 });
+

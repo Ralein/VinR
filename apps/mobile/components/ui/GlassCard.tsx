@@ -17,18 +17,9 @@ import Animated, {
     withSpring,
     Easing,
 } from 'react-native-reanimated';
-import { glass, borderRadius, spacing, shadows, colors } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 type AccentColor = 'gold' | 'emerald' | 'sapphire' | 'crimson' | 'lavender' | 'none';
-
-const ACCENT_COLORS: Record<AccentColor, string> = {
-    gold: colors.gold,
-    emerald: colors.emerald,
-    sapphire: colors.sapphire,
-    crimson: colors.crimson,
-    lavender: colors.lavender,
-    none: 'rgba(255,255,255,0.07)',
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -41,6 +32,8 @@ interface GlassCardProps {
     delay?: number;
     /** Disable entrance animation */
     noAnimation?: boolean;
+    /** Disable default 1px border */
+    noBorder?: boolean;
     /** Additional styles */
     style?: StyleProp<ViewStyle>;
     /** Use elevated shadow */
@@ -51,6 +44,8 @@ interface GlassCardProps {
     onPress?: () => void;
     /** Colored drop shadow/glow using accent */
     glow?: boolean;
+    /** Force hide any glow/shimmer effects */
+    hideGlow?: boolean;
 }
 
 export default function GlassCard({
@@ -59,18 +54,31 @@ export default function GlassCard({
     accentBorder = false,
     delay = 0,
     noAnimation = false,
+    noBorder = false,
     style,
     elevated = false,
     shimmer = false,
     onPress,
     glow = false,
+    hideGlow = false,
 }: GlassCardProps) {
-    const accentHex = ACCENT_COLORS[accent];
+    const { colors, glass, borderRadius, spacing, shadows, isDark } = useTheme();
     const shimmerOpacity = useSharedValue(0.1);
     const pressScale = useSharedValue(1);
 
+    const ACCENT_COLORS: Record<AccentColor, string> = {
+        gold: colors.gold,
+        emerald: colors.emerald,
+        sapphire: colors.sapphire,
+        crimson: colors.crimson,
+        lavender: colors.lavender,
+        none: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+    };
+
+    const accentHex = ACCENT_COLORS[accent];
+
     useEffect(() => {
-        if (shimmer && accent !== 'none') {
+        if (shimmer && accent !== 'none' && !hideGlow) {
             shimmerOpacity.value = withRepeat(
                 withSequence(
                     withTiming(0.45, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
@@ -83,9 +91,9 @@ export default function GlassCard({
     }, [shimmer, accent]);
 
     const shimmerStyle = useAnimatedStyle(() => ({
-        borderColor: accent !== 'none'
-            ? `${accentHex}${Math.round(shimmerOpacity.value * 255).toString(16).padStart(2, '0')}`
-            : glass.border,
+        borderColor: (noBorder || accent === 'none' || hideGlow)
+            ? 'transparent'
+            : `${accentHex}${Math.round(shimmerOpacity.value * 255).toString(16).padStart(2, '0')}`,
     }));
 
     const pressStyle = useAnimatedStyle(() => ({
@@ -101,10 +109,10 @@ export default function GlassCard({
         onPress();
     };
 
-    const glowShadow = glow && accent !== 'none' ? {
+    const glowShadow = (glow && accent !== 'none' && !hideGlow) ? {
         shadowColor: accentHex,
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
+        shadowOpacity: isDark ? 0.25 : 0.15,
         shadowRadius: 16,
         elevation: 8,
     } : {};
@@ -117,10 +125,16 @@ export default function GlassCard({
         backgroundColor: accent !== 'none' ? `${accentHex}06` : glass.background,
         borderRadius: borderRadius.lg,
         padding: spacing.md,
-        borderWidth: 1,
-        borderColor: staticBorderColor,
+        borderWidth: noBorder ? 0 : 1,
+        borderColor: noBorder ? 'transparent' : staticBorderColor,
         overflow: 'hidden',
-        ...(elevated ? shadows.card : {}),
+        ...(elevated ? (isDark ? shadows.card : {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.05,
+            shadowRadius: 12,
+            elevation: 4,
+        }) : {}),
         ...(glowShadow),
     };
 
@@ -130,26 +144,28 @@ export default function GlassCard({
                 <View
                     style={[
                         styles.accentStripe,
-                        { backgroundColor: `${accentHex}99` },
+                        { backgroundColor: `${accentHex}99`, borderTopLeftRadius: borderRadius.lg, borderBottomLeftRadius: borderRadius.lg },
                     ]}
                 />
             )}
-            <View style={accentBorder ? styles.contentWithStripe : undefined}>
+            <View style={accentBorder ? { paddingLeft: spacing.sm } : undefined}>
                 {children}
             </View>
         </>
     );
 
-    const wrappedContent = onPress ? (
-        <AnimatedPressable
-            onPress={handlePress}
-            style={[cardBaseStyle, shimmer ? shimmerStyle : {}, pressStyle, style]}
-        >
-            {inner}
-        </AnimatedPressable>
-    ) : (
+    const wrappedContent = (
         <Animated.View style={[cardBaseStyle, shimmer ? shimmerStyle : {}, style]}>
-            {inner}
+            {onPress ? (
+                <AnimatedPressable
+                    onPress={handlePress}
+                    style={[styles.pressableArea, pressStyle]}
+                >
+                    {inner}
+                </AnimatedPressable>
+            ) : (
+                inner
+            )}
         </Animated.View>
     );
 
@@ -163,16 +179,15 @@ export default function GlassCard({
 }
 
 const styles = StyleSheet.create({
+    pressableArea: {
+        width: '100%',
+    },
     accentStripe: {
         position: 'absolute',
         left: 0,
         top: 0,
         bottom: 0,
         width: 3,
-        borderTopLeftRadius: borderRadius.lg,
-        borderBottomLeftRadius: borderRadius.lg,
-    },
-    contentWithStripe: {
-        paddingLeft: spacing.sm,
     },
 });
+

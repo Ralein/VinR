@@ -22,6 +22,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class SendMessageRequest(BaseModel):
     text: str
     voice_enabled: bool = False
+    persona: str = "sara"  # Default persona
 
 
 class ChatMessageResponse(BaseModel):
@@ -29,6 +30,7 @@ class ChatMessageResponse(BaseModel):
     role: str
     content: str
     audio_url: str | None = None
+    persona: str | None = None
     created_at: str
 
 
@@ -48,25 +50,40 @@ async def send_message(
     """Send a message to VinR Buddy and get a response."""
     user_id = current_user["sub"]
 
-    if not request.text.strip():
+    # Check for /voice command or voice_enabled flag
+    is_voice = request.voice_enabled or request.text.strip().startswith("/voice")
+    clean_text = request.text.strip()
+    if clean_text.startswith("/voice"):
+        clean_text = clean_text.replace("/voice", "", 1).strip()
+
+    if not clean_text:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     # Save user message
-    user_msg = await save_message(db, user_id, "user", request.text.strip())
+    user_msg = await save_message(
+        db, user_id, "user", clean_text, persona=request.persona
+    )
 
     # Generate buddy response
-    buddy_text = await generate_buddy_response(db, user_id, request.text.strip())
+    buddy_text = await generate_buddy_response(
+        db, user_id, clean_text, persona=request.persona
+    )
 
     # Optional: generate voice
     audio_url = None
-    if request.voice_enabled:
-        audio_bytes = await text_to_speech(buddy_text)
+    if is_voice:
+        # Get persona voice ID
+        from app.services.elevenlabs_service import PERSONA_VOICES
+        voice_id = PERSONA_VOICES.get(request.persona)
+
+        audio_bytes = await text_to_speech(buddy_text, voice_id=voice_id)
         if audio_bytes:
             audio_url = audio_bytes_to_data_uri(audio_bytes)
 
     # Save buddy message
     buddy_msg = await save_message(
-        db, user_id, "assistant", buddy_text, audio_url=audio_url,
+        db, user_id, "assistant", buddy_text,
+        audio_url=audio_url, persona=request.persona,
     )
 
     return SendMessageResponse(

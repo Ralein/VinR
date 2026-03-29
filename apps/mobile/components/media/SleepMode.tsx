@@ -2,9 +2,9 @@
  * SleepMode — Dim overlay with breathing animation and auto-stop timer
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { useMediaStore } from '../../stores/mediaStore';
 
 const TIMER_OPTIONS = [
@@ -19,6 +19,7 @@ interface SleepModeProps {
 }
 
 export default function SleepMode({ visible, onClose }: SleepModeProps) {
+    const { colors, fonts, spacing, borderRadius, isDark } = useTheme();
     const { setSleepTimer, sleepTimerMinutes } = useMediaStore();
     const [selectedTimer, setSelectedTimer] = useState<number>(30);
 
@@ -38,12 +39,12 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
             transparent
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
-                <View style={styles.container}>
+            <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(7,9,15,0.92)' : 'rgba(252,251,247,0.92)' }]}>
+                <View style={[styles.container, { backgroundColor: colors.elevated, borderRadius: borderRadius.xl, padding: spacing.xl }]}>
                     {/* Moon */}
                     <Text style={styles.moonEmoji}>🌙</Text>
-                    <Text style={styles.title}>Sleep Mode</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>Sleep Mode</Text>
+                    <Text style={[styles.subtitle, { color: colors.textMuted, fontFamily: fonts.body }]}>
                         Dim the lights. Breathe slowly.{'\n'}VinR will stop playing after your timer.
                     </Text>
 
@@ -54,14 +55,16 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
                                 key={opt.value}
                                 style={[
                                     styles.timerChip,
-                                    selectedTimer === opt.value && styles.timerChipActive,
+                                    { backgroundColor: colors.surface, borderColor: colors.border },
+                                    selectedTimer === opt.value && { backgroundColor: colors.gold + '20', borderColor: colors.gold },
                                 ]}
                                 onPress={() => setSelectedTimer(opt.value)}
                             >
                                 <Text
                                     style={[
                                         styles.timerChipText,
-                                        selectedTimer === opt.value && styles.timerChipTextActive,
+                                        { color: colors.textMuted, fontFamily: fonts.body },
+                                        selectedTimer === opt.value && { color: colors.gold, fontFamily: fonts.bodySemiBold },
                                     ]}
                                 >
                                     {opt.label}
@@ -72,22 +75,22 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
 
                     {/* Status */}
                     {sleepTimerMinutes && (
-                        <View style={styles.statusBanner}>
-                            <Text style={styles.statusText}>
+                        <View style={[styles.statusBanner, { backgroundColor: colors.gold + '10', borderRadius: borderRadius.md, padding: spacing.sm }]}>
+                            <Text style={[styles.statusText, { color: colors.gold, fontFamily: fonts.body }]}>
                                 😴 Sleep timer active: {sleepTimerMinutes} min
                             </Text>
                         </View>
                     )}
 
                     {/* Actions */}
-                    <Pressable style={styles.startButton} onPress={handleStart}>
-                        <Text style={styles.startText}>
+                    <Pressable style={[styles.startButton, { backgroundColor: colors.gold, borderRadius: borderRadius.md, paddingVertical: spacing.md }]} onPress={handleStart}>
+                        <Text style={[styles.startText, { color: isDark ? colors.void : colors.surface, fontFamily: fonts.bodySemiBold }]}>
                             {sleepTimerMinutes ? 'Update Timer' : 'Start Sleep Timer'}
                         </Text>
                     </Pressable>
 
                     <Pressable style={styles.closeButton} onPress={onClose}>
-                        <Text style={styles.closeText}>Close</Text>
+                        <Text style={[styles.closeText, { color: colors.textMuted, fontFamily: fonts.body }]}>Close</Text>
                     </Pressable>
                 </View>
             </View>
@@ -98,94 +101,61 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(7,9,15,0.92)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: spacing.lg,
+        padding: 24,
     },
     container: {
-        backgroundColor: colors.elevated,
-        borderRadius: borderRadius.xl,
-        padding: spacing.xl,
         width: '100%',
         maxWidth: 360,
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.gold + '20',
+        marginBottom: 24,
     },
-    moonEmoji: { fontSize: 48, marginBottom: spacing.md },
+    moonEmoji: { fontSize: 48, marginBottom: 16 },
     title: {
-        fontFamily: fonts.display,
         fontSize: 24,
-        color: colors.textPrimary,
-        marginBottom: spacing.xs,
+        marginBottom: 8,
     },
     subtitle: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
         textAlign: 'center',
         lineHeight: 20,
-        marginBottom: spacing.lg,
+        marginBottom: 24,
     },
     timerRow: {
         flexDirection: 'row',
-        gap: spacing.sm,
-        marginBottom: spacing.lg,
+        gap: 12,
+        marginBottom: 24,
     },
     timerChip: {
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm + 2,
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surface,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 24,
         borderWidth: 1,
-        borderColor: colors.border,
-    },
-    timerChipActive: {
-        backgroundColor: colors.gold + '20',
-        borderColor: colors.gold,
     },
     timerChipText: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
-    },
-    timerChipTextActive: {
-        color: colors.gold,
-        fontFamily: fonts.bodySemiBold,
     },
     statusBanner: {
-        backgroundColor: colors.gold + '10',
-        borderRadius: borderRadius.md,
-        padding: spacing.sm,
-        marginBottom: spacing.md,
+        marginBottom: 16,
         width: '100%',
         alignItems: 'center',
     },
     statusText: {
-        fontFamily: fonts.body,
         fontSize: 13,
-        color: colors.gold,
     },
     startButton: {
-        backgroundColor: colors.gold,
-        borderRadius: borderRadius.md,
-        paddingVertical: spacing.md,
         width: '100%',
         alignItems: 'center',
-        marginBottom: spacing.sm,
+        marginBottom: 12,
     },
     startText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.void,
     },
     closeButton: {
-        paddingVertical: spacing.sm,
+        paddingVertical: 8,
     },
     closeText: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
     },
 });
