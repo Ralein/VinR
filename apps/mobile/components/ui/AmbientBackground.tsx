@@ -45,6 +45,11 @@ export function AmbientBlob({ color, size, top, left, right, bottom, delay: d, d
     );
 }
 
+const adjustAlpha = (color: string, alpha: number) => {
+    if (typeof color !== 'string' || !color.includes('rgba')) return color;
+    return color.replace(/,[\s\d.]+\)$/, `, ${alpha})`);
+};
+
 export function OrbitRing({ size, duration, delay: d, color = 'rgba(212,175,55,0.6)', reverse = false }: {
     size: number; duration: number; delay: number; color?: string; reverse?: boolean;
 }) {
@@ -70,9 +75,9 @@ export function OrbitRing({ size, duration, delay: d, color = 'rgba(212,175,55,0
             width: size, height: size, borderRadius: size / 2,
             borderWidth: 1,
             borderTopColor: color,
-            borderRightColor: typeof color === 'string' && color.includes('rgba') ? color.replace(/[\d.]+\)$/, '0.1)') : 'rgba(212,175,55,0.1)',
+            borderRightColor: adjustAlpha(color, 0.1),
             borderBottomColor: 'transparent',
-            borderLeftColor: typeof color === 'string' && color.includes('rgba') ? color.replace(/[\d.]+\)$/, '0.1)') : 'rgba(212,175,55,0.1)',
+            borderLeftColor: adjustAlpha(color, 0.1),
         }, style]} />
     );
 }

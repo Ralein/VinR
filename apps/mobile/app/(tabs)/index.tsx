@@ -18,7 +18,7 @@ import Animated, { FadeInDown, FadeIn, FadeInUp, SlideInRight } from 'react-nati
 import {
     Moon, ChevronRight, Calendar, MapPin,
     Activity, Brain, Sparkles, Wind, Heart, Quote,
-    CalendarDays, LogOut, MessageCircle, Flame
+    CalendarDays, LogOut, MessageCircle, Flame, BookOpen
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { fonts, spacing, borderRadius } from '../../constants/theme';
@@ -70,6 +70,7 @@ function getDailyQuote() {
 
 const NUDGE_ICON_MAP: Record<string, any> = {
     therapist_directory: Brain,
+    journal: BookOpen,
     journey: Activity,
     breathing: Wind,
     affirmation: Sparkles,
@@ -152,7 +153,7 @@ export default function HomeScreen() {
                                     delay={i * 60}
                                     onPress={() => {
                                         if (card.action === 'therapist_directory') router.push('/therapist');
-                                        else if (card.action === 'journey') router.push('/(tabs)/journey');
+                                        else if (card.action === 'journey' || card.action === 'journal') router.push('/(tabs)/journal');
                                         else if (card.action === 'buddy') router.push('/buddy/chat');
                                     }}
                                 />
@@ -188,24 +189,24 @@ export default function HomeScreen() {
                     <GoldButton label="Start a Check-In" onPress={() => router.push('/(tabs)/checkin')} />
                 </Animated.View>
 
-                {/* ── 21-Day Journey Plan ────────────────────── */}
+                {/* ── Daily Gratitude Journal ────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
-                    <SectionHeader title="21-Day Journey Plan" Icon={Flame} iconColor={colors.gold} delay={0} />
-                    <Pressable onPress={() => router.push('/(tabs)/journey')}>
+                    <SectionHeader title="Gratitude Journal" Icon={BookOpen} iconColor={colors.gold} delay={0} />
+                    <Pressable onPress={() => router.push('/(tabs)/journal')}>
                         <GlassCard accent="gold" elevated shimmer noAnimation>
                             <View style={styles.journeyCard}>
                                 <View style={[styles.journeyIconWrap, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
-                                    <Flame size={28} color={colors.gold} strokeWidth={1.8} fill={`${colors.gold}30`} />
+                                    <BookOpen size={28} color={colors.gold} strokeWidth={1.8} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.journeyTitle, { color: colors.textPrimary }]}>
-                                        Your 21-Day Journey
+                                        Daily Gratitude
                                     </Text>
                                     <Text style={[styles.journeyStreak, { color: colors.gold }]}>
-                                        {streak} day streak · {todayDone ? 'Today done ✓' : 'Not started today'}
+                                        Reflect & Grow
                                     </Text>
                                     <Text style={[styles.journeyText, { color: colors.textMuted }]}>
-                                        Build lasting habits with daily check-ins and reflections.
+                                        Document your daily wins and positive moments.
                                     </Text>
                                 </View>
                                 <ChevronRight size={18} color={colors.gold} strokeWidth={2} />

@@ -1,5 +1,6 @@
 /**
  * GratitudeInput v2 — Emoji-free mood selection with Lucide icons + animated input cards
+ * Updated for Midnight Gold theme with GlassCard look.
  */
 
 import { useState } from 'react';
@@ -9,12 +10,12 @@ import {
 } from 'react-native';
 import Animated, {
     FadeInDown, useAnimatedStyle, withSpring, useSharedValue,
-    withTiming, interpolateColor,
 } from 'react-native-reanimated';
 import {
     Frown, Meh, Smile, SmilePlus, Star, Sparkles, Send,
 } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 interface GratitudeInputProps {
     onSubmit: (data: {
@@ -25,7 +26,7 @@ interface GratitudeInputProps {
     isSubmitting: boolean;
 }
 
-const MOODS: Array<{ rating: number; Icon: typeof Smile; label: string; color: string }> = [
+const MOODS: Array<{ rating: number; Icon: any; label: string; color: string }> = [
     { rating: 1, Icon: Frown,     label: 'Low',     color: '#E85D5D' },
     { rating: 2, Icon: Meh,       label: 'Okay',    color: '#D4A853' },
     { rating: 3, Icon: Smile,     label: 'Good',    color: '#4ECBA0' },
@@ -33,10 +34,11 @@ const MOODS: Array<{ rating: number; Icon: typeof Smile; label: string; color: s
     { rating: 5, Icon: Star,      label: 'Amazing', color: '#8B7EC8' },
 ];
 
-function MoodButton({ rating, Icon, label, color, selected, onPress }: {
-    rating: number; Icon: typeof Smile; label: string; color: string;
+function MoodButton({ Icon, label, color, selected, onPress }: {
+    Icon: any; label: string; color: string;
     selected: boolean; onPress: () => void;
 }) {
+    const { colors } = useTheme();
     const scale = useSharedValue(1);
     const animStyle = useAnimatedStyle(() => ({
         transform: [{ scale: withSpring(selected ? 1.12 : 1, { stiffness: 240, damping: 18 }) }],
@@ -56,7 +58,7 @@ function MoodButton({ rating, Icon, label, color, selected, onPress }: {
             ]}>
                 <Icon size={22} color={selected ? color : colors.textGhost} strokeWidth={selected ? 2.2 : 1.6} />
             </Animated.View>
-            <Text style={[styles.moodLabel, selected && { color, opacity: 1 }]}>{label}</Text>
+            <Text style={[styles.moodLabel, { color: colors.textGhost }, selected && { color, opacity: 1 }]}>{label}</Text>
         </Pressable>
     );
 }
@@ -64,17 +66,19 @@ function MoodButton({ rating, Icon, label, color, selected, onPress }: {
 function InputCard({ index, value, setter, placeholder }: {
     index: number; value: string; setter: (s: string) => void; placeholder: string;
 }) {
+    const { colors } = useTheme();
     const [focused, setFocused] = useState(false);
     return (
         <Animated.View entering={FadeInDown.delay(index * 60).duration(320)} style={[
             styles.inputCard,
+            { backgroundColor: colors.elevated, borderColor: colors.border },
             focused && { borderColor: `${colors.gold}60`, backgroundColor: `${colors.gold}06` },
         ]}>
-            <View style={styles.inputNumBadge}>
-                <Text style={styles.inputNum}>{index + 1}</Text>
+            <View style={[styles.inputNumBadge, { backgroundColor: `${colors.gold}20` }]}>
+                <Text style={[styles.inputNum, { color: colors.gold }]}>{index + 1}</Text>
             </View>
             <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.textPrimary }]}
                 value={value}
                 onChangeText={setter}
                 placeholder={placeholder}
@@ -89,6 +93,7 @@ function InputCard({ index, value, setter, placeholder }: {
 }
 
 export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInputProps) {
+    const { colors } = useTheme();
     const [gratitude1, setGratitude1] = useState('');
     const [gratitude2, setGratitude2] = useState('');
     const [gratitude3, setGratitude3] = useState('');
@@ -112,12 +117,12 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
             {/* Gratitude */}
             <View style={styles.sectionHeadRow}>
-                <View style={styles.sectionDot} />
-                <Text style={styles.sectionLabel}>TODAY'S GRATITUDE</Text>
+                <View style={[styles.sectionDot, { backgroundColor: colors.gold }]} />
+                <Text style={[styles.sectionLabel, { color: colors.textGhost }]}>TODAY'S GRATITUDE</Text>
             </View>
 
             <InputCard index={0} value={gratitude1} setter={setGratitude1} placeholder="I'm grateful for..." />
@@ -127,10 +132,14 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
             {/* Reflection */}
             <View style={[styles.sectionHeadRow, { marginTop: spacing.lg }]}>
                 <View style={[styles.sectionDot, { backgroundColor: colors.sapphire }]} />
-                <Text style={styles.sectionLabel}>REFLECTION</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textGhost }]}>REFLECTION</Text>
             </View>
             <TextInput
-                style={[styles.reflectionInput, reflFocused && { borderColor: `${colors.sapphire}50` }]}
+                style={[
+                    styles.reflectionInput, 
+                    { backgroundColor: colors.elevated, borderColor: colors.border, color: colors.textPrimary },
+                    reflFocused && { borderColor: `${colors.sapphire}50` }
+                ]}
                 value={reflection}
                 onChangeText={setReflection}
                 placeholder="What else is on my mind..."
@@ -145,7 +154,7 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
             {/* Mood */}
             <View style={[styles.sectionHeadRow, { marginTop: spacing.lg }]}>
                 <View style={[styles.sectionDot, { backgroundColor: colors.lavender }]} />
-                <Text style={styles.sectionLabel}>HOW ARE YOU FEELING?</Text>
+                <Text style={[styles.sectionLabel, { color: colors.textGhost }]}>HOW ARE YOU FEELING?</Text>
             </View>
             <View style={styles.moodRow}>
                 {MOODS.map((m) => (
@@ -160,7 +169,7 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
 
             {/* Submit */}
             <Pressable
-                style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+                style={[styles.submitButton, { backgroundColor: colors.gold }, !canSubmit && styles.submitButtonDisabled]}
                 onPress={handleSubmit}
                 disabled={!canSubmit}
             >
@@ -169,7 +178,7 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
                 ) : (
                     <View style={styles.submitInner}>
                         <Sparkles size={16} color={colors.void} strokeWidth={2} />
-                        <Text style={styles.submitText}>Save & Reflect</Text>
+                        <Text style={[styles.submitText, { color: colors.void }]}>Save & Reflect</Text>
                         <Send size={14} color={colors.void} strokeWidth={2} />
                     </View>
                 )}
@@ -180,11 +189,9 @@ export default function GratitudeInput({ onSubmit, isSubmitting }: GratitudeInpu
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
         borderRadius: borderRadius.xl,
         padding: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border,
     },
     sectionHeadRow: {
         flexDirection: 'row',
@@ -194,12 +201,10 @@ const styles = StyleSheet.create({
     },
     sectionDot: {
         width: 4, height: 4, borderRadius: 2,
-        backgroundColor: colors.gold,
     },
     sectionLabel: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 10,
-        color: colors.textGhost,
         textTransform: 'uppercase',
         letterSpacing: 1.6,
     },
@@ -207,10 +212,8 @@ const styles = StyleSheet.create({
     inputCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.elevated,
         borderRadius: borderRadius.md,
         borderWidth: 1,
-        borderColor: colors.border,
         marginBottom: spacing.sm,
         overflow: 'hidden',
         paddingVertical: spacing.sm + 2,
@@ -219,31 +222,25 @@ const styles = StyleSheet.create({
     },
     inputNumBadge: {
         width: 22, height: 22, borderRadius: 11,
-        backgroundColor: `${colors.gold}20`,
         alignItems: 'center', justifyContent: 'center',
         flexShrink: 0,
     },
     inputNum: {
         fontFamily: fonts.mono,
         fontSize: 12,
-        color: colors.gold,
     },
     input: {
         flex: 1,
         fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textPrimary,
     },
     reflectionInput: {
         fontFamily: fonts.body,
         fontSize: 15,
-        color: colors.textPrimary,
-        backgroundColor: colors.elevated,
         borderRadius: borderRadius.md,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm + 4,
         borderWidth: 1,
-        borderColor: colors.border,
         minHeight: 90,
     },
     // Mood
@@ -262,13 +259,11 @@ const styles = StyleSheet.create({
     moodLabel: {
         fontFamily: fonts.body,
         fontSize: 9.5,
-        color: colors.textGhost,
         opacity: 0.7,
         letterSpacing: 0.3,
     },
     // Submit
     submitButton: {
-        backgroundColor: colors.gold,
         borderRadius: borderRadius.md,
         paddingVertical: spacing.md,
         alignItems: 'center',
@@ -284,6 +279,5 @@ const styles = StyleSheet.create({
     submitText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.void,
     },
 });
