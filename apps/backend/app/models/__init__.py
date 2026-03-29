@@ -7,6 +7,7 @@ from .user import User
 from .notification_preferences import NotificationPreferences
 from .journal import JournalEntry
 from .chat import ChatMessage
+from .rag import KnowledgeChunk
 
 __all__ = [
     "BookmarkedEvent",
@@ -20,4 +21,5 @@ __all__ = [
     "NotificationPreferences",
     "JournalEntry",
     "ChatMessage",
+    "KnowledgeChunk",
 ]
