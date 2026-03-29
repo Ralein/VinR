@@ -177,17 +177,17 @@ function EmotionDonut({ distribution }: { distribution: EmotionSlice[] }) {
 // ──────────────────────────── Stat Card ────────────────────────────
 
 function StatCard({ value, label, Icon, color }: { value: number; label: string; Icon: any; color: string }) {
-    const { colors, spacing } = useTheme();
+    const { colors } = useTheme();
     return (
-        <View style={statStyles.cardWrapper}>
-            <GlassCard noAnimation accent="gold" style={[{ padding: spacing.md }, statStyles.cardInner]}>
-                <View style={[statStyles.iconWrap, { backgroundColor: `${color}10` }]}>
+        <GlassCard style={statStyles.cardWrapper} delay={300}>
+            <View style={statStyles.cardInner}>
+                <View style={[statStyles.iconWrap, { backgroundColor: `${color}15` }]}>
                     <Icon size={18} color={color} strokeWidth={2} />
                 </View>
                 <Text style={[statStyles.value, { color: colors.textPrimary }]}>{value}</Text>
                 <Text style={[statStyles.label, { color: colors.textSecondary }]}>{label}</Text>
-            </GlassCard>
-        </View>
+            </View>
+        </GlassCard>
     );
 }
 
@@ -223,15 +223,15 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground hideBlobs={true} />
+            <AmbientBackground minimal={true} />
             <ScrollView
-                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 80 }]}
+                contentContainerStyle={styles.scroll}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}08`, borderColor: 'rgba(212,175,55,0.25)' }]}>
-                        <User size={42} color={colors.gold} strokeWidth={1} />
+                    <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}05`, borderColor: colors.gold }]}>
+                        <User size={40} color={colors.gold} strokeWidth={1} />
                     </View>
                     <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>My Journey</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: fonts.body }]}>Refinement statistics</Text>
@@ -351,7 +351,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    scroll: { },
+    scroll: { paddingBottom: 100 },
     header: {
         alignItems: 'center', paddingVertical: 40,
     },

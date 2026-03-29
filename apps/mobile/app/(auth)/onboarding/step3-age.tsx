@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useTheme } from '../../../context/ThemeContext';
+import { useOnboardingStore } from '../../../stores/onboardingStore';
 import Animated, {
     FadeInDown,
     FadeIn,
@@ -33,7 +34,8 @@ export default function Step3Age() {
     const { colors, fonts } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const [age, setAge] = useState('');
+    const onboarding = useOnboardingStore();
+    const [age, setAge] = useState(onboarding.age || '');
     const [isFocused, setIsFocused] = useState(false);
 
     // Animations
@@ -174,7 +176,10 @@ export default function Step3Age() {
                             <LiquidCTA
                                 label="CONTINUE"
                                 delay={1250}
-                                onPress={handleNext}
+                                onPress={() => {
+                                    onboarding.setAge(age);
+                                    handleNext();
+                                }}
                                 isDisabled={!isAgeValid}
                             />
                         </View>
