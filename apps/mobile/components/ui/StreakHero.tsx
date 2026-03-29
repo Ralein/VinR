@@ -1,11 +1,3 @@
-/**
- * StreakHero — Premium streak display with count-up animation
- *
- * Large animated streak counter with flame icon from Lucide,
- * progress rings for weekly completion, and a motivational subtitle.
- * Sits center-stage on the Home screen as the hero card content.
- */
-
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
@@ -18,7 +10,7 @@ import Animated, {
     Easing,
 } from 'react-native-reanimated';
 import { Flame, CheckCircle2, Circle } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import ProgressRing from './ProgressRing';
 
 interface StreakHeroProps {
@@ -32,6 +24,8 @@ export default function StreakHero({
     todayDone = false,
     weeklyDays = [false, false, false, false, false, false, false],
 }: StreakHeroProps) {
+    const { colors, fonts, spacing, borderRadius, isDark } = useTheme();
+
     // Flame scale pulse
     const flamePulse = useSharedValue(1);
 
@@ -56,15 +50,15 @@ export default function StreakHero({
     const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { gap: spacing.md, paddingVertical: spacing.sm }]}>
             {/* Streak Number + Flame */}
             <Animated.View
                 entering={FadeInDown.delay(150).duration(500).springify()}
                 style={styles.heroRow}
             >
                 <View style={styles.numberBlock}>
-                    <Text style={styles.streakNumber}>{streak}</Text>
-                    <Text style={styles.streakUnit}>day{streak !== 1 ? 's' : ''}</Text>
+                    <Text style={[styles.streakNumber, { color: colors.gold, fontFamily: fonts.displayBlack }]}>{streak}</Text>
+                    <Text style={[styles.streakUnit, { color: colors.textMuted, fontFamily: fonts.bodyLight }]}>day{streak !== 1 ? 's' : ''}</Text>
                 </View>
 
                 <Animated.View style={[styles.flameWrap, flameStyle]}>
@@ -98,7 +92,7 @@ export default function StreakHero({
                 ) : (
                     <Circle size={14} color={colors.textGhost} strokeWidth={1.5} />
                 )}
-                <Text style={[styles.todayText, todayDone && { color: colors.emerald }]}>
+                <Text style={[styles.todayText, { color: colors.textMuted, fontFamily: fonts.body }, todayDone && { color: colors.emerald }]}>
                     {todayDone ? "Today's check-in complete" : 'Complete a check-in to continue'}
                 </Text>
             </Animated.View>
@@ -106,7 +100,7 @@ export default function StreakHero({
             {/* Weekly day dots */}
             <Animated.View
                 entering={FadeInDown.delay(400).duration(400)}
-                style={styles.weekRow}
+                style={[styles.weekRow, { paddingTop: spacing.xs }]}
             >
                 {DAY_LABELS.map((day, i) => (
                     <View key={i} style={styles.dayItem}>
@@ -114,11 +108,21 @@ export default function StreakHero({
                             style={[
                                 styles.dayDot,
                                 weeklyDays[i]
-                                    ? { backgroundColor: colors.gold, shadowColor: colors.gold, shadowOpacity: 0.5, shadowRadius: 4, shadowOffset: { width: 0, height: 0 } }
-                                    : { backgroundColor: colors.elevated, borderWidth: 1, borderColor: colors.border },
+                                    ? { 
+                                        backgroundColor: colors.gold, 
+                                        shadowColor: colors.gold, 
+                                        shadowOpacity: isDark ? 0.5 : 0.3, 
+                                        shadowRadius: isDark ? 4 : 2, 
+                                        shadowOffset: { width: 0, height: 0 } 
+                                      }
+                                    : { 
+                                        backgroundColor: isDark ? colors.elevated : '#F5F2EA', 
+                                        borderWidth: 1, 
+                                        borderColor: isDark ? colors.border : '#E8E1D0' 
+                                      },
                             ]}
                         />
-                        <Text style={styles.dayLabel}>{day}</Text>
+                        <Text style={[styles.dayLabel, { color: colors.textGhost, fontFamily: fonts.bodyLight }]}>{day}</Text>
                     </View>
                 ))}
             </Animated.View>
@@ -128,8 +132,6 @@ export default function StreakHero({
 
 const styles = StyleSheet.create({
     container: {
-        gap: spacing.md,
-        paddingVertical: spacing.sm,
     },
     heroRow: {
         flexDirection: 'row',
@@ -141,16 +143,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     streakNumber: {
-        fontFamily: fonts.displayBlack,
         fontSize: 64,
-        color: colors.gold,
         lineHeight: 68,
         letterSpacing: -2,
     },
     streakUnit: {
-        fontFamily: fonts.bodyLight,
         fontSize: 14,
-        color: colors.textMuted,
         letterSpacing: 0.5,
         textTransform: 'uppercase',
         marginTop: -4,
@@ -169,14 +167,11 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     todayText: {
-        fontFamily: fonts.body,
         fontSize: 13,
-        color: colors.textMuted,
     },
     weekRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingTop: spacing.xs,
     },
     dayItem: {
         alignItems: 'center',
@@ -189,9 +184,8 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     dayLabel: {
-        fontFamily: fonts.bodyLight,
         fontSize: 10,
-        color: colors.textGhost,
         letterSpacing: 0.5,
     },
 });
+

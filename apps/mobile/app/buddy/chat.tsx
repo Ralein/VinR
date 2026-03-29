@@ -1,32 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { ChevronLeft, Send, Mic, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, Send, Mic, Sparkles, Brain, User as UserIcon, Volume2, Info } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const THEME = {
-    bg: '#0F172A',
-    surface: '#1E293B',
-    primary: '#6366F1',
-    gold: '#FBBF24',
-    text: '#F8FAFC',
-    textMuted: '#94A3B8',
-    border: '#334155'
-};
 
 const SafeBlurView = (props: any) => {
+    const { isDark } = useTheme();
     try {
-        // We use a internal check to see if BlurView is actually a valid component
         if (BlurView) {
-            return <BlurView {...props} />;
+            return <BlurView {...props} tint={isDark ? "dark" : "light"} />;
         }
-    } catch (e) {
-        // Fallback
-    }
-    return <View {...props} style={[props.style, { backgroundColor: THEME.surface, opacity: 0.9 }]} />;
+    } catch (e) {}
+    return <View {...props} />;
 };
 
 const SafeAudio = {
@@ -49,15 +40,22 @@ interface Message {
     role: 'user' | 'assistant';
     content: string;
     audioUrl?: string;
+    persona?: 'sara' | 'alex';
 }
 
+type PersonaType = 'sara' | 'alex';
+
 export default function ChatScreen() {
+    const { colors, spacing, borderRadius, isDark } = useTheme();
     const insets = useSafeAreaInsets();
+    
+    const [persona, setPersona] = useState<PersonaType>('sara');
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 'welcome',
             role: 'assistant',
-            content: "Hi! I'm VinR, your personal growth companion. How are you feeling today?"
+            content: "Hi! I'm Sara, your kind and calm VinR Buddy. I'm here to listen. How are you feeling today?",
+            persona: 'sara'
         }
     ]);
     const [input, setInput] = useState('');
@@ -98,31 +96,42 @@ export default function ChatScreen() {
         setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
 
+        setIsLoading(true);
+
         try {
             const res = await api.post('/chat/message', { 
                 text: userText,
-                voice_enabled: audioEnabled 
+                voice_enabled: audioEnabled,
+                persona: persona
             });
 
             const aiMsg: Message = {
                 id: res.data.buddy_message.id || Date.now().toString(),
                 role: 'assistant',
                 content: res.data.buddy_message.content,
-                audioUrl: res.data.buddy_message.audio_url
+                audioUrl: res.data.buddy_message.audio_url,
+                persona: persona
             };
 
-            setMessages(prev => [...prev, aiMsg]);
+            setMessages(prev => {
+                const newMessages = [...prev, aiMsg];
+                // Limit to 20 messages, removing the oldest ones from the top
+                return newMessages.slice(-20);
+            });
 
             if (aiMsg.audioUrl) {
                 playAudio(aiMsg.audioUrl);
             }
         } catch (error) {
             console.error('Chat error:', error);
-            setMessages(prev => [...prev, {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: "Sorry, I'm having trouble connecting to my brain right now. Please try again."
-            }]);
+            setMessages(prev => {
+                const newMessages = [...prev, {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant' as const,
+                    content: "Sorry, I'm having trouble connecting to my brain right now. Please try again."
+                }];
+                return newMessages.slice(-20);
+            });
         } finally {
             setIsLoading(false);
         }
@@ -130,24 +139,50 @@ export default function ChatScreen() {
 
     const renderMessage = ({ item, index }: { item: Message, index: number }) => {
         const isUser = item.role === 'user';
+        const msgPersona = item.persona || 'sara';
+        
         return (
             <Animated.View 
-                entering={FadeInDown.delay(index * 100).duration(400)}
-                style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperAi]}
+                entering={FadeInDown.delay(index * 50).duration(400)}
+                layout={Layout.springify()}
+                style={[
+                    styles.msgWrapper, 
+                    isUser ? styles.msgWrapperUser : styles.msgWrapperAi
+                ]}
             >
                 {!isUser && (
-                    <View style={styles.aiAvatar}>
-                        <Sparkles size={16} color={THEME.gold} />
+                    <View style={[
+                        styles.aiAvatar, 
+                        { backgroundColor: `${colors.gold}15` }
+                    ]}>
+                        {msgPersona === 'sara' ? (
+                            <Sparkles size={16} color={colors.gold} />
+                        ) : (
+                            <Brain size={16} color={colors.gold} />
+                        )}
                     </View>
                 )}
-                <View style={[styles.msgBubble, isUser ? styles.msgBubbleUser : styles.msgBubbleAi]}>
-                    <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAi]}>
+                <View style={[
+                    styles.msgBubble, 
+                    isUser ? styles.msgBubbleUser : styles.msgBubbleAi,
+                    isUser ? { backgroundColor: colors.sapphire } : { 
+                        backgroundColor: isDark ? colors.surface : colors.elevated, 
+                        borderColor: colors.border 
+                    }
+                ]}>
+                    <Text style={[
+                        styles.msgText, 
+                        isUser ? styles.msgTextUser : { color: colors.textPrimary }
+                    ]}>
                         {item.content}
                     </Text>
                     {!isUser && item.audioUrl && (
-                        <Pressable onPress={() => playAudio(item.audioUrl!)} style={styles.playBtn}>
-                            <Mic size={14} color={THEME.gold} />
-                            <Text style={styles.playText}>Listen</Text>
+                        <Pressable 
+                            onPress={() => playAudio(item.audioUrl!)} 
+                            style={[styles.playBtn, { borderTopColor: colors.border }]}
+                        >
+                            <Volume2 size={14} color={colors.gold} />
+                            <Text style={[styles.playText, { color: colors.gold }]}>Listen</Text>
                         </Pressable>
                     )}
                 </View>
@@ -155,24 +190,111 @@ export default function ChatScreen() {
         );
     };
 
+    const changePersona = (newPersona: PersonaType) => {
+        if (newPersona === persona) return;
+        setPersona(newPersona);
+        
+        const welcomeText = newPersona === 'sara' 
+            ? "Switching to Sara. She's kind, calm, and ready to listen."
+            : "Switching to Alex. He's playful, nerdy, and ready to improve together!";
+            
+        setMessages(prev => {
+            const newMessages = [...prev, {
+                id: `switch-${Date.now()}`,
+                role: 'assistant' as const,
+                content: welcomeText,
+                persona: newPersona
+            }];
+            return newMessages.slice(-20);
+        });
+    };
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
             <Stack.Screen options={{ headerShown: false }} />
             
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-                <Pressable onPress={() => router.back()} style={styles.backBtn}>
-                    <ChevronLeft size={24} color={THEME.text} />
+            <View style={[
+                styles.header, 
+                { 
+                    paddingTop: insets.top + 10,
+                    backgroundColor: isDark ? 'rgba(7, 9, 15, 0.95)' : 'rgba(245, 242, 236, 0.95)',
+                    borderBottomWidth: isDark ? 1 : 0,
+                    borderBottomColor: colors.border
+                }
+            ]}>
+                <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? colors.surface : colors.elevated }]}>
+                    <ChevronLeft size={24} color={colors.textPrimary} />
                 </Pressable>
                 <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle}>VinR Buddy</Text>
+                    <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>VinR Buddy</Text>
                     <View style={styles.onlineStatus} />
                 </View>
                 <Pressable 
                     onPress={() => setAudioEnabled(!audioEnabled)} 
-                    style={[styles.audioToggle, !audioEnabled && styles.audioDisabled]}
+                    style={[
+                        styles.audioToggle, 
+                        { 
+                            backgroundColor: isDark ? colors.surface : colors.elevated, 
+                            borderColor: audioEnabled ? colors.gold : colors.border,
+                            borderWidth: 1.5 
+                        },
+                        !audioEnabled && styles.audioDisabled
+                    ]}
                 >
-                    <Mic size={20} color={audioEnabled ? THEME.gold : THEME.textMuted} />
+                    <Mic size={20} color={audioEnabled ? colors.gold : colors.textMuted} />
+                </Pressable>
+            </View>
+
+            {/* Persona Selection */}
+            <View style={[styles.personaContainer, { backgroundColor: isDark ? colors.surface : colors.elevated }]}>
+                <Pressable 
+                    onPress={() => changePersona('sara')}
+                    style={[
+                        styles.personaTab, 
+                        persona === 'sara' && { 
+                            backgroundColor: isDark ? `${colors.gold}15` : colors.void, 
+                            borderColor: colors.gold,
+                            shadowColor: colors.gold,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: isDark ? 0 : 0.08,
+                            shadowRadius: 4,
+                            elevation: 2
+                        }
+                    ]}
+                >
+                    <Sparkles size={14} color={persona === 'sara' ? colors.gold : colors.textMuted} />
+                    <View>
+                        <Text style={[
+                            styles.personaName, 
+                            { color: persona === 'sara' ? colors.gold : colors.textPrimary }
+                        ]}>Sara</Text>
+                        <Text style={[styles.personaSub, { color: colors.textMuted }]}>Kind & Calm</Text>
+                    </View>
+                </Pressable>
+                <Pressable 
+                    onPress={() => changePersona('alex')}
+                    style={[
+                        styles.personaTab, 
+                        persona === 'alex' && { 
+                            backgroundColor: isDark ? `${colors.gold}15` : colors.void, 
+                            borderColor: colors.gold,
+                            shadowColor: colors.gold,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: isDark ? 0 : 0.08,
+                            shadowRadius: 4,
+                            elevation: 2
+                        }
+                    ]}
+                >
+                    <Brain size={14} color={persona === 'alex' ? colors.gold : colors.textMuted} />
+                    <View>
+                        <Text style={[
+                            styles.personaName, 
+                            { color: persona === 'alex' ? colors.gold : colors.textPrimary }
+                        ]}>Alex</Text>
+                        <Text style={[styles.personaSub, { color: colors.textMuted }]}>Nerd & Playful</Text>
+                    </View>
                 </Pressable>
             </View>
 
@@ -191,12 +313,18 @@ export default function ChatScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
                 style={styles.keyboardAvoid}
             >
-                <SafeBlurView intensity={80} tint="dark" style={[styles.inputContainer, { paddingBottom: insets.bottom || 20 }]}>
-                    <View style={styles.inputInner}>
+                <SafeBlurView intensity={80} style={[
+                    styles.inputContainer, 
+                    { 
+                        paddingBottom: insets.bottom || 20,
+                        borderTopColor: colors.border
+                    }
+                ]}>
+                    <View style={[styles.inputInner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { color: colors.textPrimary }]}
                             placeholder="Message VinR..."
-                            placeholderTextColor={THEME.textMuted}
+                            placeholderTextColor={colors.textMuted}
                             value={input}
                             onChangeText={setInput}
                             multiline
@@ -205,18 +333,18 @@ export default function ChatScreen() {
                         />
                         {isLoading ? (
                             <View style={styles.sendBtn}>
-                                <ActivityIndicator size="small" color={THEME.gold} />
+                                <ActivityIndicator size="small" color={colors.gold} />
                             </View>
                         ) : input.trim() ? (
-                            <Pressable onPress={handleSend} style={[styles.sendBtn, { backgroundColor: THEME.primary }]}>
+                            <Pressable onPress={handleSend} style={[styles.sendBtn, { backgroundColor: colors.sapphire }]}>
                                 <Send size={20} color="#FFF" style={{ marginLeft: 2 }} />
                             </Pressable>
                         ) : (
                             <Pressable 
                                 onPress={() => setAudioEnabled(!audioEnabled)}
-                                style={[styles.sendBtn, { backgroundColor: audioEnabled ? `${THEME.gold}20` : 'transparent' }]}
+                                style={[styles.sendBtn, { backgroundColor: audioEnabled ? `${colors.gold}15` : 'transparent' }]}
                             >
-                                <Mic size={24} color={audioEnabled ? THEME.gold : THEME.textMuted} />
+                                <Mic size={24} color={audioEnabled ? colors.gold : colors.textMuted} />
                             </Pressable>
                         )}
                     </View>
@@ -229,23 +357,19 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: THEME.bg,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 20,
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: THEME.border,
         zIndex: 10,
     },
     backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.surface,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -257,9 +381,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     headerTitle: {
-        color: THEME.text,
         fontSize: 18,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     onlineStatus: {
         width: 8,
@@ -267,6 +390,28 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: '#10B981',
         marginTop: 2,
+    },
+    personaContainer: {
+        flexDirection: 'row',
+        padding: 8,
+        margin: 16,
+        borderRadius: 12,
+        gap: 8,
+    },
+    personaTab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    personaText: {
+        fontSize: 13,
+        fontWeight: '600',
     },
     chatContent: {
         padding: 20,
@@ -276,6 +421,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-end',
         gap: 8,
+        marginVertical: 4,
     },
     msgWrapperUser: {
         justifyContent: 'flex-end',
@@ -287,11 +433,10 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: `${THEME.gold}20`,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: `${THEME.gold}40`,
+        borderColor: 'rgba(212,168,83,0.3)',
         marginBottom: 4,
     },
     msgBubble: {
@@ -301,14 +446,11 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     msgBubbleUser: {
-        backgroundColor: THEME.primary,
         borderBottomRightRadius: 4,
     },
     msgBubbleAi: {
-        backgroundColor: THEME.surface,
         borderBottomLeftRadius: 4,
         borderWidth: 1,
-        borderColor: THEME.border,
     },
     msgText: {
         fontSize: 16,
@@ -316,9 +458,6 @@ const styles = StyleSheet.create({
     },
     msgTextUser: {
         color: '#FFFFFF',
-    },
-    msgTextAi: {
-        color: THEME.text,
     },
     keyboardAvoid: {
         position: 'absolute',
@@ -331,22 +470,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.05)',
     },
     inputInner: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        backgroundColor: THEME.surface,
         borderRadius: 24,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: THEME.border,
         minHeight: 52,
     },
     input: {
         flex: 1,
-        color: THEME.text,
         fontSize: 16,
         maxHeight: 120,
         paddingTop: 8,
@@ -362,14 +497,12 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     audioToggle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.surface,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: THEME.border,
     },
     audioDisabled: {
         opacity: 0.5,
@@ -381,11 +514,18 @@ const styles = StyleSheet.create({
         marginTop: 8,
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.05)',
     },
     playText: {
-        color: THEME.gold,
         fontSize: 12,
         fontWeight: '600',
+    },
+    personaName: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    personaSub: {
+        fontSize: 10,
+        fontWeight: '500',
+        marginTop: -2,
     }
 });

@@ -1,16 +1,13 @@
-/**
- * EventsList v2 — Emoji-free section labels with Lucide icons
- */
-
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { MapPin, Wifi, Map } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../../constants/theme';
+import React from 'react';
+import { View, Text, SectionList, StyleSheet, ActivityIndicator } from 'react-native';
+import { MapPinOff } from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
 import EventCard from './EventCard';
-import {
-    type EventResult,
-    useEventBookmarks,
-    useBookmarkEvent,
-    useRemoveBookmark,
+import { 
+    type EventResult, 
+    useEventBookmarks, 
+    useBookmarkEvent, 
+    useRemoveBookmark 
 } from '../../hooks/useEvents';
 
 interface EventsListProps {
@@ -18,133 +15,126 @@ interface EventsListProps {
     isLoading: boolean;
 }
 
-export default function EventsList({ events, isLoading }: EventsListProps) {
+export default function EventsList({
+    events,
+    isLoading
+}: EventsListProps) {
+    const { colors, fonts, spacing } = useTheme();
     const { data: bookmarks } = useEventBookmarks();
     const bookmarkEvent = useBookmarkEvent();
     const removeBookmark = useRemoveBookmark();
 
-    const bookmarkedIds = new Set(bookmarks?.map((b) => b.event_id) || []);
-    const nearbyEvents = events.filter((e) => !e.is_virtual);
-    const virtualEvents = events.filter((e) => e.is_virtual);
+    const bookmarkedIds = new Set(bookmarks?.map((b) => b.event_id.toString()) || []);
 
-    const handleBookmarkToggle = (event: EventResult) => {
-        if (bookmarkedIds.has(event.event_id)) {
+    const handleToggleBookmark = (event: EventResult) => {
+        const idStr = event.event_id.toString();
+        if (bookmarkedIds.has(idStr)) {
             removeBookmark.mutate(event.event_id);
         } else {
             bookmarkEvent.mutate(event);
         }
     };
 
-    if (isLoading) {
+    /**
+     * Grouping logic:
+     * - "Nearby Events"
+     * - "Virtual Experiences"
+     */
+    const sections = [
+        {
+            title: 'Nearby Wellness',
+            description: 'In-person events and safe spaces near you',
+            data: events.filter(e => !e.is_virtual),
+        },
+        {
+            title: 'Digital Sanctuaries',
+            description: 'Guided sessions & workshops you can join from anywhere',
+            data: events.filter(e => e.is_virtual),
+        },
+    ].filter(s => s.data.length > 0);
+
+    if (isLoading && events.length === 0) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.center, { padding: spacing.xl }]}>
                 <ActivityIndicator color={colors.gold} />
-                <Text style={styles.loadingText}>Finding events near you...</Text>
+                <Text style={[styles.loadingText, { color: colors.textMuted, fontFamily: fonts.body, marginTop: spacing.md }]}>Gathering local sanctuaries...</Text>
             </View>
         );
     }
 
     if (events.length === 0) {
         return (
-            <View style={styles.emptyContainer}>
-                <View style={styles.emptyIconWrap}>
-                    <Map size={32} color={colors.textGhost} strokeWidth={1.4} />
+            <View style={[styles.center, { padding: spacing.xl, gap: spacing.md }]}>
+                <MapPinOff size={48} color={colors.textGhost} strokeWidth={1} />
+                <View style={styles.emptyTextCol}>
+                    <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>No events found</Text>
+                    <Text style={[styles.emptySub, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                        We couldn't find any events matching your criteria. Try adjusting your preferences or check back later!
+                    </Text>
                 </View>
-                <Text style={styles.emptyTitle}>No Events Found</Text>
-                <Text style={styles.emptyText}>Try expanding your search radius.</Text>
             </View>
         );
     }
 
     return (
-        <View>
-            {nearbyEvents.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionLabelRow}>
-                        <MapPin size={12} color={colors.emerald} strokeWidth={2} />
-                        <Text style={[styles.sectionLabel, { color: colors.emerald }]}>NEARBY</Text>
-                    </View>
-                    {nearbyEvents.map((event) => (
-                        <EventCard
-                            key={event.event_id}
-                            event={event}
-                            isBookmarked={bookmarkedIds.has(event.event_id)}
-                            onBookmarkToggle={() => handleBookmarkToggle(event)}
-                        />
-                    ))}
+        <SectionList
+            sections={sections}
+            keyExtractor={(item, index) => `${item.event_id}-${index}`}
+            renderItem={({ item }) => (
+                <EventCard
+                    event={item}
+                    isBookmarked={bookmarkedIds.has(item.event_id.toString())}
+                    onBookmarkToggle={() => handleToggleBookmark(item)}
+                />
+            )}
+            renderSectionHeader={({ section: { title, description } }) => (
+                <View style={[styles.header, { backgroundColor: colors.void, paddingVertical: spacing.md }]}>
+                    <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>{title}</Text>
+                    <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>{description}</Text>
                 </View>
             )}
-
-            {virtualEvents.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionLabelRow}>
-                        <Wifi size={12} color={colors.sapphire} strokeWidth={2} />
-                        <Text style={[styles.sectionLabel, { color: colors.sapphire }]}>ONLINE — JOIN FROM HOME</Text>
-                    </View>
-                    <Text style={styles.sectionSubtitle}>Virtual events you can join from anywhere</Text>
-                    {virtualEvents.map((event) => (
-                        <EventCard
-                            key={event.event_id}
-                            event={event}
-                            isBookmarked={bookmarkedIds.has(event.event_id)}
-                            onBookmarkToggle={() => handleBookmarkToggle(event)}
-                        />
-                    ))}
-                </View>
-            )}
-        </View>
+            contentContainerStyle={[styles.listContent, { padding: spacing.md, paddingBottom: 100 }]}
+            stickySectionHeadersEnabled={false}
+            showsVerticalScrollIndicator={false}
+        />
     );
 }
 
 const styles = StyleSheet.create({
-    section: { marginBottom: spacing.lg },
-    sectionLabelRow: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        marginBottom: spacing.sm,
+    listContent: {
     },
-    sectionLabel: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: 1.2,
+    header: {
+        gap: 4,
     },
-    sectionSubtitle: {
-        fontFamily: fonts.body,
+    headerTitle: {
+        fontSize: 18,
+        letterSpacing: -0.3,
+    },
+    headerDesc: {
         fontSize: 13,
-        color: colors.textMuted,
-        marginBottom: spacing.md,
-        marginTop: -4,
+        lineHeight: 18,
+        marginBottom: 8,
     },
-    loadingContainer: {
-        paddingVertical: spacing.xl,
+    center: {
+        flex: 1,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     loadingText: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
-        marginTop: spacing.sm,
     },
-    emptyContainer: {
-        paddingVertical: spacing.xl,
+    emptyTextCol: {
         alignItems: 'center',
         gap: 8,
     },
-    emptyIconWrap: {
-        width: 64, height: 64, borderRadius: 32,
-        backgroundColor: colors.elevated,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 4,
-    },
     emptyTitle: {
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 15,
-        color: colors.textMuted,
+        fontSize: 18,
     },
-    emptyText: {
-        fontFamily: fonts.body,
-        fontSize: 13,
-        color: colors.textGhost,
+    emptySub: {
+        fontSize: 14,
         textAlign: 'center',
+        lineHeight: 20,
+        paddingHorizontal: 20,
     },
 });
+

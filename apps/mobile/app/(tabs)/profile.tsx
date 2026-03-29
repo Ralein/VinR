@@ -156,7 +156,7 @@ function EmotionDonut({ distribution }: { distribution: EmotionSlice[] }) {
                             <Text style={[donutStyles.label, { color: colors.textPrimary }]}>{slice.emotion}</Text>
                             <Text style={[donutStyles.pct, { color: colors.textSecondary }]}>{slice.percentage}%</Text>
                         </View>
-                        <View style={[donutStyles.barBg, { backgroundColor: `#FFFFFF05` }]}>
+                        <View style={[donutStyles.barBg, { backgroundColor: colors.elevated }]}>
                             <View
                                 style={[
                                     donutStyles.barFill,
@@ -194,10 +194,10 @@ function StatCard({ value, label, Icon, color }: { value: number; label: string;
 // ──────────────────────────── Insight Card ────────────────────────────
 
 function InsightCardView({ insight }: { insight: InsightCard }) {
-    const { colors, spacing } = useTheme();
+    const { colors, spacing, isDark } = useTheme();
     return (
         <View style={{ marginBottom: spacing.sm }}>
-            <GlassCard glow accent="gold" style={{ padding: spacing.md }}>
+            <GlassCard glow accent="gold" noBorder={!isDark} hideGlow={!isDark} style={{ padding: spacing.md }}>
                 <View style={insightStyles.contentRow}>
                     <View style={[insightStyles.iconWrap, { backgroundColor: `${colors.gold}10` }]}>
                         <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
@@ -267,7 +267,7 @@ export default function ProfileScreen() {
                                     key={p}
                                     style={[
                                         styles.periodChip,
-                                        { backgroundColor: `#FFFFFF03`, borderColor: colors.border },
+                                        { backgroundColor: colors.elevated, borderColor: colors.border },
                                         period === p && { backgroundColor: `${colors.gold}15`, borderColor: colors.gold },
                                     ]}
                                     onPress={() => setPeriod(p)}

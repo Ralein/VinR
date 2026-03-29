@@ -89,7 +89,7 @@ function DayCell({ day, status, color }: {
 }
 
 export default function JourneyScreen() {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
     const MILESTONES = useMemo(() => [
@@ -191,7 +191,7 @@ export default function JourneyScreen() {
 
                 {/* Streak Header */}
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-                    <GlassCard accent="gold" elevated shimmer noAnimation>
+                    <GlassCard accent="gold" elevated shimmer noAnimation noBorder={!isDark}>
                         <View style={styles.streakCard}>
                             <View style={styles.streakLeft}>
                                 <Text style={[styles.streakCount, { color: colors.gold }]}>{currentStreak}</Text>
@@ -233,7 +233,10 @@ export default function JourneyScreen() {
                         return (
                             <View key={m.day} style={[
                                 styles.milestoneBadge,
-                                { borderColor: colors.border },
+                                { 
+                                    borderColor: isDark ? colors.border : 'transparent',
+                                    backgroundColor: isDark ? 'transparent' : colors.elevated 
+                                },
                                 unlocked && { borderColor: m.color, backgroundColor: `${m.color}10` },
                             ]}>
                                 <View style={[

@@ -51,15 +51,22 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ThemeProvider({ 
+    children, 
+    forceIsDark 
+}: { 
+    children: React.ReactNode;
+    forceIsDark?: boolean;
+}) {
     const systemScheme = useColorScheme();
     const themeSetting = useSettingsStore((s) => s.settings.theme);
 
     const isDark = useMemo(() => {
+        if (forceIsDark !== undefined) return forceIsDark;
         if (themeSetting === 'dark') return true;
         if (themeSetting === 'light') return false;
         return systemScheme === 'dark'; // 'system'
-    }, [themeSetting, systemScheme]);
+    }, [themeSetting, systemScheme, forceIsDark]);
 
     const value = useMemo<ThemeContextValue>(() => ({
         isDark,

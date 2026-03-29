@@ -29,7 +29,7 @@ import { OnboardingBackground } from '../../../components/ui/OnboardingBackgroun
 import { LiquidCTA } from '../../../components/ui/LiquidCTA';
 
 export default function Step2Name() {
-    const { colors, fonts } = useTheme();
+    const { colors, fonts, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const [name, setName] = useState('');
@@ -113,6 +113,7 @@ export default function Step2Name() {
                             <GlassCard
                                 accent={isFocused ? 'gold' : undefined}
                                 glow={isFocused}
+                                noBorder={!isDark}
                             >
                                 <View style={styles.inputContainer}>
                                     <View

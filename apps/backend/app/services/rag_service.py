@@ -236,6 +236,54 @@ KNOWLEDGE_BASE: List[dict] = [
         ),
         "source": "APA (apa.org)",
     },
+    {
+        "id": "cdc-protective-1",
+        "topic": "prevention",
+        "keywords": ["wellness", "health", "habits", "protective", "safety", "well-being"],
+        "content": (
+            "Protective factors that improve mental health include: healthy coping skills, a strong "
+            "sense of purpose, physical activity, and social connections. The CDC emphasizes that "
+            "physical and mental health are closely linked — chronic conditions like diabetes or "
+            "heart disease can increase the risk of mental illness, and vice versa."
+        ),
+        "source": "CDC Mental Health (cdc.gov/mentalhealth)",
+    },
+    {
+        "id": "mhgov-wellness-1",
+        "topic": "wellness",
+        "keywords": ["balance", "life", "wellness", "mental health", "general", "basic"],
+        "content": (
+            "Mental health includes our emotional, psychological, and social well-being. It affects how "
+            "we think, feel, and act. It also helps determine how we handle stress, relate to others, "
+            "and make choices. Mental health is important at every stage of life, from childhood "
+            "and adolescence through adulthood."
+        ),
+        "source": "MentalHealth.gov",
+    },
+    {
+        "id": "headspace-science-1",
+        "topic": "meditation",
+        "keywords": ["meditation", "brain", "focus", "amygdala", "stress", "calm"],
+        "content": (
+            "Published research shows that just 10 days of Headspace can reduce stress by 14%. "
+            "Meditation has been shown to decrease activity in the amygdala (the brain's 'fear center') "
+            "and increase cortical thickness in the hippocampus, which is responsible for learning "
+            "and memory, helping to regulate emotional responses."
+        ),
+        "source": "Headspace Research",
+    },
+    {
+        "id": "harvard-cbt-1",
+        "topic": "cbt",
+        "keywords": ["thoughts", "thinking", "distortions", "negative", "shifting", "cbt"],
+        "content": (
+            "Cognitive Behavioral Therapy (CBT) helps people identify and change destructive or "
+            "disturbing thought patterns that have a negative influence on behavior and emotions. "
+            "By challenging 'cognitive distortions'—such as all-or-nothing thinking or overgeneralization—"
+            "individuals can develop more balanced and realistic perspectives, reducing emotional distress."
+        ),
+        "source": "Harvard Health Publishing",
+    },
 ]
 
 

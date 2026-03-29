@@ -1,12 +1,3 @@
-/**
- * Loading Screen — "Void Emergence" design language
- *
- * Gyroscope rings pulse around the vinR wordmark.
- * Affirmations cross-fade with letter-spacing focus-pull.
- * Animated dot-wave progress indicator.
- * Ambient blobs + particles for atmospheric depth.
- */
-
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
@@ -19,16 +10,9 @@ import Animated, {
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import { useCheckin } from '../../hooks/useCheckin';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
-
-// ─── Palette ──────────────────────────────────────────────────────────────────
-const GOLD        = '#D4AF37';
-const GOLD_BRIGHT = '#F2C84B';
-const VOID        = '#05040E';
-const TEXT_HI     = '#ECEAF6';
-const TEXT_MID    = 'rgba(236,234,246,0.52)';
-const TEXT_LO     = 'rgba(236,234,246,0.22)';
 
 const AFFIRMATIONS = [
     "You are not your worst moments.",
@@ -45,6 +29,7 @@ function OrbitRing({ size, duration, reverse = false, delay: d, variant = 'prima
     size: number; duration: number; reverse?: boolean;
     delay: number; variant?: 'primary' | 'secondary' | 'micro';
 }) {
+    const { colors, isDark } = useTheme();
     const rot = useSharedValue(0);
     const op  = useSharedValue(0);
 
@@ -62,21 +47,21 @@ function OrbitRing({ size, duration, reverse = false, delay: d, variant = 'prima
     }));
 
     const ringStyle = variant === 'primary' ? {
-        borderTopColor:    'rgba(212,175,55,0.75)',
-        borderRightColor:  'rgba(212,175,55,0.18)',
+        borderTopColor:    isDark ? 'rgba(212,175,55,0.75)' : 'rgba(184,131,42,0.4)',
+        borderRightColor:  isDark ? 'rgba(212,175,55,0.18)' : 'rgba(184,131,42,0.1)',
         borderBottomColor: 'transparent',
-        borderLeftColor:   'rgba(212,175,55,0.18)',
+        borderLeftColor:   isDark ? 'rgba(212,175,55,0.18)' : 'rgba(184,131,42,0.1)',
         borderWidth: 1,
     } : variant === 'secondary' ? {
-        borderTopColor:    'rgba(123,94,248,0.4)',
-        borderRightColor:  'rgba(123,94,248,0.08)',
+        borderTopColor:    isDark ? 'rgba(123,94,248,0.4)' : 'rgba(142,108,184,0.25)',
+        borderRightColor:  isDark ? 'rgba(123,94,248,0.08)' : 'rgba(142,108,184,0.05)',
         borderBottomColor: 'transparent',
-        borderLeftColor:   'rgba(123,94,248,0.08)',
+        borderLeftColor:   isDark ? 'rgba(123,94,248,0.08)' : 'rgba(142,108,184,0.05)',
         borderWidth: 0.75,
     } : {
-        borderTopColor:    'rgba(212,175,55,0.15)',
+        borderTopColor:    isDark ? 'rgba(212,175,55,0.15)' : 'rgba(184,131,42,0.15)',
         borderRightColor:  'transparent',
-        borderBottomColor: 'rgba(212,175,55,0.06)',
+        borderBottomColor: isDark ? 'rgba(212,175,55,0.06)' : 'rgba(184,131,42,0.05)',
         borderLeftColor:   'transparent',
         borderWidth: 0.5,
     };
@@ -136,11 +121,13 @@ function AmbientBlob({ color, size, top, left, right, delay: d, duration }: {
 }
 
 // ─── Particle ─────────────────────────────────────────────────────────────────
-function Particle({ x, y, r, delay: d, color = GOLD_BRIGHT }: {
+function Particle({ x, y, r, delay: d, color }: {
     x: number; y: number; r: number; delay: number; color?: string;
 }) {
+    const { colors } = useTheme();
     const op = useSharedValue(0);
     const ty = useSharedValue(0);
+    const particleColor = color || colors.gold;
 
     useEffect(() => {
         op.value = withDelay(d, withTiming(0.7, { duration: 1000 }));
@@ -161,8 +148,8 @@ function Particle({ x, y, r, delay: d, color = GOLD_BRIGHT }: {
         <Animated.View style={[{
             position: 'absolute', left: x, top: y,
             width: r, height: r, borderRadius: r / 2,
-            backgroundColor: color,
-            shadowColor: color,
+            backgroundColor: particleColor,
+            shadowColor: particleColor,
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: 1, shadowRadius: r * 3,
         }, style]} />
@@ -171,6 +158,7 @@ function Particle({ x, y, r, delay: d, color = GOLD_BRIGHT }: {
 
 // ─── Pulse Ring (breathing halo around logo) ──────────────────────────────────
 function PulseRing({ size, delay: d }: { size: number; delay: number }) {
+    const { colors } = useTheme();
     const scale = useSharedValue(1);
     const op    = useSharedValue(0);
 
@@ -194,7 +182,7 @@ function PulseRing({ size, delay: d }: { size: number; delay: number }) {
             position: 'absolute',
             width: size, height: size, borderRadius: size / 2,
             borderWidth: 1,
-            borderColor: 'rgba(212,175,55,0.6)',
+            borderColor: colors.gold + '99',
         }, style]} />
     );
 }
@@ -211,6 +199,7 @@ function WaveDots() {
 }
 
 function WaveDot({ index }: { index: number }) {
+    const { colors } = useTheme();
     const ty = useSharedValue(0);
     const op = useSharedValue(0);
 
@@ -230,12 +219,13 @@ function WaveDot({ index }: { index: number }) {
     }));
 
     return (
-        <Animated.View style={[s.dot, style]} />
+        <Animated.View style={[s.dot, { backgroundColor: colors.gold, shadowColor: colors.gold }, style]} />
     );
 }
 
 // ─── Affirmation Text (focus-pull cross-fade) ─────────────────────────────────
 function AffirmationDisplay({ text }: { text: string }) {
+    const { colors, fonts } = useTheme();
     const op  = useSharedValue(0);
     const spc = useSharedValue(4);
 
@@ -253,7 +243,7 @@ function AffirmationDisplay({ text }: { text: string }) {
     }));
 
     return (
-        <Animated.Text style={[s.affirmation, style]}>
+        <Animated.Text style={[s.affirmation, { color: colors.gold + 'B3', fontFamily: fonts.bodyLight }, style]}>
             "{text}"
         </Animated.Text>
     );
@@ -261,18 +251,17 @@ function AffirmationDisplay({ text }: { text: string }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function LoadingScreen() {
+    const { colors, fonts, isDark } = useTheme();
     const { selectedMood, inputText, setAnalyzing } = useCheckinStore();
     const checkin = useCheckin();
     const [affirmationIndex, setAffirmationIndex] = useState(0);
 
-    // Logo entrance
+    // Entrance animations
     const logoOp = useSharedValue(0);
     const logoY  = useSharedValue(20);
-
-    // Subtitle + status
-    const subOp     = useSharedValue(0);
-    const subY      = useSharedValue(10);
-    const statusOp  = useSharedValue(0);
+    const subOp  = useSharedValue(0);
+    const subY   = useSharedValue(10);
+    const statusOp = useSharedValue(0);
 
     useEffect(() => {
         logoOp.value  = withDelay(200, withTiming(1, { duration: 600 }));
@@ -282,7 +271,6 @@ export default function LoadingScreen() {
         statusOp.value = withDelay(900, withTiming(1, { duration: 500 }));
     }, []);
 
-    // Affirmation rotation
     useEffect(() => {
         const timer = setInterval(() => {
             setAffirmationIndex(prev => (prev + 1) % AFFIRMATIONS.length);
@@ -290,7 +278,6 @@ export default function LoadingScreen() {
         return () => clearInterval(timer);
     }, []);
 
-    // API call
     useEffect(() => {
         if (!selectedMood) { router.back(); return; }
         setAnalyzing(true);
@@ -319,66 +306,69 @@ export default function LoadingScreen() {
     const subStyle    = useAnimatedStyle(() => ({ opacity: subOp.value,  transform: [{ translateY: subY.value  }] }));
     const statusStyle = useAnimatedStyle(() => ({ opacity: statusOp.value }));
 
-    return (
-        <View style={s.container}>
+    // Mode-specific gradients
+    const bgColors = isDark 
+        ? ['#05040E', '#0C0A1C', '#120F28', '#080614', '#05040E'] 
+        : ['#FDFCF9', '#F5F2EC', '#EAE6DB', '#F1EDE4', '#FDFCF9'];
+    
+    const subtleGradient = isDark
+        ? ['rgba(123,94,248,0.06)', 'transparent']
+        : ['rgba(184,131,42,0.08)', 'transparent'];
 
+    return (
+        <View style={[s.container, { backgroundColor: colors.void }]}>
             {/* Background */}
             <LinearGradient
-                colors={['#05040E', '#0C0A1C', '#120F28', '#080614', '#05040E']}
+                colors={bgColors as any}
                 style={StyleSheet.absoluteFill}
                 locations={[0, 0.25, 0.5, 0.75, 1]}
                 start={{ x: 0.25, y: 0 }}
                 end={{ x: 0.75, y: 1 }}
             />
             <LinearGradient
-                colors={['rgba(123,94,248,0.06)', 'transparent']}
+                colors={subtleGradient as any}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0.5, y: 0.2 }}
                 end={{ x: 0.5, y: 1 }}
             />
 
             {/* Ambient blobs */}
-            <AmbientBlob color="rgba(212,175,55,0.065)" size={420} top={height * 0.02} left={-90}          delay={200} duration={5400} />
-            <AmbientBlob color="rgba(123,94,248,0.10)"  size={360} top={height * 0.08} right={-100}        delay={400} duration={6600} />
-            <AmbientBlob color="rgba(40,90,210,0.06)"   size={280} top={height * 0.62} right={-60}         delay={300} duration={7800} />
-            <AmbientBlob color="rgba(212,175,55,0.04)"  size={220} top={height * 0.56} left={width * 0.2}  delay={600} duration={5000} />
+            <AmbientBlob color={isDark ? "rgba(212,175,55,0.06)" : "rgba(184,131,42,0.05)"} size={420} top={height * 0.02} left={-90} delay={200} duration={5400} />
+            <AmbientBlob color={isDark ? "rgba(123,94,248,0.08)" : "rgba(44,109,179,0.04)"} size={360} top={height * 0.08} right={-100} delay={400} duration={6600} />
+            <AmbientBlob color={isDark ? "rgba(40,90,210,0.05)" : "rgba(46,168,126,0.03)"} size={280} top={height * 0.62} right={-60} delay={300} duration={7800} />
 
             {/* Particles */}
             <Particle x={width * 0.08} y={height * 0.14} r={2.5} delay={500} />
             <Particle x={width * 0.84} y={height * 0.10} r={2}   delay={800} />
-            <Particle x={width * 0.92} y={height * 0.44} r={2}   delay={1100} />
-            <Particle x={width * 0.06} y={height * 0.66} r={2}   delay={1400} color="rgba(160,110,255,0.8)" />
-            <Particle x={width * 0.78} y={height * 0.74} r={1.5} delay={1700} color="rgba(160,110,255,0.7)" />
+            <Particle x={width * 0.06} y={height * 0.66} r={2}   delay={1400} />
 
             {/* ── Logo zone ── */}
             <Animated.View style={[s.logoZone, logoStyle]}>
-
-                {/* Gyroscope rings */}
                 <OrbitRing size={158} duration={7200}  delay={300} variant="primary"   />
                 <OrbitRing size={198} duration={12000} delay={500} variant="secondary" reverse />
                 <OrbitRing size={244} duration={18000} delay={700} variant="primary"   />
-                <OrbitRing size={290} duration={28000} delay={900} variant="micro"     reverse />
 
-                {/* Pulse halos */}
                 <PulseRing size={130} delay={800} />
                 <PulseRing size={158} delay={1400} />
 
-                {/* Glow beds */}
-                <View style={s.logoBedOuter} />
-                <View style={s.logoBed} />
-                <View style={s.logoRingStatic} />
-                <View style={s.logoRingMicro} />
+                <View style={[s.logoBedOuter, { shadowColor: colors.gold, backgroundColor: colors.gold + (isDark ? '0A' : '10') }]} />
+                <View style={[s.logoBed, { shadowColor: colors.gold, backgroundColor: colors.gold + (isDark ? '14' : '1A') }]} />
+                <View style={[s.logoRingStatic, { borderColor: colors.gold + '4D' }]} />
 
-                {/* Wordmark */}
                 <View style={s.wordmark}>
-                    <Text style={s.logoVin}>vin</Text>
-                    <Text style={s.logoR}>R</Text>
+                    <Text style={[s.logoVin, { color: colors.textPrimary, fontFamily: fonts.bodyLight }]}>vin</Text>
+                    <Text style={[s.logoR, { 
+                        color: colors.gold, 
+                        fontFamily: fonts.bodySemiBold, 
+                        textShadowColor: isDark ? colors.gold : 'transparent',
+                        textShadowRadius: isDark ? 20 : 0
+                    }]}>R</Text>
                 </View>
             </Animated.View>
 
             {/* ── Subtitle ── */}
             <Animated.View style={[s.subtitleWrap, subStyle]}>
-                <Text style={s.subtitle}>Reading your signal</Text>
+                <Text style={[s.subtitle, { color: colors.textMuted, fontFamily: fonts.bodyLight }]}>Reading your signal</Text>
                 <WaveDots />
             </Animated.View>
 
@@ -386,15 +376,13 @@ export default function LoadingScreen() {
             <AffirmationDisplay text={AFFIRMATIONS[affirmationIndex]} />
 
             {/* ── Status line ── */}
-            <Animated.Text style={[s.status, statusStyle]}>
+            <Animated.Text style={[s.status, { color: colors.textGhost, fontFamily: fonts.bodyLight }, statusStyle]}>
                 AI analysis in progress
             </Animated.Text>
-
         </View>
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
     container: {
         flex: 1,
@@ -402,8 +390,6 @@ const s = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 32,
     },
-
-    // Logo
     logoZone: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -412,50 +398,34 @@ const s = StyleSheet.create({
     logoBedOuter: {
         position: 'absolute',
         width: 220, height: 220, borderRadius: 110,
-        backgroundColor: 'rgba(212,175,55,0.04)',
-        shadowColor: GOLD,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.22, shadowRadius: 90,
+        shadowOpacity: 0.3, shadowRadius: 90,
     },
     logoBed: {
         position: 'absolute',
         width: 130, height: 130, borderRadius: 65,
-        backgroundColor: 'rgba(212,175,55,0.08)',
-        shadowColor: GOLD,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.55, shadowRadius: 48,
+        shadowOpacity: 0.6, shadowRadius: 48,
     },
     logoRingStatic: {
         position: 'absolute',
         width: 120, height: 120, borderRadius: 60,
         borderWidth: 0.5,
-        borderColor: 'rgba(212,175,55,0.32)',
-    },
-    logoRingMicro: {
-        position: 'absolute',
-        width: 96, height: 96, borderRadius: 48,
-        borderWidth: 0.5,
-        borderColor: 'rgba(212,175,55,0.12)',
     },
     wordmark: {
         flexDirection: 'row',
         alignItems: 'baseline',
     },
     logoVin: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 38, color: TEXT_HI,
+        fontSize: 38,
         letterSpacing: -0.5,
     },
     logoR: {
-        fontFamily: 'DMSans_700Bold',
-        fontSize: 46, color: GOLD,
+        fontSize: 46,
         letterSpacing: -0.5,
-        textShadowColor: 'rgba(212,175,55,0.65)',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 20,
     },
-
-    // Subtitle + dots
     subtitleWrap: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -463,8 +433,7 @@ const s = StyleSheet.create({
         marginBottom: 28,
     },
     subtitle: {
-        fontFamily: 'DMSans_300Light',
-        fontSize: 16, color: TEXT_MID,
+        fontSize: 16,
         letterSpacing: 0.2,
     },
     dotsRow: {
@@ -474,29 +443,19 @@ const s = StyleSheet.create({
     },
     dot: {
         width: 4, height: 4, borderRadius: 2,
-        backgroundColor: GOLD,
-        shadowColor: GOLD,
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.8, shadowRadius: 4,
     },
-
-
     affirmation: {
-        fontFamily: 'DMSans_300Light',
         fontSize: 15.5,
-        color: 'rgba(212,175,55,0.7)',
         textAlign: 'center',
         fontStyle: 'italic',
         lineHeight: 24,
         marginBottom: 36,
         paddingHorizontal: 16,
     },
-
-    // Status
     status: {
-        fontFamily: 'DMSans_300Light',
         fontSize: 11,
-        color: TEXT_LO,
         letterSpacing: 2.5,
         textTransform: 'uppercase',
     },

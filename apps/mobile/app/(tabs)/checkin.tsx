@@ -27,7 +27,7 @@ import MoodOrb, { type MoodOption } from '../../components/ui/MoodOrb';
 import AmbientBackground from '../../components/ui/AmbientBackground';
 
 export default function CheckinScreen() {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
     const { selectedMood, setMood, inputText, setText } = useCheckinStore();
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -107,11 +107,15 @@ export default function CheckinScreen() {
                         <TextInput
                             style={[
                                 styles.textArea,
-                                { backgroundColor: glass.background, color: colors.textPrimary, borderColor: colors.border },
+                                { 
+                                    backgroundColor: isDark ? glass.background : '#FAF8F4', 
+                                    color: colors.textPrimary, 
+                                    borderColor: isDark ? colors.border : '#E8E1D0' 
+                                },
                                 textFocused && {
-                                    borderColor: `${colors.gold}60`,
+                                    borderColor: `${colors.gold}90`,
                                     shadowColor: colors.gold,
-                                    shadowOpacity: 0.15,
+                                    shadowOpacity: isDark ? 0.15 : 0.08,
                                     shadowRadius: 12,
                                     shadowOffset: { width: 0, height: 0 },
                                 },

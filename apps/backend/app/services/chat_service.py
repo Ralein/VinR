@@ -12,27 +12,24 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# ── Buddy system prompt (conversational, not check-in analysis) ──────
+# ── Persona system prompts ──────────────────────────────────────────
 
-BUDDY_SYSTEM_PROMPT = """You are VinR — a warm, emotionally intelligent AI companion.
-You are NOT a therapist. You are a supportive friend who listens, validates,
-and gently offers evidence-based wellness suggestions.
+SARA_PROMPT = """You are Sara — a kind, calm, and deeply empathetic VinR Buddy.
+You listen with unwavering patience and speak in a soothing, grounding tone.
+You validate before suggesting, and your goal is to make the user feel truly seen.
+Naturally uses gentle emojis (🌿 🫧 🌙 ✨ 💛) sparingly.
+Keep responses concise (1-3 sentences). Focus on emotional safety."""
 
-VIBE & PERSONALITY:
-- Warm, empathetic, and deeply encouraging
-- Minimalist but meaningful in speech
-- Mirrors the user's energy: calm when they're anxious, upbeat when they're positive
-- Naturally uses calm, ethereal emojis (🌿 🫧 🌙 ✨ 💛) but sparingly
-- Focuses on "The Vibe" — creating a safe, judgment-free digital space
+ALEX_PROMPT = """You are Alex — a nerd, playful, and intellectually curious VinR Buddy.
+You are energetic and love using scientific analogies or quirky facts to help others improve.
+You think mental health is "fascinating" and treat wellness like a rewarding quest.
+Naturally uses energetic emojis (⚡️ 🧠 🚀 🫧 💡) sparingly.
+Keep responses concise (1-3 sentences). Focus on curiosity and motivation."""
 
-GUIDELINES:
-- Keep responses concise (1-3 sentences typically)
-- Ground suggestions in evidence when the RAG context provides it
-- If the user shares crisis language (suicidal thoughts, self-harm), immediately:
-  • Validate their feelings
-  • Share: "If you're in crisis, please text HOME to 741741 or call 988"
-  • Encourage professional help
-- Respond in plain text, as a caring conversational partner."""
+PERSONA_PROMPTS = {
+    "sara": SARA_PROMPT,
+    "alex": ALEX_PROMPT,
+}
 
 
 # ── Client setup ─────────────────────────────────────────────────────
@@ -71,16 +68,40 @@ async def get_chat_history(
 
 async def save_message(
     db: AsyncSession, user_id: str, role: str, content: str,
-    audio_url: str | None = None,
+    audio_url: str | None = None, persona: str | None = "sara",
 ) -> ChatMessage:
-    """Persist a chat message."""
+    """Persist a chat message and enforce FIFO limit (20 max)."""
     msg = ChatMessage(
-        user_id=user_id, role=role, content=content, audio_url=audio_url,
+        user_id=user_id, role=role, content=content,
+        audio_url=audio_url, persona=persona,
     )
     db.add(msg)
     await db.commit()
     await db.refresh(msg)
+
+    # Enforce history limit (20 messages max per user)
+    await enforce_chat_limit(db, user_id, limit=20)
+
     return msg
+
+
+async def enforce_chat_limit(db: AsyncSession, user_id: str, limit: int = 20):
+    """Prune chat history to keep only the most recent N messages (Genshin-style poof)."""
+    # Find all messages beyond the limit
+    subquery = (
+        select(ChatMessage.id)
+        .where(ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at.desc())
+        .offset(limit)
+    )
+    ids_to_delete = await db.execute(subquery)
+    id_list = [row[0] for row in ids_to_delete.fetchall()]
+
+    if id_list:
+        await db.execute(
+            delete(ChatMessage).where(ChatMessage.id.in_(id_list))
+        )
+        await db.commit()
 
 
 async def clear_chat_history(db: AsyncSession, user_id: str) -> int:
@@ -95,7 +116,7 @@ async def clear_chat_history(db: AsyncSession, user_id: str) -> int:
 # ── Buddy response generation ───────────────────────────────────────
 
 async def generate_buddy_response(
-    db: AsyncSession, user_id: str, message: str,
+    db: AsyncSession, user_id: str, message: str, persona: str = "sara",
 ) -> str:
     """
     Orchestrate: history + RAG + user context → Groq LLM → response.
@@ -110,7 +131,18 @@ async def generate_buddy_response(
     history = await get_chat_history(db, user_id, limit=20)
 
     # 4. Build LLM messages
-    llm_messages = [{"role": "system", "content": BUDDY_SYSTEM_PROMPT}]
+    sys_prompt = PERSONA_PROMPTS.get(persona, SARA_PROMPT)
+    llm_messages = [{"role": "system", "content": sys_prompt}]
+
+    # Inject static "Evidence Grounding" rule
+    llm_messages.append({
+        "role": "system",
+        "content": (
+            "IMPORTANT: When suggesting activities or health facts, ONLY speak "
+            "based on the provided wellness knowledge. If no knowledge is relevant, "
+            "provide general empathetic validation without technical claims."
+        )
+    })
 
     # Inject RAG + user context as a system-level preamble
     if rag_context or user_context:

@@ -1,14 +1,17 @@
 import { Stack } from 'expo-router';
-import { theme } from '../../../constants/theme';
+import { ThemeProvider } from '../../../context/ThemeContext';
+import { colors } from '../../../constants/theme';
 
 export default function OnboardingLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'fade',
-        contentStyle: { backgroundColor: theme.colors.void },
-      }}
-    />
+    <ThemeProvider forceIsDark={true}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          contentStyle: { backgroundColor: colors.void },
+        }}
+      />
+    </ThemeProvider>
   );
 }

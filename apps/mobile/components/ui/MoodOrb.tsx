@@ -15,7 +15,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { type LucideIcon } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius, animation, glass } from '../../constants/theme';
+import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 
 export interface MoodOption {
@@ -43,14 +43,17 @@ function OrbItem({
     onPress: () => void;
     index: number;
 }) {
+    const { colors, fonts, glass, animation, isDark } = useTheme();
     const scale = useSharedValue(1);
     const { Icon, color = colors.gold } = mood;
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
-        borderColor: isSelected ? color : colors.border,
+        borderColor: isSelected ? color : isDark ? colors.border : '#E8E1D0',
         borderWidth: isSelected ? 1.5 : 1,
-        backgroundColor: isSelected ? `${color}14` : glass.background,
+        backgroundColor: isSelected 
+            ? (isDark ? `${color}14` : `${color}18`) 
+            : (isDark ? glass.background : '#FAF8F4'),
     }));
 
     const handlePress = () => {
@@ -72,7 +75,7 @@ function OrbItem({
                     <View
                         style={[
                             styles.iconWrap,
-                            { backgroundColor: isSelected ? `${color}22` : `${color}0A` },
+                            { backgroundColor: isSelected ? `${color}22` : (isDark ? `${color}0A` : `${color}0D`) },
                         ]}
                     >
                         <Icon
@@ -81,7 +84,7 @@ function OrbItem({
                             strokeWidth={isSelected ? 2.2 : 1.8}
                         />
                     </View>
-                    <Text style={[styles.label, isSelected && { color, fontFamily: fonts.bodySemiBold }]}>
+                    <Text style={[styles.label, { color: colors.textMuted, fontFamily: fonts.bodyLight }, isSelected && { color, fontFamily: fonts.bodySemiBold }]}>
                         {mood.label}
                     </Text>
                     {/* Gold dot indicator on selected */}
@@ -95,6 +98,7 @@ function OrbItem({
 }
 
 export default function MoodOrb({ moods, selected, onSelect, columns = 4 }: MoodOrbProps) {
+    const { spacing } = useTheme();
     const rows: MoodOption[][] = [];
     for (let i = 0; i < moods.length; i += columns) {
         rows.push(moods.slice(i, i + columns));
@@ -103,7 +107,7 @@ export default function MoodOrb({ moods, selected, onSelect, columns = 4 }: Mood
     return (
         <View style={styles.container}>
             {rows.map((row, rowIdx) => (
-                <View key={rowIdx} style={styles.row}>
+                <View key={rowIdx} style={[styles.row, { gap: spacing.sm }]}>
                     {row.map((mood, colIdx) => (
                         <OrbItem
                             key={mood.value}
@@ -121,18 +125,17 @@ export default function MoodOrb({ moods, selected, onSelect, columns = 4 }: Mood
 
 const styles = StyleSheet.create({
     container: {
-        gap: spacing.sm,
+        gap: 8,
     },
     row: {
         flexDirection: 'row',
-        gap: spacing.sm,
     },
     orb: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 14,
         paddingHorizontal: 8,
-        borderRadius: borderRadius.md,
+        borderRadius: 16,
         gap: 5,
         minHeight: 80,
     },
@@ -144,9 +147,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     label: {
-        fontFamily: fonts.bodyLight,
         fontSize: 11,
-        color: colors.textMuted,
         textAlign: 'center',
         letterSpacing: 0.2,
     },
