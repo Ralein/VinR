@@ -80,7 +80,27 @@ export default function ChatScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors, isDark } = useTheme();
-    const persona = personaId as string || 'vinr';
+    const [persona, setPersona] = useState<string>(personaId as string || 'vinr');
+    
+    // Sync persona state if route param changes (initial load)
+    useEffect(() => {
+        if (personaId) setPersona(personaId as string);
+    }, [personaId]);
+
+    const changePersona = (id: string) => {
+        if (id === persona) return;
+        setPersona(id);
+        triggerHaptic('medium');
+        
+        // Optionally add a transition message
+        const pName = PERSONAS.find(p => p.id === id)?.name;
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            text: `Switched to ${pName}. How can I support you now?`,
+            sender: 'ai',
+            timestamp: new Date()
+        }]);
+    };
     
     const [messages, setMessages] = useState<Message[]>([
         { 
@@ -299,15 +319,35 @@ export default function ChatScreen() {
                 style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperAi]}
             >
                 {!isUser && (
-                    <View style={[styles.aiAvatar, { borderColor: colors.gold, backgroundColor: colors.surface }]}>
-                        {pData && <pData.icon size={20} color={isUser ? '#fff' : colors.gold} />}
+                    <View style={[
+                        styles.aiAvatar, 
+                        { 
+                            borderColor: colors.gold, 
+                            backgroundColor: isDark ? colors.surface : colors.void,
+                            shadowColor: colors.gold,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            elevation: 2
+                        }
+                    ]}>
+                        {pData && <pData.icon size={18} color={colors.gold} strokeWidth={2.5} />}
                     </View>
                 )}
                 <View style={[
                     styles.msgBubble, 
-                    isUser ? [styles.msgBubbleUser, { backgroundColor: colors.sapphire }] : [styles.msgBubbleAi, { backgroundColor: colors.surface }]
+                    isUser 
+                        ? [styles.msgBubbleUser, { backgroundColor: colors.sapphire }] 
+                        : [styles.msgBubbleAi, { 
+                            backgroundColor: colors.surface, 
+                            borderColor: isDark ? 'rgba(184,131,42,0.2)' : 'rgba(184,131,42,0.15)',
+                            borderWidth: 1
+                          }]
                 ]}>
-                    <Text style={[styles.msgText, isUser ? styles.msgTextUser : { color: colors.textPrimary }]}>
+                    <Text style={[
+                        styles.msgText, 
+                        isUser ? styles.msgTextUser : { color: colors.textPrimary }
+                    ]}>
                         {item.text}
                     </Text>
                     {item.isVoice && (
@@ -328,7 +368,10 @@ export default function ChatScreen() {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={[styles.container, { backgroundColor: colors.void }]}>
-                <SafeBlurView intensity={80} style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
+                <SafeBlurView 
+                    intensity={isDark ? 80 : 30} 
+                    style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}
+                >
                     <Pressable onPress={() => router.back()} style={styles.backBtn}>
                         <ChevronLeft color={colors.textPrimary} size={28} />
                     </Pressable>
@@ -342,6 +385,43 @@ export default function ChatScreen() {
                         <MoreVertical color={colors.textPrimary} size={20} />
                     </Pressable>
                 </SafeBlurView>
+
+                {/* Persona Switcher Tabs */}
+                <View style={[
+                    styles.personaContainer, 
+                    { 
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(184,131,42,0.03)', 
+                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(184,131,42,0.1)' 
+                    }
+                ]}>
+                    {PERSONAS.map((p) => (
+                        <Pressable 
+                            key={p.id}
+                            onPress={() => changePersona(p.id)}
+                            style={[
+                                styles.personaTab,
+                                persona === p.id && { 
+                                    backgroundColor: isDark ? 'rgba(184,131,42,0.15)' : 'rgba(184,131,42,0.08)',
+                                    borderColor: colors.gold,
+                                    borderWidth: 1
+                                }
+                            ]}
+                        >
+                            <p.icon 
+                                size={14} 
+                                color={persona === p.id ? colors.gold : colors.textGhost} 
+                                strokeWidth={persona === p.id ? 2.5 : 2}
+                            />
+                            <Text style={[
+                                styles.personaTabText, 
+                                { color: persona === p.id ? colors.textPrimary : colors.textGhost },
+                                persona === p.id && { fontWeight: '700' }
+                            ]}>
+                                {p.name}
+                            </Text>
+                        </Pressable>
+                    ))}
+                </View>
 
                 <KeyboardAvoidingView 
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -387,8 +467,8 @@ export default function ChatScreen() {
                                 
                                 {!isLocked && (
                                     <Animated.View style={[styles.lockContainer, lockIndicatorStyle]}>
-                                        <Lock size={16} color={colors.textMuted} />
-                                        <Text style={styles.lockText}>Slide up to lock</Text>
+                                        <Lock size={16} color={colors.gold} />
+                                        <Text style={[styles.lockText, { color: colors.gold }]}>Slide up to lock</Text>
                                     </Animated.View>
                                 )}
 
@@ -399,7 +479,13 @@ export default function ChatScreen() {
                                 )}
                             </View>
                         ) : (
-                            <View style={[styles.inputInner, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderColor: colors.border }]}>
+                            <View style={[
+                                styles.inputInner, 
+                                { 
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', 
+                                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(184,131,42,0.1)' 
+                                }
+                            ]}>
                                 <TextInput
                                     style={[styles.input, { color: colors.textPrimary }]}
                                     placeholder="Type a message..."
@@ -454,6 +540,25 @@ const styles = StyleSheet.create({
     headerTitleContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
     onlineStatus: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
+    personaContainer: { 
+        flexDirection: 'row', 
+        paddingHorizontal: 20, 
+        paddingVertical: 10,
+        gap: 12,
+        borderBottomWidth: 1,
+    },
+    personaTab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 6,
+    },
+    personaTabText: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
     chatContent: { padding: 20, gap: 20 },
     msgWrapper: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
     msgWrapperUser: { justifyContent: 'flex-end' },
@@ -461,7 +566,7 @@ const styles = StyleSheet.create({
     aiAvatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, marginBottom: 2 },
     msgBubble: { maxWidth: '80%', paddingHorizontal: 18, paddingVertical: 14, borderRadius: 24 },
     msgBubbleUser: { borderBottomRightRadius: 4 },
-    msgBubbleAi: { borderBottomLeftRadius: 4 },
+    msgBubbleAi: { borderBottomLeftRadius: 4, borderWidth: 1, borderColor: 'rgba(184,131,42,0.1)' },
     msgText: { fontSize: 16, lineHeight: 24 },
     msgTextUser: { color: '#FFFFFF', fontWeight: '500' },
     typingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 42, marginTop: -10 },
