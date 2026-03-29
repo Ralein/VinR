@@ -27,7 +27,7 @@ export default function Step9Finish() {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const { name, focusAreas, completeOnboarding } = useOnboardingStore();
+    const { name, age, focusAreas, completeOnboarding } = useOnboardingStore();
     const [saving, setSaving] = useState(false);
 
     // Animations
@@ -60,6 +60,7 @@ export default function Step9Finish() {
         try {
             await AuthService.updateProfile({
                 name: name || undefined,
+                age: age || undefined,
                 relaxationMethods: focusAreas,
                 onboardingComplete: true,
             });

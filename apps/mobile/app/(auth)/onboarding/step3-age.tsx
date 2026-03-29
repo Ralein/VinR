@@ -69,7 +69,7 @@ export default function Step3Age() {
 
     const handleNext = () => {
         if (age.length > 0 && isAgeValid) {
-            router.push('/onboarding/step4-avatar');
+            router.push('/onboarding/step5-focus');
         }
     };
 

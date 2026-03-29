@@ -122,7 +122,7 @@ export default function ProfileSettingsScreen() {
                         <ProfileRow
                             Icon={Calendar}
                             label="Age"
-                            value={onboarding.age || user?.age || '—'}
+                            value={onboarding.age || (user?.age ? user.age.toString() : null) || '—'}
                             iconColor={colors.emerald}
                         />
                         <View style={[styles.divider, { backgroundColor: colors.border }]} />
