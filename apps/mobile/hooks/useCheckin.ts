@@ -4,7 +4,7 @@
  * Sends mood + text to backend, returns AI analysis plan.
  */
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { useCheckinStore } from '../stores/checkinStore';
 
@@ -45,6 +45,7 @@ interface CheckinResponse {
 export function useCheckin() {
     const setPlan = useCheckinStore((s) => s.setPlan);
     const setCheckinResult = useCheckinStore((s) => s.setCheckinResult);
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (payload: CheckinPayload): Promise<CheckinResponse> => {
@@ -54,6 +55,7 @@ export function useCheckin() {
         onSuccess: (data) => {
             setPlan(data.plan);
             setCheckinResult(data.checkin_id, data.streak_id);
+            queryClient.invalidateQueries({ queryKey: ['streak', 'active'] });
         },
     });
 }

@@ -65,6 +65,9 @@ export function useActiveStreak() {
                         reflectionNote: c.reflection_note,
                         moodRating: c.mood_rating,
                     })),
+                    isCompletedToday: data.last_completed_date 
+                        ? new Date(data.last_completed_date).toDateString() === new Date().toDateString()
+                        : false,
                 });
             }
             return data;
