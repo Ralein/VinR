@@ -73,6 +73,7 @@ function RootNavigator() {
             <Stack.Screen name="morning" />
             <Stack.Screen name="evening" />
             <Stack.Screen name="grounding" />
+            <Stack.Screen name="buddy/chat" />
         </Stack>
     );
 }
