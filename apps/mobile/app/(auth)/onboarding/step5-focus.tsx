@@ -8,8 +8,8 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/Colors';
-import { Typography } from '../../../constants/Typography';
+import { theme } from '../../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import Animated, { 
@@ -18,6 +18,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +33,7 @@ const GOALS = [
 ];
 
 export default function Step5Focus() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { focusAreas, setFocusAreas } = useOnboardingStore();
 
@@ -50,10 +53,11 @@ export default function Step5Focus() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.content}>
+            <AmbientBackground />
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={Colors.textSecondary} />
+                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
                     </Pressable>
                     <ProgressDots currentStep={5} totalSteps={9} />
                     
@@ -84,38 +88,32 @@ export default function Step5Focus() {
                                 entering={FadeInRight.duration(600).delay(500 + index * 100).springify()}
                                 style={styles.goalWrapper}
                             >
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.goalCard,
-                                        isSelected && styles.goalCardSelected,
-                                        pressed && styles.goalCardPressed
-                                    ]}
-                                    onPress={() => toggleGoal(goal.id)}
-                                >
-                                    <View style={[styles.iconContainer, { backgroundColor: goal.color + '20' }]}>
-                                        <Text style={styles.icon}>{goal.icon}</Text>
-                                    </View>
-                                    <Text style={[
-                                        styles.label,
-                                        isSelected && styles.labelSelected
-                                    ]}>
-                                        {goal.label}
-                                    </Text>
-                                    
-                                    <View style={[
-                                        styles.checkbox,
-                                        isSelected && styles.checkboxSelected
-                                    ]}>
-                                        {isSelected && <Check size={12} color={Colors.void} strokeWidth={4} />}
-                                    </View>
-
-                                    {isSelected && (
-                                        <LinearGradient
-                                            colors={['rgba(212, 175, 55, 0.1)', 'transparent']}
-                                            style={styles.cardGradient}
-                                        />
-                                    )}
-                                </Pressable>
+                                <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.goalCard,
+                                            pressed && styles.goalCardPressed
+                                        ]}
+                                        onPress={() => toggleGoal(goal.id)}
+                                    >
+                                        <View style={[styles.iconContainer, { backgroundColor: goal.color + '20' }]}>
+                                            <Text style={styles.icon}>{goal.icon}</Text>
+                                        </View>
+                                        <Text style={[
+                                            styles.label,
+                                            isSelected && styles.labelSelected
+                                        ]}>
+                                            {goal.label}
+                                        </Text>
+                                        
+                                        <View style={[
+                                            styles.checkbox,
+                                            isSelected && styles.checkboxSelected
+                                        ]}>
+                                            {isSelected && <Check size={12} color={theme.colors.void} strokeWidth={4} />}
+                                        </View>
+                                    </Pressable>
+                                </GlassCard>
                             </Animated.View>
                         );
                     })}
@@ -133,7 +131,7 @@ export default function Step5Focus() {
                             disabled={focusAreas.length === 0}
                         >
                             <LinearGradient
-                                colors={focusAreas.length > 0 ? [Colors.gold, '#B8860B'] : ['#333', '#222']}
+                                colors={focusAreas.length > 0 ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.buttonGradient}
@@ -144,7 +142,7 @@ export default function Step5Focus() {
                                 ]}>
                                     Set Focus
                                 </Text>
-                                <ArrowRight size={20} color={focusAreas.length > 0 ? Colors.void : '#666'} strokeWidth={3} />
+                                <ArrowRight size={20} color={focusAreas.length > 0 ? theme.colors.void : '#666'} strokeWidth={3} />
                             </LinearGradient>
                         </Pressable>
                     </Animated.View>
@@ -157,13 +155,11 @@ export default function Step5Focus() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.void,
+        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
     },
     header: {
         marginBottom: 16,
@@ -176,14 +172,14 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...Typography.h2,
-        color: Colors.textPrimary,
+        ...theme.typography.h2,
+        color: theme.colors.textPrimary,
         marginTop: 32,
         fontSize: 32,
     },
     subtitle: {
-        ...Typography.body,
-        color: Colors.textSecondary,
+        ...theme.typography.body,
+        color: theme.colors.textSecondary,
         marginTop: 12,
         fontSize: 16,
         lineHeight: 24,
@@ -199,30 +195,13 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     goalCard: {
-        backgroundColor: '#1A1A1A',
-        borderRadius: 20,
         padding: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
         position: 'relative',
-        overflow: 'hidden',
-    },
-    goalCardSelected: {
-        borderColor: Colors.gold,
-        backgroundColor: '#252115',
     },
     goalCardPressed: {
         transform: [{ scale: 0.98 }],
-    },
-    cardGradient: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: -1,
     },
     iconContainer: {
         width: 48,
@@ -238,11 +217,11 @@ const styles = StyleSheet.create({
     label: {
         fontFamily: 'DMSans_500Medium',
         fontSize: 16,
-        color: Colors.textPrimary,
+        color: theme.colors.textPrimary,
         flex: 1,
     },
     labelSelected: {
-        color: Colors.gold,
+        color: theme.colors.gold,
         fontFamily: 'DMSans_700Bold',
     },
     checkbox: {
@@ -255,8 +234,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     checkboxSelected: {
-        backgroundColor: Colors.gold,
-        borderColor: Colors.gold,
+        backgroundColor: theme.colors.gold,
+        borderColor: theme.colors.gold,
     },
     footer: {
         marginTop: 20,
@@ -284,7 +263,7 @@ const styles = StyleSheet.create({
     buttonText: {
         fontFamily: 'DMSans_700Bold',
         fontSize: 18,
-        color: Colors.void,
+        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

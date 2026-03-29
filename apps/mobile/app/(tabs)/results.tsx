@@ -25,6 +25,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { haptics } from '../../services/haptics';
 import { useCheckinStore } from '../../stores/checkinStore';
 import { InstructionSheet } from '../../components/checkin/InstructionSheet';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +173,7 @@ export default function ResultsScreen() {
     if (!plan) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }}>
+                <AmbientBackground />
                 <View style={styles.emptyState}>
                     <RotateCcw size={40} color={colors.textGhost} strokeWidth={1.5} />
                     <Text style={[styles.emptyText, { color: colors.textMuted }]}>
@@ -189,6 +191,7 @@ export default function ResultsScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.void }} edges={['top']}>
+            <AmbientBackground />
             <ScrollView
                 contentContainerStyle={styles.content}
                 showsVerticalScrollIndicator={false}

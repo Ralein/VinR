@@ -35,6 +35,7 @@ import SectionHeader from '../../components/ui/SectionHeader';
 import StreakHero from '../../components/ui/StreakHero';
 import NudgeCard from '../../components/ui/NudgeCard';
 import EventsList from '../../components/events/EventsList';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 
 // ── Utilities ──────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground />
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
                 {/* ── Header ───────────────────────────────── */}

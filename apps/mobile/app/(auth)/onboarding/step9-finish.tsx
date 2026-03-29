@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../../constants/theme';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 import { AuthService } from '../../../services/auth';
 import Animated, { FadeInDown, FadeIn, FadeInUp, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Sparkles, ChevronRight } from 'lucide-react-native';
+import GlassCard from '../../../components/ui/GlassCard';
+import AmbientBackground from '../../../components/ui/AmbientBackground';
 
 export default function Step9Finish() {
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const { name, age, focusAreas, completeOnboarding } = useOnboardingStore();
     const [saving, setSaving] = useState(false);
@@ -50,18 +54,15 @@ export default function Step9Finish() {
 
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={theme.gradients.void}
-                style={StyleSheet.absoluteFill}
-            />
+            <AmbientBackground />
             
-            <View style={styles.content}>
+            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
                 <Animated.View 
                     entering={ZoomIn.duration(1000).springify()}
                     style={styles.celebrationContainer}
                 >
                     <View style={styles.circle}>
-                        <Ionicons name="sparkles" size={48} color={theme.colors.gold} />
+                        <Sparkles size={48} color={theme.colors.gold} />
                     </View>
                     <View style={styles.glow} />
                 </Animated.View>
@@ -75,12 +76,9 @@ export default function Step9Finish() {
 
                 <Animated.View 
                     entering={FadeInUp.delay(800).duration(800)}
-                    style={styles.summaryCard}
+                    style={styles.summaryWrapper}
                 >
-                    <LinearGradient
-                        colors={[theme.colors.elevated, theme.colors.surface]}
-                        style={styles.cardGradient}
-                    >
+                    <GlassCard accent="gold" glow={true} style={styles.summaryCard}>
                         <Text style={styles.summaryTitle}>Core Focus</Text>
                         <View style={styles.badgeContainer}>
                             {focusLabels.length > 0 ? (
@@ -94,11 +92,11 @@ export default function Step9Finish() {
                                 <Text style={styles.summaryText}>Balance & Clarity</Text>
                             )}
                         </View>
-                    </LinearGradient>
+                    </GlassCard>
                 </Animated.View>
             </View>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
                 <Animated.View entering={FadeInDown.delay(1200)}>
                     <Pressable
                         style={[styles.button, saving && { opacity: 0.7 }]}
@@ -116,7 +114,7 @@ export default function Step9Finish() {
                             ) : (
                                 <>
                                     <Text style={styles.buttonText}>Enter Your Sanctuary</Text>
-                                    <Ionicons name="chevron-forward" size={20} color={theme.colors.void} />
+                                    <ChevronRight size={20} color={theme.colors.void} />
                                 </>
                             )}
                         </LinearGradient>
@@ -174,14 +172,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 40,
     },
-    summaryCard: {
+    summaryWrapper: {
         width: '100%',
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: theme.colors.border,
     },
-    cardGradient: {
+    summaryCard: {
         padding: 24,
         alignItems: 'center',
     },
@@ -223,7 +217,7 @@ const styles = StyleSheet.create({
     },
     footer: {
         padding: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        
     },
     button: {
         width: '100%',
