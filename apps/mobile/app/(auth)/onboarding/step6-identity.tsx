@@ -8,33 +8,44 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, { 
     FadeInDown,
     FadeInRight,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, ArrowRight, User } from 'lucide-react-native';
+import { 
+    ArrowLeft, 
+    ArrowRight, 
+    GraduationCap,
+    Briefcase,
+    Palette,
+    Heart,
+    Rocket,
+    Activity,
+    Cpu,
+    Compass
+} from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const IDENTITIES = [
-    { id: 'student', label: 'Student', icon: '🎓' },
-    { id: 'professional', label: 'Professional', icon: '💼' },
-    { id: 'creative', label: 'Creative', icon: '🎨' },
-    { id: 'parent', label: 'Parent', icon: '👨‍👩‍👧‍👦' },
-    { id: 'entrepreneur', label: 'Entrepreneur', icon: '🚀' },
-    { id: 'athlete', label: 'Athlete', icon: '🏃' },
-    { id: 'techie', label: 'Techie', icon: '💻' },
-    { id: 'other', label: 'Explorer', icon: '🌀' },
+    { id: 'student', label: 'Student', icon: GraduationCap },
+    { id: 'professional', label: 'Professional', icon: Briefcase },
+    { id: 'creative', label: 'Creative', icon: Palette },
+    { id: 'parent', label: 'Parent', icon: Heart },
+    { id: 'entrepreneur', label: 'Entrepreneur', icon: Rocket },
+    { id: 'athlete', label: 'Athlete', icon: Activity },
+    { id: 'techie', label: 'Techie', icon: Cpu },
+    { id: 'other', label: 'Explorer', icon: Compass },
 ];
 
 export default function Step6Identity() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { identity, setIdentity } = useOnboardingStore();
@@ -46,26 +57,29 @@ export default function Step6Identity() {
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={6} totalSteps={9} />
                     
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
-                        Who are you?
+                        Identify your role
                     </Animated.Text>
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        Pick the role that best defines your daily life. This helps us personalize your mindfulness sessions.
+                        Which path defines your daily rhythm? We tailor the VinR experience to your lifestyle.
                     </Animated.Text>
                 </View>
 
@@ -77,29 +91,35 @@ export default function Step6Identity() {
                     <View style={styles.grid}>
                         {IDENTITIES.map((item, index) => {
                             const isSelected = identity === item.id;
+                            const Icon = item.icon;
                             return (
                                 <Animated.View 
                                     key={item.id}
-                                    entering={FadeInRight.duration(600).delay(500 + index * 50).springify()}
+                                    entering={FadeInDown.duration(1000).delay(600 + index * 50).springify().damping(15)}
                                     style={styles.gridItem}
                                 >
-                                    <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
-                                        <Pressable
-                                            style={({ pressed }) => [
-                                                styles.identityCard,
-                                                pressed && styles.identityCardPressed
-                                            ]}
-                                            onPress={() => setIdentity(item.id)}
-                                        >
-                                            <Text style={styles.icon}>{item.icon}</Text>
-                                            <Text style={[
-                                                styles.cardLabel,
-                                                isSelected && styles.cardLabelSelected
-                                            ]}>
-                                                {item.label}
-                                            </Text>
-                                        </Pressable>
-                                    </GlassCard>
+                                    <Pressable
+                                        onPress={() => setIdentity(item.id)}
+                                        style={({ pressed }) => [
+                                            styles.identityPressable,
+                                            pressed && styles.identityPressed
+                                        ]}
+                                    >
+                                        <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
+                                            <View style={styles.identityCard}>
+                                                <View style={[styles.iconWrapper, { backgroundColor: isSelected ? `${colors.gold}15` : colors.surface }]}>
+                                                    <Icon size={32} color={isSelected ? colors.gold : colors.textGhost} strokeWidth={1.5} />
+                                                </View>
+                                                <Text style={[
+                                                    styles.cardLabel,
+                                                    { color: isSelected ? colors.gold : colors.textPrimary },
+                                                    isSelected && styles.cardLabelSelected
+                                                ]}>
+                                                    {item.label}
+                                                </Text>
+                                            </View>
+                                        </GlassCard>
+                                    </Pressable>
                                 </Animated.View>
                             );
                         })}
@@ -107,30 +127,30 @@ export default function Step6Identity() {
                 </ScrollView>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                !identity && styles.buttonDisabled,
-                                pressed && identity && styles.buttonPressed
+                                identity
+                                    ? { backgroundColor: colors.gold } 
+                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+                                pressed && identity && styles.buttonPressed,
+                                !identity && styles.buttonDisabled
                             ]}
                             onPress={handleNext}
                             disabled={!identity}
                         >
-                            <LinearGradient
-                                colors={identity ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={[
-                                    styles.buttonText,
-                                    !identity && { color: '#666' }
-                                ]}>
-                                    That's Me
-                                </Text>
-                                <ArrowRight size={20} color={identity ? theme.colors.void : '#666'} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[
+                                styles.buttonText,
+                                { color: identity ? colors.void : colors.textGhost }
+                            ]}>
+                                Confirm Path
+                            </Text>
+                            <ArrowRight 
+                                size={20} 
+                                color={identity ? colors.void : colors.textGhost} 
+                                strokeWidth={3} 
+                            />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -142,11 +162,10 @@ export default function Step6Identity() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
         marginBottom: 8,
@@ -159,17 +178,17 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     scrollView: {
         flex: 1,
@@ -186,41 +205,42 @@ const styles = StyleSheet.create({
         width: '48%',
         marginBottom: 16,
     },
+    identityPressable: {
+        width: '100%',
+    },
+    identityPressed: {
+        transform: [{ scale: 0.97 }],
+    },
     identityCard: {
-        paddingHorizontal: 16,
-        paddingVertical: 24,
+        padding: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        aspectRatio: 1,
-        position: 'relative',
+        height: 150,
     },
-    identityCardPressed: {
-        transform: [{ scale: 0.96 }],
-    },
-    icon: {
-        fontSize: 40,
-        marginBottom: 12,
+    iconWrapper: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
     },
     cardLabel: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_500Medium',
         fontSize: 15,
-        color: theme.colors.textPrimary,
         textAlign: 'center',
     },
     cardLabelSelected: {
-        color: theme.colors.gold,
+        fontFamily: 'DMSans_700Bold',
     },
     footer: {
+        width: '100%',
         marginTop: 10,
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -231,12 +251,11 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonDisabled: {
-        opacity: 0.5,
+        opacity: 0.3,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

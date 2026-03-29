@@ -8,31 +8,42 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { theme } from '../../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProgressDots } from '../../../components/onboarding/ProgressDots';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../context/ThemeContext';
 import Animated, { 
     FadeInDown,
+    FadeIn,
     FadeInRight,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import { 
+    ArrowLeft, 
+    ArrowRight, 
+    Check,
+    User,
+    Sun,
+    Leaf,
+    Gem,
+    Flame,
+    Waves
+} from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import AmbientBackground from '../../../components/ui/AmbientBackground';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const AVATARS = [
-    { id: '1', emoji: '🧘‍♂️', label: 'Zen Master' },
-    { id: '2', emoji: '🌟', label: 'Radiant Soul' },
-    { id: '3', emoji: '🌿', label: 'Nature Lover' },
-    { id: '4', emoji: '💎', label: 'Clear Diamond' },
-    { id: '5', emoji: '🔥', label: 'Phoenix' },
-    { id: '6', emoji: '🌊', label: 'Calm Wave' },
+    { id: '1', icon: User, label: 'The Explorer' },
+    { id: '2', icon: Sun, label: 'The Luminary' },
+    { id: '3', icon: Leaf, label: 'The Naturalist' },
+    { id: '4', icon: Gem, label: 'The Diamond' },
+    { id: '5', icon: Flame, label: 'The Catalyst' },
+    { id: '6', icon: Waves, label: 'The Serene' },
 ];
 
 export default function Step4Avatar() {
+    const { colors, fonts, spacing, borderRadius } = useTheme();
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { avatarId, setAvatarId } = useOnboardingStore();
@@ -44,26 +55,29 @@ export default function Step4Avatar() {
     };
 
     return (
-        <View style={styles.container}>
-            <AmbientBackground />
-            <View style={[styles.content, { paddingTop: Math.max(insets.top + 20, 40), paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
+        <View style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            <View style={[styles.content, { 
+                paddingTop: insets.top + (height > 800 ? 40 : 20), 
+                paddingBottom: insets.bottom + 20 
+            }]}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.backButton}>
-                        <ArrowLeft size={24} color={theme.colors.textSecondary} />
+                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={4} totalSteps={9} />
                     
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(200).springify()}
-                        style={styles.title}
+                        entering={FadeInDown.duration(1000).delay(200).springify().damping(15)}
+                        style={[styles.title, { color: colors.textPrimary }]}
                     >
-                        Choose your avatar
+                        Define your identity
                     </Animated.Text>
                     <Animated.Text 
-                        entering={FadeInDown.duration(800).delay(400).springify()}
-                        style={styles.subtitle}
+                        entering={FadeInDown.duration(1000).delay(400).springify().damping(15)}
+                        style={[styles.subtitle, { color: colors.textSecondary }]}
                     >
-                        Select an icon that resonates with you. This will represent you in the VinR community.
+                        Select an icon that reflects your essence within the VinR circle.
                     </Animated.Text>
                 </View>
 
@@ -74,64 +88,79 @@ export default function Step4Avatar() {
                 >
                     {AVATARS.map((avatar, index) => {
                         const isSelected = avatarId === avatar.id;
+                        const AvatarIcon = avatar.icon;
                         return (
                             <Animated.View 
                                 key={avatar.id}
-                                entering={FadeInRight.duration(600).delay(500 + index * 100).springify()}
+                                entering={FadeInDown.duration(1000).delay(600 + index * 50).springify().damping(15)}
                                 style={styles.avatarWrapper}
                             >
-                                <GlassCard accent={isSelected ? 'gold' : undefined} glow={isSelected}>
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.avatarCard,
-                                            pressed && styles.avatarCardPressed
-                                        ]}
-                                        onPress={() => setAvatarId(avatar.id)}
+                                <Pressable
+                                    onPress={() => setAvatarId(avatar.id)}
+                                    style={({ pressed }) => [
+                                        styles.avatarPressable,
+                                        pressed && styles.avatarPressed
+                                    ]}
+                                >
+                                    <GlassCard 
+                                        accent={isSelected ? 'gold' : undefined} 
+                                        glow={isSelected}
+                                        style={styles.cardInternal}
                                     >
-                                        {isSelected && (
-                                            <View style={styles.checkIcon}>
-                                                <Check size={12} color={theme.colors.void} strokeWidth={4} />
-                                            </View>
-                                        )}
-                                        <Text style={styles.emoji}>{avatar.emoji}</Text>
-                                        <Text style={[
-                                            styles.label,
-                                            isSelected && styles.labelSelected
-                                        ]}>
-                                            {avatar.label}
-                                        </Text>
-                                    </Pressable>
-                                </GlassCard>
+                                        <View style={styles.avatarCard}>
+                                            {isSelected && (
+                                                <Animated.View 
+                                                    entering={FadeIn.duration(400)}
+                                                    style={[styles.checkIcon, { backgroundColor: colors.gold }]}
+                                                >
+                                                    <Check size={12} color={colors.void} strokeWidth={4} />
+                                                </Animated.View>
+                                            )}
+                                            <AvatarIcon 
+                                                size={40} 
+                                                color={isSelected ? colors.gold : colors.textGhost} 
+                                                strokeWidth={1.5}
+                                            />
+                                            <Text style={[
+                                                styles.label,
+                                                { color: isSelected ? colors.gold : colors.textSecondary },
+                                                isSelected && styles.labelSelected
+                                            ]}>
+                                                {avatar.label}
+                                            </Text>
+                                        </View>
+                                    </GlassCard>
+                                </Pressable>
                             </Animated.View>
                         );
                     })}
                 </ScrollView>
 
                 <View style={styles.footer}>
-                    <Animated.View entering={FadeInDown.duration(800).delay(1000).springify()}>
+                    <Animated.View entering={FadeInDown.duration(1000).delay(800).springify().damping(15)}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.button,
-                                !avatarId && styles.buttonDisabled,
-                                pressed && avatarId && styles.buttonPressed
+                                avatarId 
+                                    ? { backgroundColor: colors.gold } 
+                                    : { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+                                pressed && avatarId && styles.buttonPressed,
+                                !avatarId && styles.buttonDisabled
                             ]}
                             onPress={handleNext}
                             disabled={!avatarId}
                         >
-                            <LinearGradient
-                                colors={avatarId ? [theme.colors.gold, theme.colors.goldLight] : [theme.colors.elevated, theme.colors.surface]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Text style={[
-                                    styles.buttonText,
-                                    !avatarId && { color: '#666' }
-                                ]}>
-                                    Continue
-                                </Text>
-                                <ArrowRight size={20} color={avatarId ? theme.colors.void : '#666'} strokeWidth={3} />
-                            </LinearGradient>
+                            <Text style={[
+                                styles.buttonText,
+                                { color: avatarId ? colors.void : colors.textGhost }
+                            ]}>
+                                Continue
+                            </Text>
+                            <ArrowRight 
+                                size={20} 
+                                color={avatarId ? colors.void : colors.textGhost} 
+                                strokeWidth={3} 
+                            />
                         </Pressable>
                     </Animated.View>
                 </View>
@@ -143,11 +172,10 @@ export default function Step4Avatar() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.void,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
     },
     header: {
         marginBottom: 24,
@@ -160,17 +188,17 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     title: {
-        ...theme.typography.h2,
-        color: theme.colors.textPrimary,
-        marginTop: 32,
+        fontFamily: 'PlayfairDisplay_700Bold',
         fontSize: 32,
+        lineHeight: 40,
+        marginTop: 32,
     },
     subtitle: {
-        ...theme.typography.body,
-        color: theme.colors.textSecondary,
-        marginTop: 12,
+        fontFamily: 'DMSans_400Regular',
         fontSize: 16,
         lineHeight: 24,
+        marginTop: 12,
+        opacity: 0.7,
     },
     scrollView: {
         flex: 1,
@@ -185,15 +213,20 @@ const styles = StyleSheet.create({
         width: '47%',
         marginBottom: 20,
     },
+    avatarPressable: {
+        width: '100%',
+    },
+    avatarPressed: {
+        transform: [{ scale: 0.97 }],
+    },
+    cardInternal: {
+        width: '100%',
+    },
     avatarCard: {
         padding: 24,
         alignItems: 'center',
-        height: 160,
+        height: 140,
         justifyContent: 'center',
-        position: 'relative',
-    },
-    avatarCardPressed: {
-        transform: [{ scale: 0.97 }],
     },
     checkIcon: {
         position: 'absolute',
@@ -202,35 +235,27 @@ const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderRadius: 10,
-        backgroundColor: theme.colors.gold,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    emoji: {
-        fontSize: 48,
-        marginBottom: 16,
+        zIndex: 10,
     },
     label: {
         fontFamily: 'DMSans_500Medium',
         fontSize: 14,
-        color: theme.colors.textSecondary,
         textAlign: 'center',
+        marginTop: 16,
     },
     labelSelected: {
-        color: theme.colors.gold,
         fontFamily: 'DMSans_700Bold',
     },
     footer: {
+        width: '100%',
         marginTop: 20,
     },
     button: {
         width: '100%',
         height: 64,
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    buttonGradient: {
-        flex: 1,
+        borderRadius: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -241,12 +266,11 @@ const styles = StyleSheet.create({
         opacity: 0.9,
     },
     buttonDisabled: {
-        opacity: 0.5,
+        opacity: 0.3,
     },
     buttonText: {
-        fontFamily: 'DMSans_700Bold',
+        fontFamily: 'DMSans_600SemiBold',
         fontSize: 18,
-        color: theme.colors.void,
         letterSpacing: 0.5,
     },
 });

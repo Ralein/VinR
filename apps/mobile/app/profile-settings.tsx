@@ -1,5 +1,6 @@
 /**
  * Profile Settings — View profile info + Delete account
+ * Redesigned for Midnight Gold aesthetic.
  */
 
 import React, { useState } from 'react';
@@ -11,14 +12,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
     ArrowLeft, User, Mail, Calendar, Target, Leaf,
-    Trash2, AlertTriangle, X,
+    Trash2, AlertTriangle, X, Check
 } from 'lucide-react-native';
-import { colors, fonts, spacing, borderRadius } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
 import { deleteItemAsync } from '../utils/storage';
+import AmbientBackground from '../components/ui/AmbientBackground';
+import GlassCard from '../components/ui/GlassCard';
 
 export default function ProfileSettingsScreen() {
+    const { colors, fonts, spacing } = useTheme();
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
     const signOut = useAuthStore((s) => s.signOut);
@@ -63,105 +67,122 @@ export default function ProfileSettingsScreen() {
     };
 
     const memberSince = user?.onboardingComplete
-        ? 'Onboarding complete'
-        : 'Not yet onboarded';
+        ? 'Protocol Optimized'
+        : 'Onboarding Pending';
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground minimal={true} />
+            
             {/* Header */}
             <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.backButton}>
-                    <ArrowLeft size={24} color={colors.textPrimary} />
+                <Pressable 
+                    onPress={() => router.back()} 
+                    style={[styles.backButton, { backgroundColor: `#FFFFFF05`, borderColor: colors.border }]}
+                >
+                    <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={1.5} />
                 </Pressable>
-                <Text style={styles.title}>My Profile</Text>
-                <View style={{ width: 40 }} />
+                <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>Identity Profile</Text>
+                <View style={{ width: 44 }} />
             </View>
 
             {isDeleting ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={colors.crimson} />
-                    <Text style={styles.loadingText}>Deleting account...</Text>
+                    <Text style={[styles.loadingText, { color: colors.crimson, fontFamily: fonts.bodySemiBold }]}>Purging user state...</Text>
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Avatar & Name */}
                     <View style={styles.avatarSection}>
-                        <View style={styles.avatarCircle}>
-                            <User size={36} color={colors.gold} strokeWidth={1.5} />
+                        <View style={[styles.avatarCircle, { backgroundColor: `${colors.gold}05`, borderColor: colors.gold }]}>
+                            <User size={48} color={colors.gold} strokeWidth={1} />
                         </View>
-                        <Text style={styles.userName}>{user?.name || 'VinR User'}</Text>
-                        <Text style={styles.userEmail}>{user?.email || 'No email set'}</Text>
+                        <Text style={[styles.userName, { color: colors.textPrimary, fontFamily: fonts.display }]}>{user?.name || 'VinR Citizen'}</Text>
+                        <Text style={[styles.userEmail, { color: colors.textSecondary, fontFamily: fonts.body }]}>{user?.email || 'unattached_node@vinr.ai'}</Text>
                     </View>
 
                     {/* Profile Info Card */}
-                    <Text style={styles.sectionTitle}>Profile Details</Text>
-                    <View style={styles.card}>
+                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Established Data</Text>
+                    <GlassCard accent="gold">
                         <ProfileRow
                             Icon={User}
-                            label="Name"
+                            label="Legal Name"
                             value={user?.name || '—'}
                             iconColor={colors.gold}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Mail}
-                            label="Email"
+                            label="Synthesis Path"
                             value={user?.email || '—'}
                             iconColor={colors.sapphire}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Calendar}
-                            label="Age Range"
+                            label="Age Threshold"
                             value={user?.age || '—'}
                             iconColor={colors.emerald}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Target}
-                            label="Primary Reason"
+                            label="Primary Directive"
                             value={user?.primaryReason || '—'}
                             iconColor={colors.lavender}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
                             Icon={Leaf}
-                            label="Relaxation Methods"
+                            label="Relaxation Nodes"
                             value={user?.relaxationMethods?.join(', ') || '—'}
                             iconColor={colors.emerald}
                         />
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
                         <ProfileRow
-                            Icon={Calendar}
-                            label="Status"
+                            Icon={Check}
+                            label="Lifecycle Status"
                             value={memberSince}
-                            iconColor={colors.textMuted}
+                            iconColor={colors.textSecondary}
                         />
-                    </View>
+                    </GlassCard>
 
                     {/* Timezone */}
-                    <Text style={styles.sectionTitle}>Timezone</Text>
-                    <View style={styles.card}>
+                    <Text style={[styles.sectionTitle, { color: colors.gold, fontFamily: fonts.bodySemiBold }]}>Chronal Sync</Text>
+                    <GlassCard accent="gold">
                         <View style={styles.row}>
-                            <Text style={styles.rowValue}>{user?.timezone || 'UTC'}</Text>
+                             <View style={[styles.rowIcon, { backgroundColor: `#FFFFFF05` }]}>
+                                <Calendar size={18} color={colors.textSecondary} strokeWidth={1.8} />
+                            </View>
+                            <View style={styles.rowTextContainer}>
+                                <Text style={[styles.rowLabel, { color: colors.textSecondary, fontFamily: fonts.bodySemiBold }]}>Current Timezone</Text>
+                                <Text style={[styles.rowValue, { color: colors.textPrimary, fontFamily: fonts.body }]}>{user?.timezone || 'Universal UTC'}</Text>
+                            </View>
                         </View>
-                    </View>
+                    </GlassCard>
 
                     {/* Danger Zone */}
-                    <Text style={[styles.sectionTitle, { color: colors.crimson }]}>Danger Zone</Text>
-                    <View style={[styles.card, styles.dangerCard]}>
+                    <Text style={[styles.sectionTitle, { color: colors.crimson, fontFamily: fonts.bodySemiBold }]}>Protocol Termination</Text>
+                    <GlassCard accent="crimson" glow={true}>
                         <View style={styles.dangerInfo}>
                             <AlertTriangle size={20} color={colors.crimson} strokeWidth={2} />
-                            <Text style={styles.dangerText}>
-                                Deleting your account is permanent. All data including check-ins,
-                                journal entries, streaks, and preferences will be erased.
+                            <Text style={[styles.dangerText, { color: colors.textSecondary, fontFamily: fonts.body }]}>
+                                Account termination is irreversible. Every path established, session recorded, and insight generated will be permanently discarded.
                             </Text>
                         </View>
-                        <Pressable style={styles.deleteButton} onPress={handleDeleteAccount}>
+                        <Pressable 
+                            style={({ pressed }) => [
+                                styles.deleteButton, 
+                                { backgroundColor: colors.crimson },
+                                pressed && { opacity: 0.8 }
+                            ]} 
+                            onPress={handleDeleteAccount}
+                        >
                             <Trash2 size={18} color="#fff" />
-                            <Text style={styles.deleteButtonText}>Delete My Account</Text>
+                            <Text style={[styles.deleteButtonText, { fontFamily: fonts.bodySemiBold }]}>Terminate State</Text>
                         </Pressable>
-                    </View>
+                    </GlassCard>
 
                     <View style={{ height: 60 }} />
                 </ScrollView>
@@ -175,21 +196,21 @@ export default function ProfileSettingsScreen() {
                 onRequestClose={() => setShowDeleteModal(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <GlassCard accent="crimson" glow={true} style={styles.modalContent}>
                         <View style={styles.modalHeader}>
                             <AlertTriangle size={24} color={colors.crimson} />
-                            <Text style={styles.modalTitle}>Confirm Deletion</Text>
-                            <Pressable onPress={() => setShowDeleteModal(false)} style={styles.modalClose}>
-                                <X size={20} color={colors.textMuted} />
+                            <Text style={[styles.modalTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>Confirm Termination</Text>
+                            <Pressable onPress={() => setShowDeleteModal(false)} style={[styles.modalClose, { backgroundColor: `#FFFFFF10` }]}>
+                                <X size={20} color={colors.textSecondary} />
                             </Pressable>
                         </View>
-                        <Text style={styles.modalDesc}>
-                            Type <Text style={{ fontFamily: fonts.bodySemiBold, color: colors.crimson }}>DELETE</Text> to permanently delete your account.
+                        <Text style={[styles.modalDesc, { color: colors.textSecondary, fontFamily: fonts.body }]}>
+                            Enter <Text style={{ fontFamily: fonts.bodySemiBold, color: colors.crimson }}>TERMINATE</Text> to permanently erase your existence from the sanctuary.
                         </Text>
                         <TextInput
-                            style={styles.modalInput}
-                            placeholder="Type DELETE"
-                            placeholderTextColor={colors.textGhost}
+                            style={[styles.modalInput, { backgroundColor: `${colors.void}90`, borderColor: colors.border, color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}
+                            placeholder="TERMINATE"
+                            placeholderTextColor={`${colors.textSecondary}40`}
                             value={deleteConfirmText}
                             onChangeText={setDeleteConfirmText}
                             autoCapitalize="characters"
@@ -197,24 +218,25 @@ export default function ProfileSettingsScreen() {
                         />
                         <View style={styles.modalActions}>
                             <Pressable
-                                style={styles.modalCancelBtn}
+                                style={[styles.modalCancelBtn, { backgroundColor: `#FFFFFF05` }]}
                                 onPress={() => setShowDeleteModal(false)}
                             >
-                                <Text style={styles.modalCancelText}>Cancel</Text>
+                                <Text style={[styles.modalCancelText, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>Abort</Text>
                             </Pressable>
                             <Pressable
                                 style={[
                                     styles.modalDeleteBtn,
-                                    deleteConfirmText.trim().toUpperCase() !== 'DELETE' && { opacity: 0.4 },
+                                    { backgroundColor: colors.crimson },
+                                    deleteConfirmText.trim().toUpperCase() !== 'TERMINATE' && { opacity: 0.4 },
                                 ]}
                                 onPress={executeDelete}
-                                disabled={deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
+                                disabled={deleteConfirmText.trim().toUpperCase() !== 'TERMINATE'}
                             >
                                 <Trash2 size={16} color="#fff" />
-                                <Text style={styles.modalDeleteText}>Delete Forever</Text>
+                                <Text style={[styles.modalDeleteText, { fontFamily: fonts.bodySemiBold }]}>Confirm</Text>
                             </Pressable>
                         </View>
-                    </View>
+                    </GlassCard>
                 </View>
             </Modal>
         </SafeAreaView>
@@ -228,14 +250,15 @@ function ProfileRow({
 }: {
     Icon: any; label: string; value: string; iconColor: string;
 }) {
+    const { colors, fonts } = useTheme();
     return (
         <View style={styles.row}>
-            <View style={[styles.rowIcon, { backgroundColor: `${iconColor}15` }]}>
+            <View style={[styles.rowIcon, { backgroundColor: `${iconColor}10` }]}>
                 <Icon size={18} color={iconColor} strokeWidth={1.8} />
             </View>
             <View style={styles.rowTextContainer}>
-                <Text style={styles.rowLabel}>{label}</Text>
-                <Text style={styles.rowValue}>{value}</Text>
+                <Text style={[styles.rowLabel, { color: colors.textSecondary, fontFamily: fonts.bodySemiBold }]}>{label}</Text>
+                <Text style={[styles.rowValue, { color: colors.textPrimary, fontFamily: fonts.body }]}>{value}</Text>
             </View>
         </View>
     );
@@ -246,203 +269,174 @@ function ProfileRow({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.void,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: spacing.lg,
-        paddingTop: spacing.md,
-        paddingBottom: spacing.lg,
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        paddingBottom: 24,
     },
     backButton: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: colors.surface,
+        width: 44, height: 44, borderRadius: 14,
         alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: colors.border,
+        borderWidth: 1,
     },
     title: {
-        fontFamily: fonts.display,
-        fontSize: 20,
-        color: colors.textPrimary,
+        fontSize: 22,
     },
     loadingContainer: {
-        flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md,
+        flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20,
     },
     loadingText: {
-        fontFamily: fonts.body, fontSize: 16,
-        color: colors.crimson,
+        fontSize: 16,
     },
     scrollContent: {
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing['2xl'],
+        paddingHorizontal: 24,
+        paddingBottom: 40,
     },
     avatarSection: {
         alignItems: 'center',
-        paddingVertical: spacing.xl,
+        paddingVertical: 40,
     },
     avatarCircle: {
-        width: 88, height: 88, borderRadius: 44,
-        backgroundColor: `${colors.gold}10`,
-        borderWidth: 2, borderColor: colors.gold,
+        width: 100, height: 100, borderRadius: 50,
+        borderWidth: 1,
         alignItems: 'center', justifyContent: 'center',
-        marginBottom: spacing.md,
+        marginBottom: 20,
     },
     userName: {
-        fontFamily: fonts.display, fontSize: 24,
-        color: colors.textPrimary, marginBottom: 4,
+        fontSize: 28, marginBottom: 4,
     },
     userEmail: {
-        fontFamily: fonts.body, fontSize: 14,
-        color: colors.textMuted,
+        fontSize: 14,
+        opacity: 0.6,
+        letterSpacing: 1,
     },
     sectionTitle: {
-        fontFamily: fonts.bodySemiBold, fontSize: 14,
-        color: colors.textMuted, textTransform: 'uppercase',
-        letterSpacing: 1, marginBottom: spacing.md,
-        marginTop: spacing.xl, paddingHorizontal: spacing.sm,
-    },
-    card: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.lg,
-        borderWidth: 1, borderColor: colors.border,
-        overflow: 'hidden',
-    },
-    dangerCard: {
-        borderColor: `${colors.crimson}30`,
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        marginBottom: 16,
+        marginTop: 32,
+        paddingHorizontal: 4,
+        opacity: 0.7,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.md,
+        padding: 16,
     },
     rowIcon: {
-        width: 36, height: 36, borderRadius: 18,
+        width: 40, height: 40, borderRadius: 12,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: spacing.md,
+        marginRight: 16,
     },
     rowTextContainer: {
         flex: 1,
     },
     rowLabel: {
-        fontFamily: fonts.bodySemiBold, fontSize: 12,
-        color: colors.textMuted, marginBottom: 2,
-        textTransform: 'uppercase', letterSpacing: 0.5,
+        fontSize: 10,
+        marginBottom: 2,
+        textTransform: 'uppercase', 
+        letterSpacing: 1,
+        opacity: 0.6,
     },
     rowValue: {
-        fontFamily: fonts.body, fontSize: 16,
-        color: colors.textPrimary,
+        fontSize: 16,
     },
     divider: {
         height: 1,
-        backgroundColor: colors.border,
-        marginLeft: 60,
+        marginLeft: 72,
+        opacity: 0.1,
     },
     dangerInfo: {
         flexDirection: 'row', alignItems: 'flex-start',
-        padding: spacing.md, gap: spacing.sm,
+        padding: 16, gap: 12,
     },
     dangerText: {
-        fontFamily: fonts.body, fontSize: 13,
-        color: colors.textMuted, flex: 1, lineHeight: 18,
+        fontSize: 13,
+        flex: 1, lineHeight: 20,
+        opacity: 0.8,
     },
     deleteButton: {
         flexDirection: 'row', alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.crimson,
-        margin: spacing.md, marginTop: 0,
-        paddingVertical: spacing.md,
-        borderRadius: borderRadius.md,
-        gap: spacing.sm,
+        margin: 16, marginTop: 0,
+        paddingVertical: 14,
+        borderRadius: 12,
+        gap: 8,
     },
     deleteButtonText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16,
+        fontSize: 16,
         color: '#ffffff',
     },
-    // Modal styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.85)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: spacing.lg,
+        padding: 24,
     },
     modalContent: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.xl,
-        padding: spacing.lg,
         width: '100%',
         maxWidth: 400,
-        borderWidth: 1,
-        borderColor: `${colors.crimson}30`,
+        padding: 24,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
-        marginBottom: spacing.md,
+        gap: 12,
+        marginBottom: 20,
     },
     modalTitle: {
-        fontFamily: fonts.display,
-        fontSize: 18,
-        color: colors.textPrimary,
+        fontSize: 20,
         flex: 1,
     },
     modalClose: {
-        width: 32, height: 32, borderRadius: 16,
-        backgroundColor: colors.border,
+        width: 36, height: 36, borderRadius: 12,
         alignItems: 'center', justifyContent: 'center',
     },
     modalDesc: {
-        fontFamily: fonts.body,
         fontSize: 14,
-        color: colors.textMuted,
-        lineHeight: 20,
-        marginBottom: spacing.md,
+        lineHeight: 22,
+        marginBottom: 20,
+        opacity: 0.8,
     },
     modalInput: {
-        backgroundColor: colors.void,
-        borderRadius: borderRadius.md,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: colors.border,
-        paddingHorizontal: spacing.md,
-        paddingVertical: 14,
-        fontFamily: fonts.bodySemiBold,
-        fontSize: 16,
-        color: colors.textPrimary,
-        letterSpacing: 2,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        fontSize: 18,
+        letterSpacing: 4,
         textAlign: 'center',
-        marginBottom: spacing.lg,
+        marginBottom: 24,
     },
     modalActions: {
         flexDirection: 'row',
-        gap: spacing.sm,
+        gap: 12,
     },
     modalCancelBtn: {
         flex: 1,
         paddingVertical: 14,
-        borderRadius: borderRadius.md,
-        backgroundColor: colors.border,
+        borderRadius: 12,
         alignItems: 'center',
     },
     modalCancelText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 15,
-        color: colors.textPrimary,
     },
     modalDeleteBtn: {
         flex: 1,
         flexDirection: 'row',
         paddingVertical: 14,
-        borderRadius: borderRadius.md,
-        backgroundColor: colors.crimson,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: 8,
     },
     modalDeleteText: {
-        fontFamily: fonts.bodySemiBold,
         fontSize: 15,
         color: '#ffffff',
     },
