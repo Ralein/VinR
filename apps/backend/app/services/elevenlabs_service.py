@@ -11,10 +11,16 @@ ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech"
 # Persona Voice IDs
 SARA_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"  # Kind, Calm, Soothing
 ALEX_VOICE_ID = "cgSgspJ2msm6clMCkdW9"  # Nerd, Playful, Energetic
+VINR_VOICE_ID = "JBFyc9nz9D8pF2TWv9C7"   # Smart, Efficient (Standard AI)
+THERAPIST_VOICE_ID = "onwK4e9ZLuTAKqD09mga" # Professional, Deep (Therapist)
+COACH_VOICE_ID = "f9E8a5B7f7P2q0P9Zq0P"  # Strong, Energetic (Coach)
 
 PERSONA_VOICES = {
     "sara": SARA_VOICE_ID,
     "alex": ALEX_VOICE_ID,
+    "vinr": VINR_VOICE_ID,
+    "therapist": THERAPIST_VOICE_ID,
+    "coach": COACH_VOICE_ID,
 }
 
 

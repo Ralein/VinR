@@ -284,6 +284,54 @@ KNOWLEDGE_BASE: List[dict] = [
         ),
         "source": "Harvard Health Publishing",
     },
+    {
+        "id": "apa-resilience-1",
+        "topic": "resilience",
+        "keywords": ["resilience", "tough", "strength", "bounce back", "hardship", "overcome"],
+        "content": (
+            "Resilience is the process of adapting well in the face of adversity, trauma, tragedy, "
+            "threats, or significant sources of stress. It involves 'bouncing back' from difficult "
+            "experiences. Resilience is not a trait that people either have or don't have; it "
+            "involves behaviors, thoughts, and actions that can be learned and developed in anyone."
+        ),
+        "source": "APA (apa.org)",
+    },
+    {
+        "id": "who-burnout-1",
+        "topic": "burnout",
+        "keywords": ["burnout", "exhausted", "work", "stress", "cynicism", "tired", "job"],
+        "content": (
+            "Burnout is a syndrome conceptualized as resulting from chronic workplace stress that "
+            "has not been successfully managed. It is characterized by: feelings of energy depletion "
+            "or exhaustion; increased mental distance from one's job, or feelings of negativism "
+            "or cynicism related to one's job; and reduced professional efficacy."
+        ),
+        "source": "WHO (who.int)",
+    },
+    {
+        "id": "samhsa-trauma-1",
+        "topic": "trauma",
+        "keywords": ["trauma", "pain", "past", "hurting", "scared", "flashback", "nightmare"],
+        "content": (
+            "Individual trauma results from an event, series of events, or set of circumstances that "
+            "is experienced by an individual as physically or emotionally harmful or life-threatening "
+            "and that has lasting adverse effects on the individual's functioning and mental, "
+            "physical, social, emotional, or spiritual well-being."
+        ),
+        "source": "SAMHSA (samhsa.gov)",
+    },
+    {
+        "id": "penn-pospsych-1",
+        "topic": "positivity",
+        "keywords": ["positive", "strengths", "flourish", "well-being", "optimism", "joy"],
+        "content": (
+            "Positive psychology is the scientific study of the strengths that enable individuals "
+            "and communities to thrive. The field is founded on the belief that people want to lead "
+            "meaningful and fulfilling lives, to cultivate what is best within themselves, and to "
+            "enhance their experiences of love, work, and play."
+        ),
+        "source": "Penn Positive Psychology Center",
+    },
 ]
 
 
