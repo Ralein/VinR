@@ -33,12 +33,22 @@ import {
     CheckCheck,
     Camera,
     Plus,
-    Image as ImageIcon
+    Image as ImageIcon,
+    MicOff,
+    Volume2,
+    VolumeX
 } from 'lucide-react-native';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { SafeBlurView } from '../../components/ui/SafeBlurView';
 import { PERSONAS, Persona } from '../../constants/personas';
+import { config } from '../../constants/config';
+import { Modal, TouchableOpacity } from 'react-native';
+import api from '../../services/api';
+
+
+
 import Animated, {
     FadeIn,
     FadeInUp,
@@ -154,9 +164,12 @@ export default function ChatScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
+    const [isSendingVoice, setIsSendingVoice] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [playbackUri, setPlaybackUri] = useState<string | null>(null);
     const [playbackStatus, setPlaybackStatus] = useState<any | null>(null);
+    const [voiceEnabled, setVoiceEnabled] = useState(false);
+    const [showPersonaMenu, setShowPersonaMenu] = useState(false);
 
     useEffect(() => {
         const unsub = AudioService.subscribe((status, uri) => {
@@ -247,14 +260,18 @@ export default function ChatScreen() {
         if (timerRef.current) clearInterval(timerRef.current);
         const uri = await AudioService.stopRecording();
         const duration = recordingTime;
+        
+        // Finalize recording states but keep isSendingVoice true if we have a URI
         isLockedSV.value = false;
         dragX.value = 0;
         dragY.value = 0;
         setIsRecording(false);
         setIsLocked(false);
         setRecordingTime(0);
+        
         if (uri) {
             triggerHaptic('heavy');
+            setIsSendingVoice(true); // Start sending state
             processVoiceMessage(uri, duration);
         }
     };
@@ -272,32 +289,29 @@ export default function ChatScreen() {
     };
 
     const processVoiceMessage = async (uri: string, duration?: number) => {
-        const userMsg: Message = {
-            id: Date.now().toString(),
-            text: '',
-            sender: 'user',
-            timestamp: new Date(),
-            audioUri: uri,
-            isVoice: true,
-            duration: duration || 0,
-            isRead: true
-        };
-        setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
+        triggerHaptic('medium');
         try {
-            const transcribedText = await AudioService.transcribeAudio(uri);
-            if (transcribedText) handleSend(transcribedText);
+            const transcript = await AudioService.transcribeAudio(uri);
+            if (transcript) {
+                await handleSend(transcript);
+            }
         } catch (error) {
-            console.error('Processing voice message failed:', error);
+            console.error('Process voice message error:', error);
+            Alert.alert('Error', 'Failed to process voice message. Please try again.');
         } finally {
             setIsLoading(false);
+            setIsSendingVoice(false); // End sending state
         }
     };
+
+    const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
 
     const handleSend = async (textOverride?: string) => {
         const textToSend = textOverride || input.trim();
         if (!textToSend) return;
 
+        // Optimistic local update for User message
         const userMsg: Message = {
             id: Date.now().toString(),
             text: textToSend,
@@ -310,25 +324,54 @@ export default function ChatScreen() {
             setMessages(prev => [...prev, userMsg]);
             setInput('');
             setReplyingTo(null);
+        } else {
+            setMessages(prev => [...prev, userMsg]);
         }
 
         setIsLoading(true);
         triggerHaptic('light');
 
         try {
-            setTimeout(() => {
-                const aiMsg: Message = {
-                    id: (Date.now() + 1).toString(),
-                    text: `Response to: ${textToSend}`,
-                    sender: 'ai',
-                    timestamp: new Date(),
-                    isRead: true
-                };
-                setMessages(prev => [...prev, aiMsg]);
-                setIsLoading(false);
-                triggerHaptic('medium');
-            }, 1500);
+            const { data } = await api.post('/chat/message', {
+                text: textToSend,
+                voice_enabled: voiceEnabled,
+                persona: persona,
+            });
+
+            // Map backend response to local Message type
+            const buddyMsg: Message = {
+                id: data.buddy_message.id,
+                text: data.buddy_message.content,
+                sender: 'ai',
+                timestamp: new Date(data.buddy_message.created_at),
+                audioUri: data.buddy_message.audio_url || undefined,
+                isVoice: !!data.buddy_message.audio_url,
+                isRead: true
+            };
+
+            setMessages(prev => [...prev, buddyMsg]);
+            triggerHaptic('medium');
+
+            // Auto-play if voice is enabled and audio_url exists
+            if (voiceEnabled && data.buddy_message.audio_url) {
+                // Show a brief 'Generating voice' state if there's any lag in the data URI handling
+                setIsGeneratingVoice(true);
+                setTimeout(() => {
+                    AudioService.togglePlayback(data.buddy_message.audio_url);
+                    setIsGeneratingVoice(false);
+                }, 100);
+            }
         } catch (error) {
+            console.error('Chat error:', error);
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "I'm having a little trouble connecting. Could you try saying that again?",
+                sender: 'ai',
+                timestamp: new Date(),
+                isRead: true
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
             setIsLoading(false);
         }
     };
@@ -353,6 +396,84 @@ export default function ChatScreen() {
         }
         setShowMessageActions(null);
     };
+
+    const clearHistory = async () => {
+        try {
+            await api.delete('/chat/history');
+            setMessages([]);
+            setShowPersonaMenu(false);
+            triggerHaptic('heavy');
+        } catch (error) {
+            console.error('Failed to clear history:', error);
+        }
+    };
+
+    const toggleVoice = async () => {
+        const newState = !voiceEnabled;
+        setVoiceEnabled(newState);
+        setShowPersonaMenu(false);
+        triggerHaptic('medium');
+
+        if (newState) {
+            // Voice just turned ON — generate and play a greeting
+            const pName = PERSONAS.find((p: Persona) => p.id === persona)?.name || 'VinR Buddy';
+            const greetingText = `Hey! I'm ${pName}. Voice mode is now active — I'll speak my replies to you.`;
+
+            // Add a greeting message to the chat
+            const greetingMsg: Message = {
+                id: `voice-greeting-${Date.now()}`,
+                text: greetingText,
+                sender: 'ai',
+                timestamp: new Date(),
+                isRead: true,
+            };
+            setMessages(prev => [...prev, greetingMsg]);
+
+            // Request TTS audio from backend and auto-play
+            try {
+                setIsGeneratingVoice(true);
+                const { data } = await api.post('/chat/tts', {
+                    text: greetingText,
+                    persona: persona,
+                });
+
+                if (data.audio_url) {
+                    // Update the greeting message to include audio
+                    setMessages(prev =>
+                        prev.map(m =>
+                            m.id === greetingMsg.id
+                                ? { ...m, audioUri: data.audio_url, isVoice: true }
+                                : m
+                        )
+                    );
+                    // Auto-play the greeting
+                    AudioService.togglePlayback(data.audio_url);
+                } else {
+                    // Handle failure gracefully in UI
+                    setMessages(prev =>
+                        prev.map(m =>
+                            m.id === greetingMsg.id
+                                ? { ...m, text: `${greetingText}\n\n(Voice generation is currently unavailable, but I'll still message you!)` }
+                                : m
+                        )
+                    );
+                }
+            } catch (error) {
+                console.error('Voice greeting TTS error:', error);
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === greetingMsg.id
+                            ? { ...m, text: `${greetingText}\n\n(Error connecting to voice service.)` }
+                            : m
+                    )
+                );
+            } finally {
+                setIsGeneratingVoice(false);
+            }
+        }
+    };
+
+
 
     // Enforce max voice message length of 1:00 (60 seconds)
     useEffect(() => {
@@ -520,6 +641,7 @@ export default function ChatScreen() {
                             <CheckCheck size={12} color="rgba(255,255,255,0.7)" />
                         </View>
                     )}
+
                 </Pressable>
 
                 {/* Message Action Menu */}
@@ -563,45 +685,69 @@ export default function ChatScreen() {
         );
     };
 
-    // ── Recording row ────────────────────────────────────────────────────────
     const renderRecordingRow = () => (
-        <View style={styles.recordingRow}>
-            {/* Cancel */}
+        <View style={[styles.recordingRow, { paddingHorizontal: 16 }]}>
+            {/* Cancel (Trash) */}
             <Pressable
                 onPress={cancelRecording}
-                style={[styles.lockedActionBtn, { backgroundColor: isLocked ? colors.crimson + '20' : 'transparent' }]}
+                disabled={isSendingVoice}
+                style={[
+                    styles.lockedActionBtn, 
+                    { 
+                        backgroundColor: isLocked ? colors.crimson + '15' : 'transparent',
+                        opacity: isSendingVoice ? 0.3 : 1
+                    }
+                ]}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
-                <Trash2 size={isLocked ? 22 : 20} color={colors.crimson} />
+                <Trash2 size={24} color={colors.crimson} />
             </Pressable>
 
-            {/* Timer */}
-            <View style={styles.recordingIndicatorRow}>
-                <Animated.View style={[styles.recordingDot, { backgroundColor: colors.crimson }]} entering={BounceIn} />
-                <Text style={[styles.recordingTimer, { color: colors.textPrimary }]}>
-                    {formatTime(recordingTime)}
+            {/* Timer & Indicator */}
+            <View style={[styles.recordingIndicatorRow, { marginLeft: 12 }]}>
+                {!isSendingVoice && (
+                    <Animated.View 
+                        style={[styles.recordingDot, { backgroundColor: colors.crimson }]} 
+                        entering={BounceIn.duration(400)} 
+                    />
+                )}
+                <Text style={[styles.recordingTimer, { color: colors.textPrimary, fontSize: 16, fontWeight: '600' }]}>
+                    {isSendingVoice ? 'Processing...' : formatTime(recordingTime)}
                 </Text>
             </View>
 
-            <View style={[styles.flexFill, { alignItems: 'flex-end', justifyContent: 'center', paddingRight: 40 }]}>
-                {!isLocked && (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.6 }}>
-                        <ChevronLeft size={14} color={colors.textPrimary} style={{ marginTop: 1, marginRight: 2 }} />
-                        <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: '500' }}>
+            {/* Hint text / Spacer */}
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                {!isLocked && !isSendingVoice && (
+                    <Animated.View entering={FadeIn} exiting={FadeOut}>
+                        <Text style={{ color: colors.textMuted, fontSize: 13 }}>
                             Slide to cancel
                         </Text>
                     </Animated.View>
                 )}
             </View>
 
-            {/* Send */}
-            <Pressable
-                onPress={stopAndSend}
-                style={[styles.lockedActionBtn, { backgroundColor: isLocked ? colors.sapphire + '20' : 'transparent' }]}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-            >
-                <Send size={isLocked ? 22 : 20} color={colors.sapphire} />
-            </Pressable>
+            {/* Send / Activity Indicator */}
+            <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                {isSendingVoice ? (
+                    <ActivityIndicator size="small" color={colors.sapphire} />
+                ) : (
+                    <Pressable
+                        onPress={stopAndSend}
+                        style={[
+                            styles.actionBtn, 
+                            { 
+                                backgroundColor: colors.sapphire,
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20
+                            }
+                        ]}
+                    >
+                        <Send size={20} color="#FFFFFF" style={{ marginLeft: 2 }} />
+                    </Pressable>
+                )}
+            </View>
         </View>
     );
 
@@ -637,10 +783,12 @@ export default function ChatScreen() {
                     </View>
 
                     <Pressable
+                        onPress={() => setShowPersonaMenu(true)}
                         style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
                     >
                         <MoreVertical color={colors.textPrimary} size={20} />
                     </Pressable>
+
                 </SafeBlurView>
 
                 {/* Persona Switcher */}
@@ -702,6 +850,26 @@ export default function ChatScreen() {
                         keyExtractor={item => item.id}
                         renderItem={renderMessage}
                         contentContainerStyle={[styles.chatContent, { paddingBottom: 20 }]}
+                        ListFooterComponent={(isLoading || isGeneratingVoice) ? (
+                            <View style={[styles.typingContainer, { marginBottom: 10 }]}>
+                                <View style={[styles.aiAvatar, { width: 24, height: 24, borderColor: colors.gold }]}>
+                                    {PERSONAS.find(p => p.id === persona)?.icon && React.createElement(PERSONAS.find(p => p.id === persona)!.icon, { size: 12, color: colors.gold })}
+                                </View>
+                                {isGeneratingVoice ? (
+                                    <View style={{ marginLeft: 8 }}>
+                                        <Text style={{ fontSize: 13, color: colors.textMuted, fontStyle: 'italic' }}>
+                                            {PERSONAS.find(p => p.id === persona)?.name || 'VinR'} is generating voice...
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <View style={styles.typingDots}>
+                                        <View style={[styles.dot, { backgroundColor: colors.gold }]} />
+                                        <View style={[styles.dot, { backgroundColor: colors.gold }]} />
+                                        <View style={[styles.dot, { backgroundColor: colors.gold }]} />
+                                    </View>
+                                )}
+                            </View>
+                        ) : null}
                         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                         onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
                         ListEmptyComponent={
@@ -715,25 +883,6 @@ export default function ChatScreen() {
                                 <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>Say something to get started</Text>
                             </Animated.View>
                         }
-                        ListFooterComponent={isLoading ? (
-                            <Animated.View entering={FadeInUp} style={styles.typingContainer}>
-                                <View style={[
-                                    styles.aiAvatar,
-                                    { borderColor: colors.gold, backgroundColor: isDark ? colors.surface : colors.void }
-                                ]}>
-                                    {PERSONAS.find((p: Persona) => p.id === persona)?.icon &&
-                                        React.createElement(
-                                            PERSONAS.find((p: Persona) => p.id === persona)!.icon,
-                                            { size: 16, color: colors.gold, strokeWidth: 2.5 }
-                                        )}
-                                </View>
-                                <View style={styles.typingDots}>
-                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
-                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
-                                    <Animated.View style={[styles.dot, { backgroundColor: colors.gold }]} />
-                                </View>
-                            </Animated.View>
-                        ) : null}
                     />
 
                     {/* Input container — lifted by keyboard height on Android, 0 when closed */}
@@ -782,11 +931,11 @@ export default function ChatScreen() {
                                 backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
                             }
                         ]}>
-                            {/* Recording overlay — shown during recording */}
-                            {isRecording && renderRecordingRow()}
+                            {/* Recording overlay — shown during recording or sending */}
+                            {(isRecording || isSendingVoice) && renderRecordingRow()}
 
-                            {/* Text input — hidden during recording */}
-                            {!isRecording && (
+                            {/* Text input — hidden during recording or sending */}
+                            {(!isRecording && !isSendingVoice) && (
                                 <TextInput
                                     style={[styles.input, { color: colors.textPrimary }]}
                                     placeholder="Message..."
@@ -800,12 +949,12 @@ export default function ChatScreen() {
 
                             {/* Mic always mounted so gesture stays alive during recording */}
                             <View style={styles.rightIconsRow}>
-                                {(input.trim() === '' || isRecording) ? (
+                                {(input.trim() === '' || isRecording || isSendingVoice) ? (
                                     <GestureDetector gesture={panGesture}>
                                         <Animated.View style={[
                                             styles.micActionBtn,
                                             animatedMicStyle,
-                                            isRecording && { opacity: 0, position: 'absolute', right: 0 }
+                                            (isRecording || isSendingVoice) && { opacity: 0, position: 'absolute', right: 0 }
                                         ]}>
                                             <View style={styles.micPressable}>
                                                 <Mic size={22} color={colors.gold} />
@@ -834,10 +983,67 @@ export default function ChatScreen() {
                 {insets.bottom > 0 && (
                     <View style={{ height: insets.bottom, backgroundColor: isDark ? colors.surface : colors.void }} />
                 )}
+
+                {/* Kebab Menu Modal */}
+                <Modal
+                    visible={showPersonaMenu}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setShowPersonaMenu(false)}
+                >
+                    <Pressable 
+                        style={styles.modalOverlay}
+                        onPress={() => setShowPersonaMenu(false)}
+                    >
+                        <Animated.View 
+                            entering={FadeInUp.springify()}
+                            style={[
+                                styles.kebabMenu,
+                                { 
+                                    backgroundColor: colors.surface,
+                                    borderColor: colors.border,
+                                    shadowColor: colors.textPrimary,
+                                }
+                            ]}
+                        >
+                            <TouchableOpacity 
+                                style={[styles.kebabItem, { borderBottomColor: colors.border }]}
+                                onPress={toggleVoice}
+                            >
+                                {voiceEnabled ? (
+                                    <Volume2 size={20} color={colors.gold} />
+                                ) : (
+                                    <VolumeX size={20} color={colors.textMuted} />
+                                )}
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.kebabText, { color: colors.textPrimary }]}>
+                                        Voice Response
+                                    </Text>
+                                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                                        {voiceEnabled ? 'Currently ON' : 'Currently OFF'}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.kebabItem, { borderBottomColor: 'transparent' }]}
+                                onPress={clearHistory}
+                            >
+                                <Trash2 size={20} color={colors.crimson} />
+                                <Text style={[styles.kebabText, { color: colors.crimson }]}>
+                                    Clear History
+                                </Text>
+                            </TouchableOpacity>
+
+
+                        </Animated.View>
+                    </Pressable>
+                </Modal>
             </View>
         </GestureHandlerRootView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
@@ -918,4 +1124,10 @@ const styles = StyleSheet.create({
     recordingTimer: { fontSize: 15, fontWeight: '600' },
     flexFill: { flex: 1 },
     lockedActionBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+
+    // Modal / Kebab Menu
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 20 },
+    kebabMenu: { width: 220, borderRadius: 16, borderWidth: 1, overflow: 'hidden', paddingVertical: 8, elevation: 10, shadowOpacity: 0.3, shadowRadius: 10 },
+    kebabItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12, borderBottomWidth: 1 },
+    kebabText: { fontSize: 15, fontWeight: '600' },
 });
