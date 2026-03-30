@@ -22,6 +22,7 @@ import {
     Send,
     MoreVertical,
     Play,
+    Pause,
     Trash2,
     ChevronUp,
     Copy,
@@ -93,17 +94,25 @@ interface MessageAction {
     type: 'edit' | 'delete' | 'copy' | 'reply';
 }
 
-const Waveform = ({ color }: { color: string }) => (
+const Waveform = ({ color, progress = 0 }: { color: string, progress?: number }) => (
     <View style={styles.waveformContainer}>
-        {[8, 14, 10, 18, 12, 17, 9, 15, 11, 16, 12, 14, 8, 15, 12, 18, 10, 14, 9].map((h, i) => (
-            <View
-                key={i}
-                style={[
-                    styles.waveBar,
-                    { height: h, backgroundColor: color, opacity: i % 2 === 0 ? 0.9 : 0.5 }
-                ]}
-            />
-        ))}
+        {[8, 14, 10, 18, 12, 17, 9, 15, 11, 16, 12, 14, 8, 15, 12, 18, 10, 14, 9].map((h, i, arr) => {
+            const barProgress = i / arr.length;
+            const isActive = barProgress <= progress;
+            return (
+                <View
+                    key={i}
+                    style={[
+                        styles.waveBar,
+                        { 
+                            height: h, 
+                            backgroundColor: isActive ? color : color + '40',
+                            opacity: isActive ? 1 : 0.5 
+                        }
+                    ]}
+                />
+            );
+        })}
     </View>
 );
 
@@ -146,6 +155,16 @@ export default function ChatScreen() {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [playbackUri, setPlaybackUri] = useState<string | null>(null);
+    const [playbackStatus, setPlaybackStatus] = useState<any | null>(null);
+
+    useEffect(() => {
+        const unsub = AudioService.subscribe((status, uri) => {
+            setPlaybackStatus(status);
+            setPlaybackUri(uri);
+        });
+        return unsub;
+    }, []);
 
     useEffect(() => {
         const show = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -471,13 +490,20 @@ export default function ChatScreen() {
                                     alignItems: 'center', justifyContent: 'center',
                                     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3
                                 }}
-                                onPress={() => AudioService.playRecording(item.audioUri!)}
+                                onPress={() => AudioService.togglePlayback(item.audioUri!)}
                             >
-                                <Play color={item.sender === 'user' ? colors.sapphire : colors.void} size={14} fill={item.sender === 'user' ? colors.sapphire : colors.void} style={{ marginLeft: 2 }} />
+                                {playbackUri === item.audioUri && playbackStatus?.playing ? (
+                                    <Pause color={item.sender === 'user' ? colors.sapphire : colors.void} size={14} fill={item.sender === 'user' ? colors.sapphire : colors.void} />
+                                ) : (
+                                    <Play color={item.sender === 'user' ? colors.sapphire : colors.void} size={14} fill={item.sender === 'user' ? colors.sapphire : colors.void} style={{ marginLeft: 2 }} />
+                                )}
                             </Pressable>
 
                             <View style={{ flex: 1, marginHorizontal: 12 }}>
-                                <Waveform color={item.sender === 'user' ? 'rgba(255,255,255,0.9)' : colors.textPrimary} />
+                                <Waveform 
+                                    color={item.sender === 'user' ? 'rgba(255,255,255,0.9)' : colors.textPrimary} 
+                                    progress={playbackUri === item.audioUri && playbackStatus?.duration > 0 ? playbackStatus.currentTime / playbackStatus.duration : 0}
+                                />
                             </View>
 
                             <Text style={[

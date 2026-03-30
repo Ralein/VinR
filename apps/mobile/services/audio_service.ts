@@ -6,13 +6,16 @@ import {
     setAudioModeAsync, 
     requestRecordingPermissionsAsync,
     type AudioPlayer,
-    type AudioRecorder
+    type AudioRecorder,
+    type AudioStatus
 } from 'expo-audio';
 
 class AudioService {
     private recorder: AudioRecorder | null = null;
     private player: AudioPlayer | null = null;
     private isRecording: boolean = false;
+    private playingUri: string | null = null;
+    private statusListeners: ((status: AudioStatus | null, uri: string | null) => void)[] = [];
 
     async requestPermissions(): Promise<boolean> {
         try {
@@ -40,7 +43,6 @@ class AudioService {
             });
 
             // Create recorder using AudioModule.AudioRecorder class
-            // Note: In SDK 55, AudioModule provides the class constructor
             this.recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
             
             // Prepare and record
@@ -100,24 +102,70 @@ class AudioService {
 
     async transcribeAudio(uri: string): Promise<string> {
         console.log('Transcribing audio from:', uri);
-        // This would typically involve a call to a whisper service / backend
         return 'I feel a bit overwhelmed today.';
     }
 
-    async playRecording(uri: string): Promise<void> {
-        console.log('Playing recording from:', uri);
+    /**
+     * Subscribes to playback status updates.
+     */
+    subscribe(listener: (status: AudioStatus | null, uri: string | null) => void) {
+        this.statusListeners.push(listener);
+        // Initial notify if something is already playing
+        if (this.player && this.player.isLoaded) {
+            listener(this.player.currentStatus, this.playingUri);
+        }
+        return () => {
+            this.statusListeners = this.statusListeners.filter(l => l !== listener);
+        };
+    }
+
+    private notifyListeners(status: AudioStatus | null, uri: string | null) {
+        this.statusListeners.forEach(listener => listener(status, uri));
+    }
+
+    async togglePlayback(uri: string): Promise<void> {
         try {
-            // Create a player instance using correctly exported factory
+            // Toggle if same URI and player exists
+            if (this.playingUri === uri && this.player) {
+                if (this.player.playing) {
+                    this.player.pause();
+                } else {
+                    this.player.play();
+                }
+                return;
+            }
+
+            // Stop current playback if any
             if (this.player) {
                 this.player.remove();
+                this.player = null;
             }
-            
+
+            this.playingUri = uri;
             this.player = createAudioPlayer(uri);
+            
+            this.player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+                if (status.didJustFinish) {
+                    this.playingUri = null;
+                    this.notifyListeners(null, null);
+                } else {
+                    this.notifyListeners(status, uri);
+                }
+            });
+
             this.player.play();
         } catch (error) {
-            console.error('Failed to play recording:', error);
+            console.error('Failed to toggle playback:', error);
         }
+    }
+
+    /**
+     * @deprecated Use togglePlayback instead
+     */
+    async playRecording(uri: string): Promise<void> {
+        return this.togglePlayback(uri);
     }
 }
 
 export default new AudioService();
+
