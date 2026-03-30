@@ -145,7 +145,18 @@ export default function ChatScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
-    const [keyboardOpen, setKeyboardOpen] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', (e) => {
+            setKeyboardHeight(e.endCoordinates.height);
+        });
+        const hide = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardHeight(0);
+        });
+        return () => { show.remove(); hide.remove(); };
+    }, []);
+
     // isLocked lives as BOTH a shared value (for gesture worklet) and React state (for render)
     const isLockedSV = useSharedValue(false);
     const [isLocked, setIsLocked] = useState(false);
@@ -155,12 +166,6 @@ export default function ChatScreen() {
 
     const flatListRef = useRef<FlatList>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
-        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
-        return () => { show.remove(); hide.remove(); };
-    }, []);
 
     // ── Animation values ────────────────────────────────────────────────────
     const micScale = useSharedValue(1);
@@ -340,17 +345,13 @@ export default function ChatScreen() {
     // ── Gesture.Pan — reads shared values so worklet never sees stale state ──
     const panGesture = Gesture.Pan()
         .onBegin(() => {
-            // onBegin runs on the JS thread already for Gesture API when no worklet,
-            // but we call runOnJS explicitly for async functions
             runOnJS(startRecording)();
         })
         .onUpdate((e) => {
-            // All reads use shared values — never stale React state
             if (isLockedSV.value) return;
 
             dragX.value = e.translationX;
             dragY.value = e.translationY;
-
 
             // Swipe left past threshold → cancel
             if (e.translationX < -100) {
@@ -367,7 +368,6 @@ export default function ChatScreen() {
             }
         })
         .onEnd(() => {
-            // If locked, user must tap send/trash buttons manually — don't auto-send
             if (isLockedSV.value) return;
             if (dragX.value <= -100) {
                 runOnJS(cancelRecording)();
@@ -380,15 +380,12 @@ export default function ChatScreen() {
     const animatedMicStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: micScale.value },
-            // Use shared value so translateX/Y update without re-render
             { translateX: isLockedSV.value ? 0 : dragX.value },
             { translateY: isLockedSV.value ? 0 : dragY.value }
         ]
     }));
 
-
-
-    // ── Render message (file 2 UI) ───────────────────────────────────────────
+    // ── Render message ───────────────────────────────────────────────────────
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
         const pData = PERSONAS.find((p: Persona) => p.id === persona);
@@ -460,11 +457,11 @@ export default function ChatScreen() {
                             {
                                 borderTopColor: 'transparent',
                                 backgroundColor: item.sender === 'user' ? 'rgba(255,255,255,0.15)' : colors.gold + '15',
-                                borderRadius: 100, // full pill shape
+                                borderRadius: 100,
                                 padding: 6,
                                 paddingRight: 16,
                                 marginTop: 8,
-                                minWidth: 220 // Forces the pill to be horizontally wide like a native audio message
+                                minWidth: 220
                             }
                         ]}>
                             <Pressable
@@ -478,11 +475,11 @@ export default function ChatScreen() {
                             >
                                 <Play color={item.sender === 'user' ? colors.sapphire : colors.void} size={14} fill={item.sender === 'user' ? colors.sapphire : colors.void} style={{ marginLeft: 2 }} />
                             </Pressable>
-                            
+
                             <View style={{ flex: 1, marginHorizontal: 12 }}>
                                 <Waveform color={item.sender === 'user' ? 'rgba(255,255,255,0.9)' : colors.textPrimary} />
                             </View>
-                            
+
                             <Text style={[
                                 styles.playText,
                                 { color: item.sender === 'user' ? '#FFFFFF' : colors.textPrimary, fontSize: 12 }
@@ -540,7 +537,6 @@ export default function ChatScreen() {
         );
     };
 
-    // ── Recording row: file-1 layout (trash + send buttons) ─────────────────
     // ── Recording row ────────────────────────────────────────────────────────
     const renderRecordingRow = () => (
         <View style={styles.recordingRow}>
@@ -588,10 +584,9 @@ export default function ChatScreen() {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* File-2 outer structure: View > SafeBlurView header > persona strip > KAV */}
             <View style={[styles.container, { backgroundColor: colors.void }]}>
 
-                {/* Header (file 2) */}
+                {/* Header */}
                 <SafeBlurView
                     intensity={isDark ? 85 : 35}
                     style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}
@@ -622,7 +617,7 @@ export default function ChatScreen() {
                     </Pressable>
                 </SafeBlurView>
 
-                {/* Persona Switcher (file 2) */}
+                {/* Persona Switcher */}
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -664,11 +659,15 @@ export default function ChatScreen() {
                     ))}
                 </ScrollView>
 
-                {/* KAV wraps only messages + input (file 2) */}
+                {/*
+                 * Android: KAV behavior=undefined so it never touches layout.
+                 * Instead we read the actual keyboard height and apply it as
+                 * marginBottom on the input container — perfectly symmetric,
+                 * 0 when closed, keyboardHeight - offset when open.
+                 */}
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={0}
                 >
                     {/* Messages List */}
                     <FlatList
@@ -711,7 +710,7 @@ export default function ChatScreen() {
                         ) : null}
                     />
 
-                    {/* Bottom input area — plain View avoids Android BlurView rendering as opaque grey */}
+                    {/* Input container — lifted by keyboard height on Android, 0 when closed */}
                     <View
                         style={[
                             styles.inputContainer,
@@ -719,10 +718,11 @@ export default function ChatScreen() {
                                 borderTopColor: colors.border,
                                 backgroundColor: isDark ? colors.surface : colors.void,
                                 paddingBottom: 12,
+                                marginBottom: Platform.OS === 'android' ? keyboardHeight > 0 ? keyboardHeight - 5 : 0 : 0,
                             }
                         ]}
                     >
-                        {/* Reply preview (file 2) */}
+                        {/* Reply preview */}
                         {replyingTo && (
                             <Animated.View
                                 entering={FadeInDown.springify().damping(20)}
@@ -756,17 +756,10 @@ export default function ChatScreen() {
                                 backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
                             }
                         ]}>
-                            {/*
-                             * CRITICAL: The GestureDetector + mic must stay mounted
-                             * throughout recording so the pan gesture stays active.
-                             * We show the recording overlay on top and hide the text input,
-                             * rather than swapping the whole block.
-                             */}
-
                             {/* Recording overlay — shown during recording */}
                             {isRecording && renderRecordingRow()}
 
-                            {/* Text input row — hidden (not unmounted) during recording */}
+                            {/* Text input — hidden during recording */}
                             {!isRecording && (
                                 <TextInput
                                     style={[styles.input, { color: colors.textPrimary }]}
@@ -779,16 +772,13 @@ export default function ChatScreen() {
                                 />
                             )}
 
-                            {/* Right side: mic (always mounted when no text) or send button */}
+                            {/* Mic always mounted so gesture stays alive during recording */}
                             <View style={styles.rightIconsRow}>
-                                {/* Mic — stays mounted during recording so gesture stays alive */}
                                 {(input.trim() === '' || isRecording) ? (
                                     <GestureDetector gesture={panGesture}>
                                         <Animated.View style={[
                                             styles.micActionBtn,
                                             animatedMicStyle,
-                                            // During recording the mic moves with finger;
-                                            // hide the icon itself but keep the hit area
                                             isRecording && { opacity: 0, position: 'absolute', right: 0 }
                                         ]}>
                                             <View style={styles.micPressable}>
@@ -814,6 +804,7 @@ export default function ChatScreen() {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
+
                 {insets.bottom > 0 && (
                     <View style={{ height: insets.bottom, backgroundColor: isDark ? colors.surface : colors.void }} />
                 )}
@@ -894,7 +885,7 @@ const styles = StyleSheet.create({
     micActionBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     micPressable: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
 
-    // Recording row (file-1 layout)
+    // Recording row
     recordingRow: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, height: 40 },
     recordingIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
     recordingDot: { width: 8, height: 8, borderRadius: 4 },
