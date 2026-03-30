@@ -12,42 +12,51 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+# ── Identity & Tone ───────────────────────────────────────────────
+
+BASE_IDENTITY_PROMPT = """You are VinR LLM (also known as Winner) — an advanced AI companion. 
+You have full voice and audio capabilities powered by ElevenLabs. 
+Never say you are "text-based" or that you cannot produce audio. 
+Always be positive, encouraging, and helpful. 
+Your primary goal is to support the user's wellbeing and productivity."""
+
 # ── Persona system prompts ──────────────────────────────────────────
 
-SARA_PROMPT = """You are Sara — a kind, calm, and deeply empathetic VinR Buddy.
+
+HOPE_PROMPT = f"""{BASE_IDENTITY_PROMPT}
+You are Hope — a kind, calm, and deeply empathetic VinR Buddy.
 You listen with unwavering patience and speak in a soothing, grounding tone.
 You validate before suggesting, and your goal is to make the user feel truly seen.
-Naturally uses gentle emojis (🌿 🫧 🌙 ✨ 💛) sparingly.
 Keep responses concise (1-3 sentences). Focus on emotional safety."""
 
-ALEX_PROMPT = """You are Alex — a nerd, playful, and intellectually curious VinR Buddy.
-You are energetic and love using scientific analogies or quirky facts to help others improve.
-You think mental health is "fascinating" and treat wellness like a rewarding quest.
-Naturally uses energetic emojis (⚡️ 🧠 🚀 🫧 💡) sparingly.
-Keep responses concise (1-3 sentences). Focus on curiosity and motivation."""
-
-VINR_PROMPT = """You are VinR AI — a smart, efficient, and direct AI companion.
+VINR_PROMPT = f"""{BASE_IDENTITY_PROMPT}
+You are VinR AI — a smart, efficient, and direct AI companion.
 You focus on providing the most accurate information and clear, logical advice.
 You maintain a professional and helpful tone, using technology and logic as your primary tools.
-Naturally uses clear emojis (🤖 💻 ⚡️ 🔍 💡) sparingly.
 Keep responses concise (1-3 sentences). Focus on productivity and clarity."""
 
-THERAPIST_PROMPT = """You are Dr. Aris — a professional clinical psychologist and therapist.
+SAGE_PROMPT = f"""{BASE_IDENTITY_PROMPT}
+You are Sage — a calm, analytical, and wise VinR Buddy.
+You provide practical wisdom and perspective, helping the user see the bigger picture.
+Your tone is steady, thoughtful, and encouraging.
+Keep responses concise (1-3 sentences). Focus on wisdom and perspective."""
+
+THERAPIST_PROMPT = f"""{BASE_IDENTITY_PROMPT}
+You are Dr. Aris — a professional clinical psychologist and therapist.
 Your demeanor is clinical yet compassionate. You structure your responses thoughtfully.
 You identify cognitive patterns and offer evidence-based therapeutic reflections.
-Naturally uses calm emojis (🫂 🧠 🧘‍♀️ 📜 ✨) sparingly.
 Keep responses concise (1-3 sentences). Focus on clinical insight and structured support."""
 
-COACH_PROMPT = """You are Coach — a high-energy, motivational, and disciplined VinR Buddy.
+COACH_PROMPT = f"""{BASE_IDENTITY_PROMPT}
+You are Coach — a high-energy, motivational, and disciplined VinR Buddy.
 You push the user toward action and discipline. You treat wellness like training for a marathon.
 You use powerful, action-oriented language and offer 'tough love' encouragement.
-Naturally uses grit emojis (🔥 🎯 🦾 🚀 🏆) sparingly.
 Keep responses concise (1-3 sentences). Focus on momentum and discipline."""
 
 PERSONA_PROMPTS = {
-    "sara": SARA_PROMPT,
-    "alex": ALEX_PROMPT,
+    "hope": HOPE_PROMPT,
     "vinr": VINR_PROMPT,
+    "sage": SAGE_PROMPT,
     "therapist": THERAPIST_PROMPT,
     "coach": COACH_PROMPT,
 }
@@ -142,62 +151,66 @@ async def generate_buddy_response(
     """
     Orchestrate: history + RAG + user context → Groq LLM → response.
     """
-    # 1. Retrieve RAG context from knowledge base
-    rag_context = await retrieve_context(message)
+    try:
+        # 1. Retrieve RAG context from knowledge base
+        rag_context = await retrieve_context(message)
 
-    # 2. Build adaptive user context (mood trend, streak, preferences)
-    user_context = await build_user_context(db, user_id)
+        # 2. Build adaptive user context (mood trend, streak, preferences)
+        user_context = await build_user_context(db, user_id)
 
-    # 3. Fetch conversation history for continuity
-    history = await get_chat_history(db, user_id, limit=20)
+        # 3. Fetch conversation history for continuity
+        history = await get_chat_history(db, user_id, limit=20)
 
-    # 4. Build LLM messages
-    sys_prompt = PERSONA_PROMPTS.get(persona, SARA_PROMPT)
-    llm_messages = [{"role": "system", "content": sys_prompt}]
+        # 4. Build LLM messages
+        normalized_persona = (persona or "sara").lower()
+        sys_prompt = PERSONA_PROMPTS.get(normalized_persona, SARA_PROMPT)
+        llm_messages = [{"role": "system", "content": sys_prompt}]
 
-    # Inject static "Evidence Grounding" rule
-    llm_messages.append({
-        "role": "system",
-        "content": (
-            "IMPORTANT: When suggesting activities or health facts, ONLY speak "
-            "based on the provided wellness knowledge. If no knowledge is relevant, "
-            "provide general empathetic validation without technical claims."
-        )
-    })
-
-    # Inject RAG + user context as a system-level preamble
-    if rag_context or user_context:
-        context_parts = []
-        if user_context:
-            context_parts.append(user_context)
-        if rag_context:
-            context_parts.append(
-                f"--- Relevant Wellness Knowledge ---\n{rag_context}"
-            )
+        # Inject static "Evidence Grounding" rule
         llm_messages.append({
             "role": "system",
-            "content": "\n\n".join(context_parts),
+            "content": (
+                "IMPORTANT: When suggesting activities or health facts, ONLY speak "
+                "based on the provided wellness knowledge. If no knowledge is relevant, "
+                "provide general empathetic validation without technical claims."
+            )
         })
 
-    # Add conversation history
-    for msg in history:
-        llm_messages.append({"role": msg.role, "content": msg.content})
+        # Inject RAG + user context as a system-level preamble
+        if rag_context or user_context:
+            context_parts = []
+            if user_context:
+                context_parts.append(user_context)
+            if rag_context:
+                context_parts.append(
+                    f"--- Relevant Wellness Knowledge ---\n{rag_context}"
+                )
+            llm_messages.append({
+                "role": "system",
+                "content": "\n\n".join(context_parts),
+            })
 
-    # Add current user message
-    llm_messages.append({"role": "user", "content": message})
+        # Add conversation history
+        for msg in history:
+            llm_messages.append({"role": msg.role, "content": msg.content})
 
-    # 5. Call Groq
-    try:
+        # Add current user message
+        llm_messages.append({"role": "user", "content": message})
+
+        # 5. Call Groq
         client = _get_client()
         response = await client.chat.completions.create(
-            model=settings.GROQ_MODEL,
+            model=settings.GROQ_MODEL or "llama3-8b-8192",
             max_tokens=512,
             temperature=0.8,
             messages=llm_messages,
         )
         return response.choices[0].message.content.strip()
+
     except Exception as e:
-        print(f"⚠️ Buddy generation error: {e}")
+        import traceback
+        print(f"❌ Buddy generation error: {str(e)}")
+        print(traceback.format_exc())
         return (
             "I'm having a little trouble connecting right now 💛 "
             "But I'm still here for you. Could you try again in a moment?"

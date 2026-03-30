@@ -14,6 +14,8 @@ from app.services.chat_service import (
 )
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from app.services.audio_service import transcribe_audio_whisper
+from app.services.elevenlabs_service import text_to_speech, audio_bytes_to_data_uri
+
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -23,7 +25,8 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class SendMessageRequest(BaseModel):
     text: str
     voice_enabled: bool = False
-    persona: str = "sara"  # Default persona
+    persona: str = "vinr"  # Default persona
+
 
 
 class ChatMessageResponse(BaseModel):
@@ -111,14 +114,49 @@ async def transcribe_audio(
 ):
     """Voice to text using Groq Whisper."""
     try:
+        print(f"🎤 Received transcription request: {file.filename} ({file.content_type})")
         content = await file.read()
+        print(f"📊 Audio data size: {len(content)} bytes")
+        
+        if len(content) == 0:
+            raise ValueError("Empty audio file received")
+
         text = await transcribe_audio_whisper(content, filename=file.filename)
+        
         if not text:
-            raise HTTPException(status_code=400, detail="Transcription failed")
+            print("⚠️ Transcription service returned no text")
+            raise HTTPException(status_code=400, detail="Transcription failed to produce text")
+            
+        print(f"📝 Transcribed text: {text[:50]}...")
         return {"text": text}
     except Exception as e:
-        print(f"⚠️ Transcribe route error: {e}")
+        import traceback
+        print(f"❌ Transcribe route error: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class TTSRequest(BaseModel):
+    text: str
+    persona: str = "vinr"
+
+
+@router.post("/tts")
+async def generate_tts(
+    request: TTSRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Generate TTS audio for arbitrary text (e.g. intro greetings)."""
+    from app.services.elevenlabs_service import PERSONA_VOICES
+
+    voice_id = PERSONA_VOICES.get(request.persona)
+
+    audio_bytes = await text_to_speech(request.text, voice_id=voice_id)
+    if not audio_bytes:
+        # Return gracefully — client handles missing audio
+        return {"audio_url": None}
+
+    return {"audio_url": audio_bytes_to_data_uri(audio_bytes)}
 
 
 @router.get("/history")

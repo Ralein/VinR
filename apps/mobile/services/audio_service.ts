@@ -1,4 +1,8 @@
 import { Platform } from 'react-native';
+import { config } from '../constants/config';
+import { getItemAsync } from '../utils/storage';
+import api from './api';
+
 import { 
     AudioModule, 
     RecordingPresets, 
@@ -101,8 +105,34 @@ class AudioService {
     }
 
     async transcribeAudio(uri: string): Promise<string> {
-        console.log('Transcribing audio from:', uri);
-        return 'I feel a bit overwhelmed today.';
+        try {
+            console.log('Transcribing audio from:', uri);
+            const formData = new FormData();
+            
+            // Fix for React Native / Expo FormData
+            const fileUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
+            const filename = uri.split('/').pop() || 'recording.m4a';
+            
+            // @ts-ignore - FormData.append signature in RN
+            formData.append('file', {
+                uri: Platform.OS === 'ios' ? `file://${fileUri}` : fileUri,
+                name: filename,
+                type: 'audio/m4a',
+            });
+
+            const { data } = await api.post('chat/transcribe', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                // Increase timeout for transcription
+                timeout: 30000,
+            });
+
+            return data.text || '';
+        } catch (error) {
+            console.error('Audio transcription error:', error);
+            throw error;
+        }
     }
 
     /**
