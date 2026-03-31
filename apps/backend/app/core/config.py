@@ -40,9 +40,8 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.1-8b-instant"
 
-    # ElevenLabs TTS
-    ELEVENLABS_API_KEY: str = ""
-    ELEVENLABS_VOICE_ID: str = "EXAVITQu4vr4xnSDxMaL"  # "Bella" default
+    # Local TTS (chatterbox-tts)
+    CHATTERBOX_DEVICE: str = "cpu"
 
     # Expo Push Notifications
 
