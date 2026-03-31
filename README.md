@@ -58,8 +58,7 @@ Before you begin, ensure you have the following installed:
 6. **Start the API Server:**
    ```bash
    uvicorn app.main:app --reload
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
    The API will be accessible at `http://localhost:8000`.
 

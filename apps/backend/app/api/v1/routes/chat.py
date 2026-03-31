@@ -14,7 +14,7 @@ from app.services.chat_service import (
 )
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from app.services.audio_service import transcribe_audio_whisper
-from app.services.elevenlabs_service import text_to_speech, audio_bytes_to_data_uri
+from app.services.chatterbox_service import text_to_speech, audio_bytes_to_data_uri, PERSONA_VOICES
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -77,7 +77,7 @@ async def send_message(
     audio_url = None
     if is_voice:
         # Get persona voice ID
-        from app.services.elevenlabs_service import PERSONA_VOICES
+        # Get persona voice (optional for chatterbox default)
         voice_id = PERSONA_VOICES.get(request.persona)
 
         audio_bytes = await text_to_speech(buddy_text, voice_id=voice_id)
@@ -147,8 +147,6 @@ async def generate_tts(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate TTS audio for arbitrary text (e.g. intro greetings)."""
-    from app.services.elevenlabs_service import PERSONA_VOICES
-
     voice_id = PERSONA_VOICES.get(request.persona)
 
     audio_bytes = await text_to_speech(request.text, voice_id=voice_id)
