@@ -16,11 +16,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ── Static Files ─────────────────────────────────────────────────────
-# Mount the static directory to serve pre-generated greetings and media
+# Mount the static directory for internal assets
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Mount the public directory for greetings and user-accessible media
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public")
+os.makedirs(PUBLIC_DIR, exist_ok=True)
+app.mount("/public", StaticFiles(directory=PUBLIC_DIR), name="public")
 
 @app.on_event("startup")
 async def startup_event():

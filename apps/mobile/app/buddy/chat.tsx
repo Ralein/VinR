@@ -137,11 +137,23 @@ export default function ChatScreen() {
         if (personaId) setPersona(personaId as string);
     }, [personaId]);
 
+    const triggerPersonaGreeting = useCallback(async (pId: string) => {
+        try {
+            const baseUrl = config.API_BASE_URL.replace('/api/v1/', '');
+            const greetingUrl = `${baseUrl}/public/wav/greetings/${pId}.wav`;
+            AudioService.togglePlayback(greetingUrl);
+        } catch (e) {
+            console.error('Failed to trigger greeting:', e);
+        }
+    }, []);
+
     const changePersona = (id: string) => {
         if (id === persona) return;
         setPersona(id);
         triggerHaptic('medium');
         const pName = PERSONAS.find(p => p.id === id)?.name;
+        
+        // Add switch message
         setMessages(prev => [...prev, {
             id: Date.now().toString(),
             text: `Switched to ${pName}. How can I help you?`,
@@ -149,6 +161,11 @@ export default function ChatScreen() {
             timestamp: new Date(),
             isRead: true
         }]);
+
+        // If voice mode is on, play greetings
+        if (voiceEnabled) {
+            triggerPersonaGreeting(id);
+        }
     };
 
     const [messages, setMessages] = useState<Message[]>([
@@ -415,7 +432,7 @@ export default function ChatScreen() {
         triggerHaptic('medium');
 
         if (newState) {
-            // Voice just turned ON — generate and play a greeting
+            // Voice just turned ON — play the pre-generated greeting
             const pName = PERSONAS.find((p: Persona) => p.id === persona)?.name || 'VinR Buddy';
             const greetingText = `Hey! I'm ${pName}. Voice mode is now active — I'll speak my replies to you.`;
 
@@ -426,50 +443,12 @@ export default function ChatScreen() {
                 sender: 'ai',
                 timestamp: new Date(),
                 isRead: true,
+                isVoice: true, // Mark as voice immediately
             };
             setMessages(prev => [...prev, greetingMsg]);
 
-            // Request TTS audio from backend and auto-play
-            try {
-                setIsGeneratingVoice(true);
-                const { data } = await api.post('/chat/tts', {
-                    text: greetingText,
-                    persona: persona,
-                });
-
-                if (data.audio_url) {
-                    // Update the greeting message to include audio
-                    setMessages(prev =>
-                        prev.map(m =>
-                            m.id === greetingMsg.id
-                                ? { ...m, audioUri: data.audio_url, isVoice: true }
-                                : m
-                        )
-                    );
-                    // Auto-play the greeting
-                    AudioService.togglePlayback(data.audio_url);
-                } else {
-                    // Handle failure gracefully in UI
-                    setMessages(prev =>
-                        prev.map(m =>
-                            m.id === greetingMsg.id
-                                ? { ...m, text: `${greetingText}\n\n(Voice generation is currently unavailable, but I'll still message you!)` }
-                                : m
-                        )
-                    );
-                }
-            } catch (error) {
-                console.error('Voice greeting TTS error:', error);
-                setMessages(prev =>
-                    prev.map(m =>
-                        m.id === greetingMsg.id
-                            ? { ...m, text: `${greetingText}\n\n(Error connecting to voice service.)` }
-                            : m
-                    )
-                );
-            } finally {
-                setIsGeneratingVoice(false);
-            }
+            // Play the pre-generated greeting from public/wav
+            triggerPersonaGreeting(persona);
         }
     };
 
