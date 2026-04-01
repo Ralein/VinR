@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 # ── Paths ───────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 KOKORO_DIR = os.path.join(BASE_DIR, "resources", "kokoro")
-STATIC_GREETINGS_DIR = os.path.join(BASE_DIR, "static", "greetings")
+PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+STATIC_GREETINGS_DIR = os.path.join(PUBLIC_DIR, "wav", "greetings")
 
 os.makedirs(KOKORO_DIR, exist_ok=True)
 os.makedirs(STATIC_GREETINGS_DIR, exist_ok=True)
