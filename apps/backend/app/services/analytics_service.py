@@ -41,41 +41,72 @@ async def get_summary(db: AsyncSession, user_id: str) -> dict:
     Returns total check-ins, days completed, best streak,
     journal entries, and meditation count.
     """
-    # Total check-ins
-    checkin_count = await db.scalar(
-        select(func.count(Checkin.id)).where(Checkin.user_id == user_id)
-    ) or 0
+    # ⚡ Bolt Optimization: Batch 5 separate queries into a single query using scalar subqueries
+    # This prevents the N+1 query problem, reducing network round-trips from 5 down to 1
+    # and significantly decreasing the database latency.
 
-    # Total days completed (across all streaks)
-    days_completed = await db.scalar(
+    checkin_sq = (
+        select(func.count(Checkin.id))
+        .where(Checkin.user_id == user_id)
+        .scalar_subquery()
+        .label("checkin_count")
+    )
+
+    days_sq = (
         select(func.coalesce(func.sum(Streak.total_days_completed), 0))
         .where(Streak.user_id == user_id)
-    ) or 0
+        .scalar_subquery()
+        .label("days_completed")
+    )
 
-    # Best streak
-    best_streak = await db.scalar(
+    best_sq = (
         select(func.coalesce(func.max(Streak.longest_streak), 0))
         .where(Streak.user_id == user_id)
-    ) or 0
+        .scalar_subquery()
+        .label("best_streak")
+    )
 
-    # Journal entries count
-    journal_count = await db.scalar(
-        select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id)
-    ) or 0
+    journal_sq = (
+        select(func.count(JournalEntry.id))
+        .where(JournalEntry.user_id == user_id)
+        .scalar_subquery()
+        .label("journal_count")
+    )
 
-    # Meditation sessions (from daily completions with mood_rating)
-    meditation_count = await db.scalar(
+    meditation_sq = (
         select(func.count(DailyCompletion.id))
         .join(Streak, DailyCompletion.streak_id == Streak.id)
         .where(Streak.user_id == user_id)
-    ) or 0
+        .scalar_subquery()
+        .label("meditation_count")
+    )
+
+    stmt = select(
+        checkin_sq,
+        days_sq,
+        best_sq,
+        journal_sq,
+        meditation_sq
+    )
+
+    result = await db.execute(stmt)
+    row = result.first()
+
+    if row:
+        return {
+            "total_checkins": row.checkin_count or 0,
+            "total_days_completed": row.days_completed or 0,
+            "best_streak": row.best_streak or 0,
+            "journal_entries": row.journal_count or 0,
+            "meditations": row.meditation_count or 0,
+        }
 
     return {
-        "total_checkins": checkin_count,
-        "total_days_completed": days_completed,
-        "best_streak": best_streak,
-        "journal_entries": journal_count,
-        "meditations": meditation_count,
+        "total_checkins": 0,
+        "total_days_completed": 0,
+        "best_streak": 0,
+        "journal_entries": 0,
+        "meditations": 0,
     }
 
 
