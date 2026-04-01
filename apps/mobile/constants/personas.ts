@@ -1,4 +1,4 @@
-import { Sparkles, Heart, Brain, LucideIcon } from 'lucide-react-native';
+import { Sparkles, Heart, Brain, Stethoscope, Dumbbell, LucideIcon } from 'lucide-react-native';
 
 export interface Persona {
     id: string;
@@ -29,5 +29,19 @@ export const PERSONAS: Persona[] = [
         description: 'A calm, analytical voice offering practical wisdom and perspective.',
         icon: Brain,
         color: '#4ECDC4',
-    }
+    },
+    {
+        id: 'therapist',
+        name: 'Dr. Aris',
+        description: 'A clinical psychologist offering evidence-based therapeutic reflections.',
+        icon: Stethoscope,
+        color: '#A78BFA',
+    },
+    {
+        id: 'coach',
+        name: 'Coach',
+        description: 'A high-energy motivator who pushes you toward action and discipline.',
+        icon: Dumbbell,
+        color: '#F97316',
+    },
 ];

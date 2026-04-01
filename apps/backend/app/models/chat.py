@@ -23,7 +23,7 @@ class ChatMessage(Base):
     )
     content = Column(Text, nullable=False)
     audio_url = Column(Text, nullable=True)  # ElevenLabs TTS Data URI or URL
-    persona = Column(String(50), nullable=True, default="sara")  # "sara" or "alex"
+    persona = Column(String(50), nullable=True, default="hope")  # vinr, hope, sage, therapist, coach
     created_at = Column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False,
     )

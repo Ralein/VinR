@@ -98,7 +98,7 @@ async def get_chat_history(
 
 async def save_message(
     db: AsyncSession, user_id: str, role: str, content: str,
-    audio_url: str | None = None, persona: str | None = "sara",
+    audio_url: str | None = None, persona: str | None = "hope",
 ) -> ChatMessage:
     """Persist a chat message and enforce FIFO limit (20 max)."""
     msg = ChatMessage(
@@ -146,7 +146,7 @@ async def clear_chat_history(db: AsyncSession, user_id: str) -> int:
 # ── Buddy response generation ───────────────────────────────────────
 
 async def generate_buddy_response(
-    db: AsyncSession, user_id: str, message: str, persona: str = "sara",
+    db: AsyncSession, user_id: str, message: str, persona: str = "hope",
 ) -> str:
     """
     Orchestrate: history + RAG + user context → Groq LLM → response.
@@ -162,8 +162,8 @@ async def generate_buddy_response(
         history = await get_chat_history(db, user_id, limit=20)
 
         # 4. Build LLM messages
-        normalized_persona = (persona or "sara").lower()
-        sys_prompt = PERSONA_PROMPTS.get(normalized_persona, SARA_PROMPT)
+        normalized_persona = (persona or "hope").lower()
+        sys_prompt = PERSONA_PROMPTS.get(normalized_persona, HOPE_PROMPT)
         llm_messages = [{"role": "system", "content": sys_prompt}]
 
         # Inject static "Evidence Grounding" rule
