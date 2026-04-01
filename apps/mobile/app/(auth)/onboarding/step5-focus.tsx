@@ -105,9 +105,9 @@ export default function Step5Focus() {
                 <Animated.View style={[styles.header, headerStyle]}>
                     <Pressable
                         onPress={() => router.back()}
-                        style={styles.backButton}
+                        style={[styles.backButton, { backgroundColor: '#FFFFFF05', borderColor: colors.border }]}
                     >
-                        <ArrowLeft size={24} color={colors.textSecondary} strokeWidth={1.5} />
+                        <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={1.5} />
                     </Pressable>
                     <ProgressDots currentStep={5} totalSteps={9} />
                 </Animated.View>
@@ -244,13 +244,17 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     backButton: {
         width: 44,
         height: 44,
+        borderRadius: 14,
+        alignItems: 'center',
         justifyContent: 'center',
-        alignItems: 'flex-start',
-        marginBottom: 8,
+        borderWidth: 1,
     },
     titleSection: {
         marginBottom: 12,

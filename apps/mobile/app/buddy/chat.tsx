@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import {
-    ChevronLeft,
+    ArrowLeft,
     Mic,
     Send,
     MoreVertical,
@@ -765,9 +765,9 @@ export default function ChatScreen() {
                 >
                     <Pressable
                         onPress={() => router.back()}
-                        style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+                        style={[styles.backBtn, { backgroundColor: '#FFFFFF05', borderColor: colors.border }]}
                     >
-                        <ChevronLeft color={colors.textPrimary} size={28} />
+                        <ArrowLeft color={colors.textPrimary} size={24} strokeWidth={1.5} />
                     </Pressable>
 
                     <View style={styles.headerTitleContainer}>
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
 
     // Header
     header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, zIndex: 100 },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    backBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
     headerTitleContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
     headerTextWrapper: { alignItems: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
