@@ -4,6 +4,7 @@ import {
     Text,
     StyleSheet,
     TextInput,
+    Pressable,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -23,7 +24,7 @@ import Animated, {
     withDelay,
     withSpring,
 } from 'react-native-reanimated';
-import { User, Check } from 'lucide-react-native';
+import { User, Check, ArrowLeft } from 'lucide-react-native';
 import GlassCard from '../../../components/ui/GlassCard';
 import { OnboardingBackground } from '../../../components/ui/OnboardingBackground';
 import { LiquidCTA } from '../../../components/ui/LiquidCTA';
@@ -91,6 +92,12 @@ export default function Step2Name() {
                         <Animated.View
                             style={[styles.header, { marginTop: insets.top + 32 }, headerStyle]}
                         >
+                            <Pressable
+                                onPress={() => router.back()}
+                                style={[styles.backButton, { backgroundColor: '#FFFFFF05', borderColor: colors.border }]}
+                            >
+                                <ArrowLeft size={24} color={colors.textPrimary} strokeWidth={1.5} />
+                            </Pressable>
                             <ProgressDots currentStep={2} totalSteps={9} />
                         </Animated.View>
 
@@ -201,6 +208,17 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 32,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
     },
     titleSection: {
         marginBottom: 16,
