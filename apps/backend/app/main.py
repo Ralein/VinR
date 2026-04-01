@@ -1,9 +1,10 @@
-"""VinR API — Emotional Wellness & Comeback Platform."""
-
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.api.v1.routes import auth, checkin, streaks, notifications, journal, media, events, analytics, therapist, rituals, chat
+from app.services.kokoro_service import tts_service
 
 settings = get_settings()
 
@@ -15,18 +16,23 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# ── Static Files ─────────────────────────────────────────────────────
+# Mount the static directory to serve pre-generated greetings and media
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.on_event("startup")
+async def startup_event():
+    """Trigger background tasks on startup."""
+    # Pre-generate persona greetings in background to avoid blocking API startup
+    import asyncio
+    asyncio.create_task(tts_service.pregenerate_greetings())
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8081",
-        "http://localhost:3000",
-        "http://127.0.0.1:8081",
-        "http://127.0.0.1:3000",
-        "exp://127.0.0.1:19000",
-        "exp://localhost:19000",
-    ],
-    allow_origin_regex=r"https?://(?:localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(?::\d+)?",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

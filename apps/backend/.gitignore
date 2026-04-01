@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Kokoro TTS Assets & Generated Media
+resources/kokoro/
+static/greetings/
+*.wav
+
 # C extensions
 *.so
 

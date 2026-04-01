@@ -14,7 +14,7 @@ from app.services.chat_service import (
 )
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from app.services.audio_service import transcribe_audio_whisper
-from app.services.chatterbox_service import text_to_speech, audio_bytes_to_data_uri, PERSONA_VOICES
+from app.services.kokoro_service import text_to_speech, audio_bytes_to_data_uri
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -76,11 +76,8 @@ async def send_message(
     # Optional: generate voice
     audio_url = None
     if is_voice:
-        # Get persona voice ID
-        # Get persona voice (optional for chatterbox default)
-        voice_id = PERSONA_VOICES.get(request.persona)
-
-        audio_bytes = await text_to_speech(buddy_text, voice_id=voice_id)
+        # Generate voice using local Kokoro-ONNX
+        audio_bytes = await text_to_speech(buddy_text, persona=request.persona)
         if audio_bytes:
             audio_url = audio_bytes_to_data_uri(audio_bytes)
 
@@ -147,9 +144,8 @@ async def generate_tts(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate TTS audio for arbitrary text (e.g. intro greetings)."""
-    voice_id = PERSONA_VOICES.get(request.persona)
-
-    audio_bytes = await text_to_speech(request.text, voice_id=voice_id)
+    # Generate using persona name
+    audio_bytes = await text_to_speech(request.text, persona=request.persona)
     if not audio_bytes:
         # Return gracefully — client handles missing audio
         return {"audio_url": None}
