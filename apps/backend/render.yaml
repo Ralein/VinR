@@ -50,7 +50,7 @@ services:
         sync: false
       # SMTP (Email)
       - key: SMTP_HOST
-        value: "smtp.mailtrap.io"
+        value: "smtp.mailtrap.live"
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
@@ -58,7 +58,7 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: EMAILS_FROM_EMAIL
-        value: "noreply@vinrmobile.com"
+        value: "no-reply@vinr.expo.app"
       # Third Party APIs
       - key: YOUTUBE_API_KEY
         sync: false
