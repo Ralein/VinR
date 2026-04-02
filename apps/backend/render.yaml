@@ -4,7 +4,7 @@ services:
     name: vinr-api
     runtime: docker
     plan: free
-    region: singapore # Based on user's screenshot
+    region: singapore
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -22,21 +22,38 @@ services:
           property: connectionString
       - key: APP_NAME
         value: "VinR API"
+      - key: APP_VERSION
+        value: "0.1.0"
       - key: DEBUG
         value: "false"
-      # Manual configuration required for these in Render Dashboard:
-      - key: ANTHROPIC_API_KEY
+      # Required secrets from your .env
+      - key: SECRET_KEY
         sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: CLERK_PUBLISHABLE_KEY
-        sync: false
-      - key: CLERK_JWKS_URL
-        sync: false
-      - key: CLERK_ISSUER
-        sync: false
+      - key: FRONTEND_URL
+        value: "https://vinr--20q97d982l.expo.app" # Using your current Expo web URL
       - key: GROQ_API_KEY
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_IDS
+        sync: false
+      # External Service Keys
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: EVENTBRITE_API_KEY
+        sync: false
+      - key: EVENTBRITE_PUBLIC_TOKEN
+        sync: false
+      - key: EVENTBRITE_CLIENT_SECRET
+        sync: false
+      - key: EXPO_PUSH_URL
+        value: "https://exp.host/--/api/v2/push/send"
 
   # 2. Celery Background Worker
   - type: worker
@@ -60,10 +77,11 @@ services:
           type: redis
           name: vinr-redis
           property: connectionString
-      # Workers need same keys for logic
-      - key: ANTHROPIC_API_KEY
-        sync: false
       - key: GROQ_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
         sync: false
 
 # 3. Managed Redis
@@ -71,7 +89,7 @@ services:
     name: vinr-redis
     plan: free
     region: singapore
-    ipAllowList: [] # Required to be empty for standard cloud access
+    ipAllowList: []
 
 # 4. Managed Postgres
 databases:
