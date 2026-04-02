@@ -59,6 +59,8 @@ Before you begin, ensure you have the following installed:
    ```bash
    uvicorn app.main:app --reload
    uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+   #kill sof -ti :8000 | xargs kill -9   
    ```
    The API will be accessible at `http://localhost:8000`.
 

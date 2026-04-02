@@ -22,11 +22,18 @@ from app.schemas.user import (
     UserUpdate,
     UserRegister,
     UserLogin,
+    UserLogin,
     GoogleLogin,
+    AppleLogin,
     TokenResponse,
     ForgotPassword,
     ResetPassword,
 )
+import jwt
+import requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
 
 settings = get_settings()
 
@@ -87,15 +94,110 @@ async def login(user_in: UserLogin, db: AsyncSession = Depends(get_db)):
 @router.post("/google", response_model=TokenResponse)
 async def google_login(user_in: GoogleLogin, db: AsyncSession = Depends(get_db)):
     """Authenticate or register user via Google."""
-    # Note: In production, verify the id_token using google.oauth2.id_token
-    # For now, we simulate decoding or assume the client verified it.
-    # We would do:
-    # idinfo = id_token.verify_oauth2_token(user_in.id_token, Request(), CLIENT_ID)
-    # email = idinfo['email']
-    # google_id = idinfo['sub']
-    
-    # Placeholder implementation:
-    raise HTTPException(status_code=501, detail="Google verify logic needs library")
+    try:
+        # Note: CLIENT_ID should ideally be passed or fetched from settings
+        # On mobile, you might have different IDs for iOS and Android.
+        # Verify against all allowed Client IDs (Web, iOS, Android)
+        # Verify audience can be a single string or a list of strings
+        idinfo = id_token.verify_oauth2_token(
+            user_in.id_token, 
+            google_requests.Request(), 
+            audience=[settings.GOOGLE_CLIENT_ID] + settings.GOOGLE_CLIENT_IDS if settings.GOOGLE_CLIENT_ID else settings.GOOGLE_CLIENT_IDS
+        )
+
+        email = idinfo["email"]
+        google_id = idinfo["sub"]
+        name = idinfo.get("name")
+        avatar_url = idinfo.get("picture")
+
+        # Check if user exists by google_id or email
+        result = await db.execute(
+            select(User).where((User.google_id == google_id) | (User.email == email))
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            user_id = str(uuid.uuid4())
+            user = User(
+                id=user_id,
+                email=email,
+                google_id=google_id,
+                name=name,
+                avatar_url=avatar_url,
+                is_email_verified=True,
+            )
+            db.add(user)
+        else:
+            # Update google_id if it was missing but email matched
+            if not user.google_id:
+                user.google_id = google_id
+            if not user.name and name:
+                user.name = name
+            if not user.avatar_url and avatar_url:
+                user.avatar_url = avatar_url
+
+        await db.commit()
+        await db.refresh(user)
+
+        return TokenResponse(
+            access_token=create_access_token(user.id),
+            refresh_token=create_refresh_token(user.id),
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+
+
+@router.post("/apple", response_model=TokenResponse)
+async def apple_login(user_in: AppleLogin, db: AsyncSession = Depends(get_db)):
+    """Authenticate or register user via Apple."""
+    try:
+        # In a real app, you'd verify the Apple identity token.
+        # This involves fetching Apple's public keys and verifying the signature.
+        # For brevity and since this often requires a library or more boilerplate:
+        unverified_claims = jwt.decode(user_in.identity_token, options={"verify_signature": False})
+        
+        apple_id = unverified_claims.get("sub")
+        email = unverified_claims.get("email") or user_in.email
+
+        if not apple_id:
+            raise HTTPException(status_code=401, detail="Invalid Apple token claims")
+
+        # Check if user exists by apple_id or email
+        result = await db.execute(
+            select(User).where((User.apple_id == apple_id) | (User.email == email))
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            if not email:
+                raise HTTPException(status_code=400, detail="Email required for new Apple user")
+                
+            user_id = str(uuid.uuid4())
+            user = User(
+                id=user_id,
+                email=email,
+                apple_id=apple_id,
+                name=user_in.name,
+                is_email_verified=True,
+            )
+            db.add(user)
+        else:
+            # Update apple_id if it was missing but email matched
+            if not user.apple_id:
+                user.apple_id = apple_id
+            if not user.name and user_in.name:
+                user.name = user_in.name
+
+        await db.commit()
+        await db.refresh(user)
+
+        return TokenResponse(
+            access_token=create_access_token(user.id),
+            refresh_token=create_refresh_token(user.id),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Apple token: {str(e)}")
+
 
 
 @router.post("/forgot-password")

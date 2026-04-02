@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     # OAuth
     GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_IDS: list[str] = []
 
     # SMTP for emails
     SMTP_HOST: str = "smtp.mailtrap.io"
@@ -40,8 +41,6 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.1-8b-instant"
 
-    # Local TTS (chatterbox-tts)
-    CHATTERBOX_DEVICE: str = "cpu"
 
     # Expo Push Notifications
 

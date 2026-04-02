@@ -26,6 +26,12 @@ class GoogleLogin(BaseModel):
     id_token: str
 
 
+class AppleLogin(BaseModel):
+    identity_token: str
+    email: EmailStr | None = None
+    name: str | None = None
+
+
 class ForgotPassword(BaseModel):
     email: EmailStr
 
