@@ -50,11 +50,11 @@ services:
         sync: false
       # SMTP (Email)
       - key: SMTP_HOST
-        value: "smtp.mailtrap.live"
+        value: "live.smtp.mailtrap.io"
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        sync: false
+        value: "apismtp@mailtrap.io"
       - key: SMTP_PASSWORD
         sync: false
       - key: EMAILS_FROM_EMAIL
