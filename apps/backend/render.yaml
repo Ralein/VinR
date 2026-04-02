@@ -26,24 +26,40 @@ services:
         value: "0.1.0"
       - key: DEBUG
         value: "false"
-      # Required secrets from your .env
+      # Required Secrets & Logic
       - key: SECRET_KEY
         sync: false
       - key: FRONTEND_URL
-        value: "https://vinr--20q97d982l.expo.app" # Using your current Expo web URL
+        value: "https://vinr--20q97d982l.expo.app"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "15"
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "30"
       - key: GROQ_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_IDS
         sync: false
-      # External Service Keys
+      # Supabase
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      # SMTP (Email)
+      - key: SMTP_HOST
+        value: "smtp.mailtrap.io"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAILS_FROM_EMAIL
+        value: "noreply@vinrmobile.com"
+      # Third Party APIs
       - key: YOUTUBE_API_KEY
         sync: false
       - key: EVENTBRITE_API_KEY
