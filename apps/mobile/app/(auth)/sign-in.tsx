@@ -22,6 +22,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
 import { Eye, EyeOff } from 'lucide-react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { config } from '../../constants/config';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get('window');
 
@@ -200,6 +206,34 @@ export default function SignInScreen() {
     const [password, setPassword] = useState('');
     const [loading,  setLoading]  = useState(false);
 
+    // Google Auth
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        iosClientId: config.GOOGLE_IOS_CLIENT_ID,
+        androidClientId: config.GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: config.GOOGLE_WEB_CLIENT_ID,
+    });
+
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { id_token } = response.params;
+            handleGoogleAuth(id_token);
+        }
+    }, [response]);
+
+    const handleGoogleAuth = async (idToken: string) => {
+        setLoading(true);
+        try {
+            await AuthService.signInWithGoogle(idToken);
+            haptics.success();
+            router.replace('/(tabs)');
+        } catch (err: any) {
+            haptics.error();
+            Alert.alert('Google Sign In Failed', err.response?.data?.detail || 'Please try again');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Entry animations
     const backOp   = useSharedValue(0);
     const logoOp   = useSharedValue(0);
@@ -252,7 +286,37 @@ export default function SignInScreen() {
 
     const handleOAuth = async (strategy: 'oauth_google' | 'oauth_apple') => {
         haptics.medium();
-        Alert.alert('Coming soon', `${strategy === 'oauth_google' ? 'Google' : 'Apple'} sign-in coming next`);
+        if (strategy === 'oauth_google') {
+            promptAsync();
+        } else if (strategy === 'oauth_apple') {
+            try {
+                const credential = await AppleAuthentication.signInAsync({
+                    requestedScopes: [
+                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                    ],
+                });
+                
+                if (credential.identityToken) {
+                    setLoading(true);
+                    await AuthService.signInWithApple(credential.identityToken, {
+                        email: credential.email ?? undefined,
+                        name: credential.fullName ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim() : undefined
+                    });
+                    haptics.success();
+                    router.replace('/(tabs)');
+                }
+            } catch (e: any) {
+                if (e.code === 'ERR_CANCELED') {
+                    // user cancelled the login flow
+                } else {
+                    haptics.error();
+                    Alert.alert('Apple Sign In Failed', e.message || 'Please try again');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
     };
 
     const canSubmit = !!email && !!password && !loading;

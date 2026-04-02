@@ -22,6 +22,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { haptics } from '../../services/haptics';
 import { Lock, Eye, EyeOff } from 'lucide-react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { config } from '../../constants/config';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get('window');
 
@@ -195,6 +201,69 @@ export default function SignUpScreen() {
     const [password, setPassword] = useState('');
     const [loading,  setLoading]  = useState(false);
 
+    // Google Auth
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        iosClientId: config.GOOGLE_IOS_CLIENT_ID,
+        androidClientId: config.GOOGLE_ANDROID_CLIENT_ID,
+        webClientId: config.GOOGLE_WEB_CLIENT_ID,
+    });
+
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { id_token } = response.params;
+            handleGoogleAuth(id_token);
+        }
+    }, [response]);
+
+    const handleGoogleAuth = async (idToken: string) => {
+        setLoading(true);
+        try {
+            await AuthService.signInWithGoogle(idToken);
+            haptics.success();
+            router.replace('/(tabs)');
+        } catch (err: any) {
+            haptics.error();
+            Alert.alert('Google Sign Up Failed', err.response?.data?.detail || 'Please try again');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOAuth = async (strategy: 'oauth_google' | 'oauth_apple') => {
+        haptics.medium();
+        if (strategy === 'oauth_google') {
+            promptAsync();
+        } else if (strategy === 'oauth_apple') {
+            try {
+                const credential = await AppleAuthentication.signInAsync({
+                    requestedScopes: [
+                        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                    ],
+                });
+                
+                if (credential.identityToken) {
+                    setLoading(true);
+                    await AuthService.signInWithApple(credential.identityToken, {
+                        email: credential.email ?? undefined,
+                        name: credential.fullName ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim() : undefined
+                    });
+                    haptics.success();
+                    router.replace('/(tabs)');
+                }
+            } catch (e: any) {
+                if (e.code === 'ERR_CANCELED') {
+                    // user cancelled the login flow
+                } else {
+                    haptics.error();
+                    Alert.alert('Apple Sign Up Failed', e.message || 'Please try again');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
     // Entry animations
     const backOp  = useSharedValue(0);
     const logoOp  = useSharedValue(0);
@@ -355,6 +424,25 @@ export default function SignUpScreen() {
                             </Pressable>
                         </Animated.View>
 
+                        {/* Divider */}
+                        <View style={s.divider}>
+                            <View style={s.dividerLine} />
+                            <Text style={s.dividerText}>or continue with</Text>
+                            <View style={s.dividerLine} />
+                        </View>
+
+                        {/* OAuth */}
+                        <View style={s.oauthRow}>
+                            <Pressable style={s.oauthBtn} onPress={() => handleOAuth('oauth_google')}>
+                                <Text style={s.oauthIcon}>G</Text>
+                                <Text style={s.oauthText}>Google</Text>
+                            </Pressable>
+                            <Pressable style={s.oauthBtn} onPress={() => handleOAuth('oauth_apple')}>
+                                <Text style={s.oauthIcon}></Text>
+                                <Text style={s.oauthText}>Apple</Text>
+                            </Pressable>
+                        </View>
+
                         {/* Privacy */}
                         <View style={s.privacyRow}>
                             <Lock size={11} color={TEXT_LO} strokeWidth={1.8} />
@@ -477,6 +565,38 @@ const s = StyleSheet.create({
     privacyNote: {
         fontFamily: 'DMSans_300Light',
         fontSize: 12, color: TEXT_LO, letterSpacing: 0.2,
+    },
+
+    divider: {
+        flexDirection: 'row', alignItems: 'center',
+        marginVertical: 18,
+    },
+    dividerLine: {
+        flex: 1, height: 0.5,
+        backgroundColor: 'rgba(236,234,246,0.08)',
+    },
+    dividerText: {
+        fontFamily: 'DMSans_300Light',
+        fontSize: 11, color: TEXT_LO,
+        marginHorizontal: 12, letterSpacing: 0.3,
+        textTransform: 'uppercase',
+    },
+
+    oauthRow: { flexDirection: 'row', gap: 10 },
+    oauthBtn: {
+        flex: 1, flexDirection: 'row',
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(236,234,246,0.04)',
+        borderRadius: 12, paddingVertical: 13,
+        borderWidth: 1, borderColor: 'rgba(236,234,246,0.07)',
+        gap: 8,
+    },
+    oauthIcon: {
+        fontSize: 17, fontWeight: '700', color: TEXT_HI,
+    },
+    oauthText: {
+        fontFamily: 'DMSans_400Regular',
+        fontSize: 15, color: TEXT_MID,
     },
 
     switchRow: { alignItems: 'center', marginTop: 24 },

@@ -25,6 +25,13 @@ export const config = {
         ? getDevApiUrl()
         : 'https://api.vinr.app/api/v1/'),
 
+    // Social Auth
+    GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '198332756226-ftbpmhopop09o7cl9gmqre8vao24d9ub.apps.googleusercontent.com',
+    GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '198332756226-cmpc336dj0rf7hf3u3qfsj1kt24m01m0.apps.googleusercontent.com',
+    GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '198332756226-cmpc336dj0rf7hf3u3qfsj1kt24m01m0.apps.googleusercontent.com',
+    APPLE_CLIENT_ID: process.env.EXPO_PUBLIC_APPLE_CLIENT_ID || 'com.vinr.app',
+
+
     // Limits
     CHECKIN_TEXT_MAX_LENGTH: 500,
     MAX_FREE_CHECKINS_PER_MONTH: 3,

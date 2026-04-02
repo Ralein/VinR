@@ -128,5 +128,48 @@ export const AuthService = {
         } finally {
             useAuthStore.getState().setLoading(false);
         }
+    },
+
+    async signInWithGoogle(idToken: string) {
+        useAuthStore.getState().setLoading(true);
+        try {
+            const { data } = await api.post('/auth/google', { id_token: idToken });
+            
+            if (data.access_token) {
+                await setItemAsync('authToken', data.access_token);
+                await setItemAsync('refreshToken', data.refresh_token);
+                useAuthStore.getState().setToken(data.access_token);
+                return await this.getMe();
+            }
+        } catch (error: any) {
+            console.error('Google sign in failed:', error?.response?.data?.detail || error.message);
+            throw error;
+        } finally {
+            useAuthStore.getState().setLoading(false);
+        }
+    },
+
+    async signInWithApple(identityToken: string, user?: { email?: string, name?: string }) {
+        useAuthStore.getState().setLoading(true);
+        try {
+            const { data } = await api.post('/auth/apple', { 
+                identity_token: identityToken,
+                email: user?.email,
+                name: user?.name
+            });
+            
+            if (data.access_token) {
+                await setItemAsync('authToken', data.access_token);
+                await setItemAsync('refreshToken', data.refresh_token);
+                useAuthStore.getState().setToken(data.access_token);
+                return await this.getMe();
+            }
+        } catch (error: any) {
+            console.error('Apple sign in failed:', error?.response?.data?.detail || error.message);
+            throw error;
+        } finally {
+            useAuthStore.getState().setLoading(false);
+        }
     }
 };
+
