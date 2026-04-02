@@ -25,6 +25,7 @@ import { Lock, Eye, EyeOff } from 'lucide-react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { config } from '../../constants/config';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -203,9 +204,10 @@ export default function SignUpScreen() {
 
     // Google Auth
     const [request, response, promptAsync] = Google.useAuthRequest({
-        iosClientId: config.GOOGLE_IOS_CLIENT_ID,
-        androidClientId: config.GOOGLE_ANDROID_CLIENT_ID,
+        iosClientId: config.GOOGLE_WEB_CLIENT_ID,
+        androidClientId: config.GOOGLE_WEB_CLIENT_ID,
         webClientId: config.GOOGLE_WEB_CLIENT_ID,
+        redirectUri: makeRedirectUri(),
     });
 
     useEffect(() => {

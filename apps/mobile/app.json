@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "vinr",
+    "extra": {
+      "eas": {
+        "projectId": "da85af28-ae4b-4e4f-ab7c-52bbf94f1370"
+      }
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
