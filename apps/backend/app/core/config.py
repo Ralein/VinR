@@ -11,6 +11,15 @@ class Settings(BaseSettings):
     APP_NAME: str = "VinR API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        """SQLAlchemy asyncpg requires postgresql+asyncpg:// prefix."""
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif self.DATABASE_URL.startswith("postgresql://"):
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return self.DATABASE_URL
+
     API_V1_PREFIX: str = "/api/v1"
 
     # Database (Neon PostgreSQL)
@@ -19,6 +28,7 @@ class Settings(BaseSettings):
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
 
     # JWT Auth
     SECRET_KEY: str = "vinr_super_secret_key_placeholder_change_in_production"

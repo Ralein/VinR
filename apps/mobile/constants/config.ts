@@ -23,7 +23,7 @@ export const config = {
     // API
     API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || (__DEV__
         ? getDevApiUrl()
-        : 'https://api.vinr.app/api/v1/'),
+        : 'https://vinr-api.onrender.com/api/v1/'), // Replace with your actual Render URL
 
     // Social Auth
     GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '198332756226-ftbpmhopop09o7cl9gmqre8vao24d9ub.apps.googleusercontent.com',
