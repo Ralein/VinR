@@ -13,14 +13,15 @@ export const useGlint = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchGlints = useCallback(async (primaryReason: string = 'Stress Relief') => {
+  const fetchGlints = useCallback(async (focusAreas: string[] = ['Stress Relief']) => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming backend endpoint is updated to /media/glint or we use an alias
-      const response = await api.get('/media/glint', {
-        params: { primary_reason: primaryReason },
-      });
+      const params = new URLSearchParams();
+      focusAreas.forEach(area => params.append('focus_areas', area));
+      
+      const response = await api.get('/media/glint', { params });
+      
       if (response.data && response.data.glints) {
         setGlints(response.data.glints);
       }

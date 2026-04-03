@@ -14,6 +14,9 @@ from app.schemas.media import (
     MediaSessionCreate,
     MediaSessionResponse,
 )
+from app.models.journal import JournalEntry
+from app.models.checkin import Checkin
+from sqlalchemy import select, desc
 from app.services.media_service import get_audio_library, search_youtube, search_youtube_reels
 
 router = APIRouter(prefix="/media", tags=["media"])
@@ -47,16 +50,44 @@ async def youtube_search(
 
 @router.get("/glint")
 async def get_glint(
-    primary_reason: str = Query("Stress Relief", description="User's primary reason for using VinR"),
+    focus_areas: list[str] = Query(None, description="User's selected focus areas"),
     current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Get curated YouTube shorts/reels based on user's primary wellness reason."""
-    # We could also use user.primaryReason if we load user from DB. 
-    # Passing it via query param is simpler for now, similar to how /youtube takes genre.
-    results = await search_youtube_reels(primary_reason, max_results=10)
+    """Get curated YouTube shorts/reels based on user's focus areas and recent emotional context."""
+    user_id = current_user["sub"]
     
-    # Format the results to match what we need in the feed (we can reuse YouTubeResult or return a raw structure)
-    # We will just return a dict with a list of reels
+    # 1. Fetch recent journals for context
+    journal_result = await db.execute(
+        select(JournalEntry)
+        .where(JournalEntry.user_id == user_id)
+        .order_by(desc(JournalEntry.created_at))
+        .limit(2)
+    )
+    journals = journal_result.scalars().all()
+    journal_context = " ".join([j.reflection_text for j in journals if j.reflection_text])
+    
+    # 2. Fetch recent checkins for mood context
+    checkin_result = await db.execute(
+        select(Checkin)
+        .where(Checkin.user_id == user_id)
+        .order_by(desc(Checkin.created_at))
+        .limit(3)
+    )
+    checkins = checkin_result.scalars().all()
+    mood_context = ", ".join([c.mood_tag for c in checkins if c.mood_tag])
+    
+    # 3. Use focus areas (fall back to Stress Relief if empty)
+    areas = focus_areas if focus_areas else ["Stress Relief"]
+    
+    # 4. Search for reels using the combined context
+    results = await search_youtube_reels(
+        focus_areas=areas,
+        mood_context=mood_context,
+        journal_context=journal_context,
+        max_results=12
+    )
+    
     return {"glints": results}
 
 
