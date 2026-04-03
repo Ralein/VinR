@@ -71,11 +71,13 @@ def _set_cache(key: str, data: list[dict]):
 
 # ── Google Places API ────────────────────────────────────────────────────
 
-def _build_google_maps_url(lat: float, lng: float, place_id: str | None = None) -> str:
-    """Build a Google Maps deep link URL."""
+def _build_google_maps_url(lat: float, lng: float, name: str | None = None, place_id: str | None = None) -> str:
+    """Build a Google Maps deep link URL using the official search API."""
+    query = quote_plus(name) if name else f"{lat},{lng}"
+    url = f"https://www.google.com/maps/search/?api=1&query={query}"
     if place_id:
-        return f"https://www.google.com/maps/place/?q=place_id:{place_id}"
-    return f"https://www.google.com/maps/search/?api=1&query={lat},{lng}"
+        url += f"&query_place_id={place_id}"
+    return url
 
 
 def _build_photo_url(photo_reference: str, max_width: int = 400) -> str:
@@ -153,7 +155,7 @@ async def _search_google_places(
                     "image_url": photo_url,
                     "latitude": p_lat,
                     "longitude": p_lng,
-                    "google_maps_url": _build_google_maps_url(p_lat, p_lng, place_id),
+                    "google_maps_url": _build_google_maps_url(p_lat, p_lng, place.get("name"), place_id),
                     "source": "google_places",
                     "photo_url": photo_url,
                     "rating": place.get("rating"),
@@ -238,7 +240,7 @@ async def _search_eventbrite(
                 # Google Maps URL
                 maps_url = None
                 if lat_val and lng_val:
-                    maps_url = _build_google_maps_url(lat_val, lng_val)
+                    maps_url = _build_google_maps_url(lat_val, lng_val, event.get("name", {}).get("text", ""))
 
                 # Image
                 logo = event.get("logo", {}) or {}
