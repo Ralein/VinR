@@ -1,226 +1,382 @@
 /**
- * Emergency Screen — Crisis intervention
+ * Emergency Screen — Crisis intervention hub
  *
- * Red pulsing border, crisis hotline numbers,
- * Call 988, Text 741741, "I'm safe" option.
+ * Features:
+ * - Lucide icons (no emoji)
+ * - Call/Text CTAs with proper Linking
+ * - Grounding & Breathing quick-actions
+ * - "What to expect when you call" expandable
+ * - Theme-aware throughout
+ * - Pulsing urgency border
  */
 
-import { View, Text, Pressable, StyleSheet, Linking, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { useState } from 'react';
+import {
+    View, Text, ScrollView, Pressable, StyleSheet, Linking,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import Animated, {
-    FadeIn,
-    FadeInDown,
-    useSharedValue,
-    useAnimatedStyle,
-    withRepeat,
-    withSequence,
-    withTiming,
+    FadeIn, FadeInDown, useSharedValue, useAnimatedStyle,
+    withRepeat, withTiming, Easing, withSequence,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
-import { fonts, spacing } from '../../constants/theme';
+import {
+    Phone, MessageSquare, ExternalLink, Shield, Heart,
+    Wind, Layers, ChevronDown, ChevronUp, Info,
+    Siren, HeartHandshake, Globe, CheckCircle2,
+} from 'lucide-react-native';
+import { fonts, spacing, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
+import AmbientBackground from '../../components/ui/AmbientBackground';
 import { haptics } from '../../services/haptics';
 
-const CRISIS_NUMBERS = [
-    { label: '988 Suicide & Crisis Lifeline', number: '988', emoji: '📞', type: 'call' },
-    { label: 'Crisis Text Line', number: '741741', emoji: '💬', type: 'text' },
-    { label: 'Emergency', number: '911', emoji: '🚨', type: 'call' },
-    { label: 'SAMHSA Helpline', number: '1-800-662-4357', emoji: '🆘', type: 'call' },
+// ── Types ──
+
+interface CrisisResource {
+    name: string;
+    phone: string;
+    text?: string;
+    description: string;
+    Icon: any;
+    iconColor: string;
+}
+
+const CRISIS_RESOURCES: CrisisResource[] = [
+    {
+        name: '988 Suicide & Crisis Lifeline',
+        phone: '988',
+        text: '741741',
+        description: 'Free, confidential support 24/7 for people in distress',
+        Icon: Siren,
+        iconColor: '#E05C5C',
+    },
+    {
+        name: 'Crisis Text Line',
+        phone: '',
+        text: '741741',
+        description: 'Text HOME to 741741 for free, 24/7 crisis support',
+        Icon: MessageSquare,
+        iconColor: '#5B8CF5',
+    },
+    {
+        name: 'SAMHSA Helpline',
+        phone: '1-800-662-4357',
+        description: 'Treatment referral service for mental health & substance use',
+        Icon: HeartHandshake,
+        iconColor: '#4ECBA0',
+    },
+    {
+        name: 'International Association for Suicide Prevention',
+        phone: '',
+        description: 'Find crisis centers in your country',
+        Icon: Globe,
+        iconColor: '#8B7EC8',
+    },
 ];
 
-export default function EmergencyScreen() {
-    const { colors } = useTheme();
-    const borderOpacity = useSharedValue(0.3);
+const WHAT_TO_EXPECT = [
+    'A trained counselor will answer, not a recording',
+    'They\'ll ask how you\'re feeling — just be honest',
+    'You can talk, you don\'t have to have everything figured out',
+    'Everything is confidential',
+    'They can help you make a safety plan',
+    'You can hang up at any time — you\'re in control',
+];
 
-    useEffect(() => {
-        haptics.error();
-        // Pulsing red border
-        borderOpacity.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 1000 }),
-                withTiming(0.3, { duration: 1000 })
-            ),
-            -1,
-            true
-        );
-    }, []);
+// ── Crisis Card ──
 
-    const borderAnimatedStyle = useAnimatedStyle(() => ({
-        borderColor: `rgba(232, 93, 93, ${borderOpacity.value})`,
-    }));
-
-    const handleCall = (number: string) => {
-        haptics.heavy();
-        const cleaned = number.replace(/[^0-9]/g, '');
-        Linking.openURL(`tel:${cleaned}`).catch(() =>
-            Alert.alert('Unable to open dialer', `Please call ${number} directly.`)
-        );
-    };
-
-    const handleText = () => {
-        haptics.heavy();
-        Linking.openURL('sms:741741&body=HOME').catch(() =>
-            Alert.alert('Unable to open SMS', 'Please text HOME to 741741.')
-        );
-    };
-
-    const handleSafe = () => {
-        haptics.medium();
-        router.replace('/(tabs)/results');
-    };
+function CrisisCard({ resource, index }: { resource: CrisisResource; index: number }) {
+    const { colors, isDark } = useTheme();
+    const CIcon = resource.Icon;
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.void }]}>
-            {/* Header */}
-            <Animated.View entering={FadeIn.duration(400)}>
-                <Text style={styles.headerEmoji}>🫂</Text>
-                <Text style={[styles.title, { color: colors.textPrimary }]}>You're not alone</Text>
-                <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Help is available right now. Please reach out.
-                </Text>
-            </Animated.View>
+        <Animated.View entering={FadeInDown.delay(200 + index * 80).duration(400)}>
+            <View style={[cardStyles.card, {
+                backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                borderColor: isDark ? colors.border : '#E8E1D0',
+            }]}>
+                <View style={cardStyles.header}>
+                    <View style={[cardStyles.iconWrap, {
+                        backgroundColor: `${resource.iconColor}12`,
+                        borderColor: `${resource.iconColor}30`,
+                    }]}>
+                        <CIcon size={20} color={resource.iconColor} strokeWidth={1.5} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[cardStyles.name, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                            {resource.name}
+                        </Text>
+                        <Text style={[cardStyles.desc, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                            {resource.description}
+                        </Text>
+                    </View>
+                </View>
 
-            {/* Pulsing red card */}
-            <Animated.View style={[styles.crisisCard, { backgroundColor: colors.surface }, borderAnimatedStyle]}>
-                {CRISIS_NUMBERS.map((item, index) => (
-                    <Animated.View
-                        key={item.number}
-                        entering={FadeInDown.delay(200 + index * 100).duration(400)}
-                    >
+                <View style={cardStyles.actions}>
+                    {resource.phone ? (
                         <Pressable
-                            style={styles.crisisRow}
-                            onPress={() =>
-                                item.type === 'text' ? handleText() : handleCall(item.number)
-                            }
+                            style={[cardStyles.actionBtn, {
+                                backgroundColor: `${colors.emerald}12`,
+                                borderColor: `${colors.emerald}30`,
+                            }]}
+                            onPress={() => { haptics.medium(); Linking.openURL(`tel:${resource.phone}`); }}
                         >
-                            <Text style={styles.crisisEmoji}>{item.emoji}</Text>
-                            <View style={styles.crisisInfo}>
-                                <Text style={[styles.crisisLabel, { color: colors.textMuted }]}>{item.label}</Text>
-                                <Text style={[styles.crisisNumber, { color: colors.textPrimary }]}>{item.number}</Text>
-                            </View>
-                            <Text style={[styles.crisisAction, { color: colors.crimson }]}>
-                                {item.type === 'text' ? 'Text →' : 'Call →'}
+                            <Phone size={15} color={colors.emerald} strokeWidth={2} />
+                            <Text style={[cardStyles.actionText, { color: colors.emerald, fontFamily: fonts.bodySemiBold }]}>
+                                Call {resource.phone}
                             </Text>
                         </Pressable>
-                        {index < CRISIS_NUMBERS.length - 1 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-                    </Animated.View>
-                ))}
-            </Animated.View>
-
-            {/* Primary CTA */}
-            <Animated.View entering={FadeInDown.delay(700).duration(400)} style={styles.ctaGroup}>
-                <Pressable style={[styles.callButton, { backgroundColor: colors.crimson, shadowColor: colors.crimson }]} onPress={() => handleCall('988')}>
-                    <Text style={styles.callButtonText}>Call 988 Now</Text>
-                </Pressable>
-
-                <Pressable style={[styles.textButton, { backgroundColor: colors.elevated, borderColor: colors.border }]} onPress={handleText}>
-                    <Text style={[styles.textButtonText, { color: colors.textPrimary }]}>Text HOME to 741741</Text>
-                </Pressable>
-            </Animated.View>
-
-            {/* I'm safe */}
-            <Animated.View entering={FadeIn.delay(1000).duration(400)}>
-                <Pressable style={styles.safeButton} onPress={handleSafe}>
-                    <Text style={[styles.safeText, { color: colors.textMuted }]}>I'm safe — show me support</Text>
-                </Pressable>
-            </Animated.View>
-        </View>
+                    ) : null}
+                    {resource.text ? (
+                        <Pressable
+                            style={[cardStyles.actionBtn, {
+                                backgroundColor: `${colors.sapphire}12`,
+                                borderColor: `${colors.sapphire}30`,
+                            }]}
+                            onPress={() => { haptics.medium(); Linking.openURL(`sms:${resource.text}`); }}
+                        >
+                            <MessageSquare size={15} color={colors.sapphire} strokeWidth={2} />
+                            <Text style={[cardStyles.actionText, { color: colors.sapphire, fontFamily: fonts.bodySemiBold }]}>
+                                Text {resource.text}
+                            </Text>
+                        </Pressable>
+                    ) : null}
+                    {!resource.phone && !resource.text && (
+                        <Pressable
+                            style={[cardStyles.actionBtn, {
+                                backgroundColor: `${resource.iconColor}12`,
+                                borderColor: `${resource.iconColor}30`,
+                            }]}
+                            onPress={() => { haptics.light(); Linking.openURL('https://www.iasp.info/resources/Crisis_Centres/'); }}
+                        >
+                            <ExternalLink size={14} color={resource.iconColor} strokeWidth={2} />
+                            <Text style={[cardStyles.actionText, { color: resource.iconColor, fontFamily: fonts.bodySemiBold }]}>
+                                Find a Center
+                            </Text>
+                        </Pressable>
+                    )}
+                </View>
+            </View>
+        </Animated.View>
     );
 }
 
+// ── Main Screen ──
+
+export default function EmergencyScreen() {
+    const router = useRouter();
+    const { colors, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
+    const [showExpected, setShowExpected] = useState(false);
+
+    // Pulsing urgency ring
+    const pulseScale = useSharedValue(1);
+    pulseScale.value = withRepeat(
+        withSequence(
+            withTiming(1.06, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        ), -1, true,
+    );
+    const pulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseScale.value }],
+    }));
+
+    return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]} edges={['top']}>
+            <AmbientBackground hideBlobs={true} />
+            <ScrollView
+                contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Hero */}
+                <Animated.View entering={FadeIn.duration(500)} style={styles.hero}>
+                    <Animated.View style={pulseStyle}>
+                        <View style={[styles.heroCircle, {
+                            backgroundColor: `${colors.crimson}12`,
+                            borderColor: `${colors.crimson}30`,
+                        }]}>
+                            <Shield size={32} color={colors.crimson} strokeWidth={1.2} />
+                        </View>
+                    </Animated.View>
+                    <Text style={[styles.heroTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                        You're Not Alone
+                    </Text>
+                    <Text style={[styles.heroSubtitle, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                        Help is available right now. Reach out — it's free and confidential.
+                    </Text>
+                </Animated.View>
+
+                {/* Crisis Resources */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Phone size={14} color={colors.crimson} strokeWidth={2} />
+                        <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                            Crisis Resources
+                        </Text>
+                    </View>
+                    {CRISIS_RESOURCES.map((r, i) => (
+                        <CrisisCard key={r.name} resource={r} index={i} />
+                    ))}
+                </View>
+
+                {/* What to Expect */}
+                <Animated.View entering={FadeInDown.delay(600).duration(400)} style={styles.section}>
+                    <Pressable
+                        style={[styles.expectHeader, {
+                            backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                            borderColor: isDark ? colors.border : '#E8E1D0',
+                        }]}
+                        onPress={() => { haptics.light(); setShowExpected(!showExpected); }}
+                    >
+                        <Info size={16} color={colors.sapphire} strokeWidth={1.8} />
+                        <Text style={[styles.expectTitle, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                            What to expect when you call
+                        </Text>
+                        {showExpected
+                            ? <ChevronUp size={18} color={colors.textGhost} strokeWidth={2} />
+                            : <ChevronDown size={18} color={colors.textGhost} strokeWidth={2} />}
+                    </Pressable>
+                    {showExpected && (
+                        <Animated.View entering={FadeInDown.duration(300)} style={[styles.expectBody, {
+                            backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                            borderColor: isDark ? colors.border : '#E8E1D0',
+                        }]}>
+                            {WHAT_TO_EXPECT.map((tip, i) => (
+                                <View key={i} style={styles.expectRow}>
+                                    <CheckCircle2 size={14} color={colors.sapphire} strokeWidth={2} />
+                                    <Text style={[styles.expectText, { color: colors.textMuted, fontFamily: fonts.body }]}>{tip}</Text>
+                                </View>
+                            ))}
+                        </Animated.View>
+                    )}
+                </Animated.View>
+
+                {/* Quick Actions */}
+                <Animated.View entering={FadeInDown.delay(700).duration(400)} style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Heart size={14} color={colors.emerald} strokeWidth={2} />
+                        <Text style={[styles.sectionTitle, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                            Need something right now?
+                        </Text>
+                    </View>
+
+                    <View style={styles.quickRow}>
+                        <Pressable
+                            style={[styles.quickCard, {
+                                backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                                borderColor: isDark ? `${colors.sapphire}25` : `${colors.sapphire}18`,
+                            }]}
+                            onPress={() => { haptics.light(); router.push('/breathing'); }}
+                        >
+                            <View style={[styles.quickIcon, {
+                                backgroundColor: `${colors.sapphire}12`,
+                                borderColor: `${colors.sapphire}30`,
+                            }]}>
+                                <Wind size={22} color={colors.sapphire} strokeWidth={1.5} />
+                            </View>
+                            <Text style={[styles.quickLabel, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                                Slow Breathing
+                            </Text>
+                            <Text style={[styles.quickDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                Calm your body in 60 seconds
+                            </Text>
+                        </Pressable>
+
+                        <Pressable
+                            style={[styles.quickCard, {
+                                backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                                borderColor: isDark ? `${colors.emerald}25` : `${colors.emerald}18`,
+                            }]}
+                            onPress={() => { haptics.light(); router.push('/grounding'); }}
+                        >
+                            <View style={[styles.quickIcon, {
+                                backgroundColor: `${colors.emerald}12`,
+                                borderColor: `${colors.emerald}30`,
+                            }]}>
+                                <Layers size={22} color={colors.emerald} strokeWidth={1.5} />
+                            </View>
+                            <Text style={[styles.quickLabel, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                                5-4-3-2-1 Grounding
+                            </Text>
+                            <Text style={[styles.quickDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                Reconnect with the present
+                            </Text>
+                        </Pressable>
+                    </View>
+                </Animated.View>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+// ── Styles ──
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 80,
+    container: { flex: 1 },
+    scroll: { paddingBottom: 80 },
+    // Hero
+    hero: {
+        alignItems: 'center', paddingHorizontal: spacing.xl,
+        paddingTop: spacing.xl, paddingBottom: spacing.xl, gap: spacing.sm,
     },
-    headerEmoji: {
-        fontSize: 48,
-        textAlign: 'center',
-        marginBottom: 12,
+    heroCircle: {
+        width: 76, height: 76, borderRadius: 38,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 2, marginBottom: spacing.sm,
     },
-    title: {
-        fontFamily: 'PlayfairDisplay_700Bold',
-        fontSize: 30,
-        textAlign: 'center',
-        marginBottom: 8,
+    heroTitle: { fontSize: 28, textAlign: 'center', letterSpacing: -0.5 },
+    heroSubtitle: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
+    // Sections
+    section: { paddingHorizontal: spacing.lg, marginBottom: spacing.xl },
+    sectionHeader: {
+        flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md,
     },
-    subtitle: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 28,
+    sectionTitle: { fontSize: 16 },
+    // Expect
+    expectHeader: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        padding: spacing.md, borderRadius: borderRadius.lg, borderWidth: 1,
     },
-    crisisCard: {
-        borderRadius: 20,
-        padding: 8,
-        borderWidth: 2,
-        marginBottom: 28,
+    expectTitle: { flex: 1, fontSize: 14 },
+    expectBody: {
+        padding: spacing.md, paddingTop: 0, gap: 10,
+        borderBottomLeftRadius: borderRadius.lg, borderBottomRightRadius: borderRadius.lg,
+        borderWidth: 1, borderTopWidth: 0, marginTop: -1,
     },
-    crisisRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        gap: 14,
+    expectRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingTop: 10 },
+    expectText: { flex: 1, fontSize: 13, lineHeight: 19 },
+    // Quick actions
+    quickRow: { flexDirection: 'row', gap: spacing.md },
+    quickCard: {
+        flex: 1, borderRadius: borderRadius.lg, padding: spacing.md,
+        borderWidth: 1, alignItems: 'center', gap: spacing.xs,
     },
-    crisisEmoji: {
-        fontSize: 24,
+    quickIcon: {
+        width: 50, height: 50, borderRadius: 25,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1, marginBottom: 4,
     },
-    crisisInfo: {
-        flex: 1,
+    quickLabel: { fontSize: 13, textAlign: 'center' },
+    quickDesc: { fontSize: 11, textAlign: 'center', lineHeight: 16 },
+});
+
+const cardStyles = StyleSheet.create({
+    card: {
+        borderRadius: borderRadius.lg, padding: spacing.md,
+        marginBottom: spacing.sm, borderWidth: 1,
     },
-    crisisLabel: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 14,
+    header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, marginBottom: spacing.sm },
+    iconWrap: {
+        width: 44, height: 44, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 1,
     },
-    crisisNumber: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 18,
-        marginTop: 2,
+    name: { fontSize: 15 },
+    desc: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+    actions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+    actionBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        paddingHorizontal: spacing.md, paddingVertical: 9,
+        borderRadius: borderRadius.full, borderWidth: 1,
     },
-    crisisAction: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 14,
-    },
-    divider: {
-        height: 1,
-        marginHorizontal: 16,
-    },
-    ctaGroup: {
-        gap: 12,
-        marginBottom: 24,
-    },
-    callButton: {
-        borderRadius: 14,
-        paddingVertical: 18,
-        alignItems: 'center',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-    },
-    callButtonText: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 18,
-        color: '#FFFFFF',
-        letterSpacing: 0.3,
-    },
-    textButton: {
-        borderRadius: 14,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-    },
-    textButtonText: {
-        fontFamily: 'DMSans_600SemiBold',
-        fontSize: 16,
-    },
-    safeButton: {
-        alignItems: 'center',
-        paddingVertical: 16,
-    },
-    safeText: {
-        fontFamily: 'DMSans_400Regular',
-        fontSize: 15,
-        textDecorationLine: 'underline',
-    },
+    actionText: { fontSize: 13 },
 });

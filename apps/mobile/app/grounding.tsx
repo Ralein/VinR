@@ -1,274 +1,388 @@
 /**
- * Grounding 5-4-3-2-1 Interactive Exercise
+ * Grounding Screen — 5-4-3-2-1 Sensory Exercise
  *
- * Step-by-step animated prompts with user input at each step.
- * AI reflection at the end.
+ * Features:
+ * - Lucide icons per sense (Eye, Hand, Ear, Flower2, Coffee)
+ * - Animated progress bar
+ * - Gentle fade between steps
+ * - Theme-aware throughout
+ * - Animated completion with checkmark
+ * - AmbientBackground
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    View, Text, Pressable, StyleSheet, TextInput,
-    KeyboardAvoidingView, Platform, ScrollView,
-    ActivityIndicator,
+    View, Text, Pressable, StyleSheet, TextInput, KeyboardAvoidingView, Platform,
+    Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Leaf } from 'lucide-react-native';
-import { colors, fonts, spacing, glass, typography, borderRadius, animation, shadows, gradients } from '../constants/theme';
+import Animated, {
+    FadeIn, FadeInDown, FadeInUp, FadeOut,
+    useSharedValue, useAnimatedStyle, withTiming, withSpring,
+    withSequence, withRepeat, Easing,
+} from 'react-native-reanimated';
+import {
+    ChevronLeft, Eye, Hand, Ear, Flower2, Coffee,
+    ArrowRight, Check, Heart, RotateCcw,
+} from 'lucide-react-native';
+import { fonts, spacing, borderRadius } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
+import AmbientBackground from '../components/ui/AmbientBackground';
+import { haptics } from '../services/haptics';
+
+// ── Types ──
 
 interface GroundingStep {
     count: number;
     sense: string;
-    emoji: string;
     prompt: string;
+    Icon: any;
+    iconColor: string;
     placeholder: string;
 }
 
 const GROUNDING_STEPS: GroundingStep[] = [
-    { count: 5, sense: 'See', emoji: '👀', prompt: 'Name 5 things you can see right now.', placeholder: 'I can see...' },
-    { count: 4, sense: 'Touch', emoji: '✋', prompt: 'Name 4 things you can touch.', placeholder: 'I can feel...' },
-    { count: 3, sense: 'Hear', emoji: '👂', prompt: 'Name 3 things you can hear.', placeholder: 'I can hear...' },
-    { count: 2, sense: 'Smell', emoji: '👃', prompt: 'Name 2 things you can smell.', placeholder: 'I can smell...' },
-    { count: 1, sense: 'Taste', emoji: '👅', prompt: 'Name 1 thing you can taste.', placeholder: 'I can taste...' },
+    {
+        count: 5, sense: 'Sight', prompt: 'Name 5 things you can see',
+        Icon: Eye, iconColor: '#4A90D9', placeholder: 'e.g. the ceiling, my phone, a lamp...',
+    },
+    {
+        count: 4, sense: 'Touch', prompt: 'Name 4 things you can feel',
+        Icon: Hand, iconColor: '#4ECBA0', placeholder: 'e.g. the chair, my shirt, the air...',
+    },
+    {
+        count: 3, sense: 'Sound', prompt: 'Name 3 things you can hear',
+        Icon: Ear, iconColor: '#D4A853', placeholder: 'e.g. a fan, traffic, my breath...',
+    },
+    {
+        count: 2, sense: 'Smell', prompt: 'Name 2 things you can smell',
+        Icon: Flower2, iconColor: '#8B7EC8', placeholder: 'e.g. coffee, soap...',
+    },
+    {
+        count: 1, sense: 'Taste', prompt: 'Name 1 thing you can taste',
+        Icon: Coffee, iconColor: '#E85D5D', placeholder: 'e.g. toothpaste, tea...',
+    },
 ];
 
 export default function GroundingScreen() {
     const router = useRouter();
+    const { colors, isDark } = useTheme();
     const [currentStep, setCurrentStep] = useState(0);
-    const [answers, setAnswers] = useState<string[]>(['', '', '', '', '']);
-    const [isComplete, setIsComplete] = useState(false);
-    const [currentInput, setCurrentInput] = useState('');
+    const [input, setInput] = useState('');
+    const [completed, setCompleted] = useState(false);
+    const inputRef = useRef<TextInput>(null);
 
-    const step = GROUNDING_STEPS[currentStep];
-    const isLastStep = currentStep === GROUNDING_STEPS.length - 1;
+    // Animation values
+    const progressWidth = useSharedValue(0);
+    const checkScale = useSharedValue(0);
 
-    const handleNext = () => {
-        const updated = [...answers];
-        updated[currentStep] = currentInput;
-        setAnswers(updated);
+    // Update progress
+    useEffect(() => {
+        progressWidth.value = withTiming(
+            ((currentStep) / GROUNDING_STEPS.length) * 100,
+            { duration: 500, easing: Easing.out(Easing.quad) }
+        );
+    }, [currentStep]);
 
-        if (isLastStep) {
-            setIsComplete(true);
+    const progressStyle = useAnimatedStyle(() => ({
+        width: `${progressWidth.value}%`,
+    }));
+
+    const handleNext = useCallback(() => {
+        haptics.light();
+        setInput('');
+        Keyboard.dismiss();
+
+        if (currentStep >= GROUNDING_STEPS.length - 1) {
+            // Complete!
+            progressWidth.value = withTiming(100, { duration: 400 });
+            setCompleted(true);
+            haptics.success();
+            checkScale.value = withSpring(1, { stiffness: 200, damping: 15 });
         } else {
             setCurrentStep(currentStep + 1);
-            setCurrentInput('');
+            setTimeout(() => inputRef.current?.focus(), 400);
         }
+    }, [currentStep]);
+
+    const handleRestart = () => {
+        haptics.light();
+        setCurrentStep(0);
+        setInput('');
+        setCompleted(false);
+        progressWidth.value = withTiming(0, { duration: 400 });
+        checkScale.value = withTiming(0, { duration: 300 });
     };
 
-    // Generate a reflection based on answers
-    const getReflection = () => {
-        const seeAnswer = answers[0] || '';
-        const touchAnswer = answers[1] || '';
+    const checkAnimStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: checkScale.value }],
+    }));
 
-        if (seeAnswer.toLowerCase().includes('nature') ||
-            seeAnswer.toLowerCase().includes('tree') ||
-            seeAnswer.toLowerCase().includes('sky') ||
-            seeAnswer.toLowerCase().includes('green')) {
-            return "You noticed a lot of nature around you — that's a beautiful instinct. Your brain naturally gravitates toward calming elements.";
-        }
-        if (touchAnswer.toLowerCase().includes('warm') ||
-            touchAnswer.toLowerCase().includes('soft')) {
-            return "You're drawn to comforting textures — your body knows what it needs to feel safe. Trust that instinct.";
-        }
-        return "You just grounded yourself in the present moment. The anxiety lives in the future, but you're here — right now — and you're okay.";
-    };
-
-    if (isComplete) {
+    // ── Completion View ──
+    if (completed) {
         return (
-            <SafeAreaView style={styles.container}>
-                <ScrollView contentContainerStyle={styles.completeContainer}>
-                    <View style={styles.completeIconWrap}>
-                        <Leaf size={36} color={colors.emerald} strokeWidth={1.5} />
-                    </View>
-                    <Text style={styles.completeTitle}>You're grounded.</Text>
-                    <View style={styles.reflectionCard}>
-                        <Text style={styles.reflectionText}>
-                            "{getReflection()}"
-                        </Text>
-                        <Text style={styles.reflectionAttrib}>— VinR</Text>
-                    </View>
-
-                    {/* Summary of answers */}
-                    <View style={styles.summarySection}>
-                        <Text style={styles.summaryTitle}>What you noticed:</Text>
-                        {GROUNDING_STEPS.map((s, i) => (
-                            answers[i] ? (
-                                <View key={i} style={styles.summaryRow}>
-                                    <Text style={styles.summaryEmoji}>{s.emoji}</Text>
-                                    <Text style={styles.summaryText}>{answers[i]}</Text>
-                                </View>
-                            ) : null
-                        ))}
-                    </View>
-
-                    <Pressable
-                        style={styles.doneButton}
-                        onPress={() => router.back()}
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+                <AmbientBackground hideBlobs={true} />
+                <View style={styles.completeContainer}>
+                    <Animated.View
+                        style={[styles.completeCircle, {
+                            backgroundColor: `${colors.emerald}15`,
+                            borderColor: `${colors.emerald}35`,
+                        }, checkAnimStyle]}
                     >
-                        <Text style={styles.doneButtonText}>Done ✓</Text>
-                    </Pressable>
-                </ScrollView>
+                        <Check size={48} color={colors.emerald} strokeWidth={2} />
+                    </Animated.View>
+                    <Animated.Text
+                        entering={FadeInUp.delay(300).duration(500)}
+                        style={[styles.completeTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}
+                    >
+                        You're grounded.
+                    </Animated.Text>
+                    <Animated.Text
+                        entering={FadeInUp.delay(500).duration(500)}
+                        style={[styles.completeSubtitle, { color: colors.textMuted, fontFamily: fonts.body }]}
+                    >
+                        Take a moment to notice how your body feels right now. You engaged all five senses and brought yourself back to the present.
+                    </Animated.Text>
+
+                    <Animated.View entering={FadeInUp.delay(700).duration(400)} style={styles.completeActions}>
+                        <Pressable
+                            style={[styles.completeBtn, {
+                                backgroundColor: colors.gold,
+                                shadowColor: colors.gold,
+                            }]}
+                            onPress={() => { haptics.light(); router.back(); }}
+                        >
+                            <Text style={[styles.completeBtnText, { color: colors.void, fontFamily: fonts.bodySemiBold }]}>
+                                Done — I feel better
+                            </Text>
+                            <Heart size={14} color={colors.void} strokeWidth={2} />
+                        </Pressable>
+
+                        <Pressable
+                            style={[styles.restartBtn, { borderColor: isDark ? colors.border : '#E0DAC8' }]}
+                            onPress={handleRestart}
+                        >
+                            <RotateCcw size={14} color={colors.textMuted} strokeWidth={2} />
+                            <Text style={[styles.restartText, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                Do it again
+                            </Text>
+                        </Pressable>
+                    </Animated.View>
+                </View>
             </SafeAreaView>
         );
     }
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
-                <View style={styles.stepContainer}>
-                    <Pressable style={styles.backButton} onPress={() => router.back()}>
-                        <Text style={styles.backText}>← Back</Text>
-                    </Pressable>
+    // ── Active Step ──
+    const step = GROUNDING_STEPS[currentStep];
+    const StepIcon = step.Icon;
 
-                    {/* Progress */}
-                    <View style={styles.progressRow}>
-                        {GROUNDING_STEPS.map((_, i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.progressDot,
-                                    i <= currentStep && styles.progressDotActive,
-                                    i < currentStep && styles.progressDotDone,
-                                ]}
-                            />
-                        ))}
+    return (
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
+            <AmbientBackground hideBlobs={true} />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                {/* Header */}
+                <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+                    <Pressable onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                        <ChevronLeft size={20} color={colors.textPrimary} strokeWidth={2} />
+                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.bodySemiBold }]}>
+                            5-4-3-2-1 Grounding
+                        </Text>
+                    </View>
+                    <View style={[styles.stepBadge, {
+                        backgroundColor: isDark ? colors.surface : '#F2EFE9',
+                        borderColor: isDark ? colors.border : '#E0DAC8',
+                    }]}>
+                        <Text style={[styles.stepBadgeText, { color: colors.textMuted, fontFamily: fonts.mono }]}>
+                            {currentStep + 1}/{GROUNDING_STEPS.length}
+                        </Text>
+                    </View>
+                </Animated.View>
+
+                {/* Progress Bar */}
+                <View style={[styles.progressTrack, { backgroundColor: isDark ? colors.surface : '#E0DAC8' }]}>
+                    <Animated.View style={[styles.progressFill, { backgroundColor: step.iconColor }, progressStyle]} />
+                </View>
+
+                {/* Step content */}
+                <Animated.View
+                    key={currentStep}
+                    entering={FadeIn.duration(500)}
+                    style={styles.stepContainer}
+                >
+                    {/* Icon */}
+                    <View style={[styles.stepIconOuter, {
+                        backgroundColor: `${step.iconColor}10`,
+                        borderColor: `${step.iconColor}25`,
+                    }]}>
+                        <View style={[styles.stepIconInner, { backgroundColor: `${step.iconColor}18` }]}>
+                            <StepIcon size={36} color={step.iconColor} strokeWidth={1.5} />
+                        </View>
                     </View>
 
-                    {/* Step Content */}
-                    <Text style={styles.stepEmoji}>{step.emoji}</Text>
-                    <Text style={styles.stepCount}>{step.count}</Text>
-                    <Text style={styles.stepPrompt}>{step.prompt}</Text>
+                    {/* Count badge */}
+                    <View style={[styles.countCircle, { backgroundColor: `${step.iconColor}18`, borderColor: `${step.iconColor}35` }]}>
+                        <Text style={[styles.countNumber, { color: step.iconColor, fontFamily: fonts.display }]}>
+                            {step.count}
+                        </Text>
+                    </View>
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder={step.placeholder}
-                        placeholderTextColor={colors.textGhost}
-                        value={currentInput}
-                        onChangeText={setCurrentInput}
-                        multiline
-                        autoFocus
-                    />
+                    <Text style={[styles.senseLabel, { color: step.iconColor, fontFamily: fonts.bodySemiBold }]}>
+                        {step.sense.toUpperCase()}
+                    </Text>
+                    <Text style={[styles.promptText, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                        {step.prompt}
+                    </Text>
 
+                    {/* Input */}
+                    <View style={[styles.inputWrap, {
+                        backgroundColor: isDark ? colors.surface : '#FAF8F4',
+                        borderColor: input.length > 0 ? step.iconColor : (isDark ? colors.border : '#E8E1D0'),
+                    }]}>
+                        <TextInput
+                            ref={inputRef}
+                            style={[styles.textInput, {
+                                color: colors.textPrimary,
+                                fontFamily: fonts.body,
+                            }]}
+                            placeholder={step.placeholder}
+                            placeholderTextColor={colors.textGhost}
+                            value={input}
+                            onChangeText={setInput}
+                            multiline
+                            returnKeyType="next"
+                            blurOnSubmit={false}
+                            onSubmitEditing={handleNext}
+                        />
+                    </View>
+                </Animated.View>
+
+                {/* Next Button */}
+                <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.footer}>
                     <Pressable
                         style={[
-                            styles.nextButton,
-                            !currentInput.trim() && styles.nextButtonDisabled,
+                            styles.nextBtn,
+                            {
+                                backgroundColor: input.length > 0 ? colors.textPrimary : (isDark ? colors.surface : '#E0DAC8'),
+                                shadowColor: input.length > 0 ? colors.textPrimary : 'transparent',
+                            },
                         ]}
                         onPress={handleNext}
-                        disabled={!currentInput.trim()}
+                        disabled={input.length === 0}
                     >
-                        <Text style={styles.nextButtonText}>
-                            {isLastStep ? 'Finish ✓' : 'Next →'}
+                        <Text style={[styles.nextBtnText, {
+                            color: input.length > 0 ? colors.void : colors.textGhost,
+                            fontFamily: fonts.bodySemiBold,
+                        }]}>
+                            {currentStep >= GROUNDING_STEPS.length - 1 ? 'Complete' : 'Next'}
                         </Text>
+                        {input.length > 0 && <ArrowRight size={16} color={colors.void} strokeWidth={2} />}
                     </Pressable>
-                </View>
+                </Animated.View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
 
+// ── Styles ──
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.void },
-    backButton: {
-        alignSelf: 'flex-start', marginBottom: spacing.lg,
+    container: { flex: 1 },
+    // Header
+    header: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm,
     },
-    backText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.gold },
-    stepContainer: {
-        flex: 1, paddingHorizontal: spacing.xl,
-        justifyContent: 'center', alignItems: 'center',
-    },
-    progressRow: {
-        flexDirection: 'row', gap: spacing.sm,
-        marginBottom: spacing.xl,
-    },
-    progressDot: {
-        width: 12, height: 12, borderRadius: 6,
-        backgroundColor: colors.surface, borderWidth: 2,
-        borderColor: colors.border,
-    },
-    progressDotActive: { borderColor: colors.gold },
-    progressDotDone: { backgroundColor: colors.gold, borderColor: colors.gold },
-    stepEmoji: { fontSize: 48, marginBottom: spacing.md },
-    stepCount: {
-        fontFamily: fonts.mono, fontSize: 72,
-        color: colors.gold, marginBottom: spacing.sm,
-    },
-    stepPrompt: {
-        fontFamily: fonts.display, fontSize: 22,
-        color: colors.textPrimary, textAlign: 'center',
-        marginBottom: spacing.xl,
-    },
-    input: {
-        width: '100%', minHeight: 80,
-        backgroundColor: colors.surface, borderRadius: borderRadius.lg,
-        paddingHorizontal: spacing.md, paddingVertical: spacing.md,
-        fontFamily: fonts.body, fontSize: 16,
-        color: colors.textPrimary, textAlignVertical: 'top',
-        borderWidth: 1, borderColor: colors.border,
-        marginBottom: spacing.lg,
-    },
-    nextButton: {
-        paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-        borderRadius: borderRadius.full, backgroundColor: colors.gold,
-    },
-    nextButtonDisabled: { opacity: 0.4 },
-    nextButtonText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.void,
-    },
-    // Complete screen
-    completeContainer: {
-        alignItems: 'center', paddingHorizontal: spacing.xl,
-        paddingTop: spacing['2xl'],
-    },
-    completeIconWrap: {
-        width: 80, height: 80, borderRadius: 40,
-        backgroundColor: `${colors.emerald}15`,
+    backBtn: {
+        width: 40, height: 40, borderRadius: 20,
         alignItems: 'center', justifyContent: 'center',
-        marginBottom: spacing.md,
     },
-    completeTitle: {
-        fontFamily: fonts.display, fontSize: 28,
-        color: colors.textPrimary, marginBottom: spacing.lg,
+    title: { fontSize: 17 },
+    stepBadge: {
+        paddingHorizontal: 10, paddingVertical: 5,
+        borderRadius: borderRadius.full, borderWidth: 1,
     },
-    reflectionCard: {
-        backgroundColor: colors.surface, borderRadius: borderRadius.lg,
-        padding: spacing.lg, width: '100%',
-        borderWidth: 1, borderColor: colors.gold + '30',
-        marginBottom: spacing.xl,
+    stepBadgeText: { fontSize: 12 },
+    // Progress
+    progressTrack: {
+        height: 3, marginHorizontal: spacing.lg,
+        borderRadius: 2, overflow: 'hidden', marginBottom: spacing.lg,
     },
-    reflectionText: {
-        fontFamily: fonts.italic, fontSize: 17,
-        color: colors.textPrimary, lineHeight: 26,
+    progressFill: { height: '100%', borderRadius: 2 },
+    // Step
+    stepContainer: {
+        flex: 1, alignItems: 'center', justifyContent: 'center',
+        paddingHorizontal: spacing.xl, gap: spacing.md,
     },
-    reflectionAttrib: {
-        fontFamily: fonts.bodySemiBold, fontSize: 13,
-        color: colors.gold, marginTop: spacing.sm,
-        textAlign: 'right',
+    stepIconOuter: {
+        width: 100, height: 100, borderRadius: 50,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1,
     },
-    summarySection: {
-        width: '100%', marginBottom: spacing.xl,
+    stepIconInner: {
+        width: 72, height: 72, borderRadius: 36,
+        alignItems: 'center', justifyContent: 'center',
     },
-    summaryTitle: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16,
-        color: colors.textPrimary, marginBottom: spacing.md,
+    countCircle: {
+        width: 40, height: 40, borderRadius: 20,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1.5, marginTop: -spacing.sm,
     },
-    summaryRow: {
-        flexDirection: 'row', alignItems: 'flex-start',
-        gap: spacing.sm, marginBottom: spacing.sm,
+    countNumber: { fontSize: 22 },
+    senseLabel: { fontSize: 12, letterSpacing: 2 },
+    promptText: { fontSize: 24, textAlign: 'center', letterSpacing: -0.3, lineHeight: 32 },
+    // Input
+    inputWrap: {
+        width: '100%', borderRadius: borderRadius.lg,
+        borderWidth: 1, minHeight: 56,
     },
-    summaryEmoji: { fontSize: 18, marginTop: 2 },
-    summaryText: {
-        fontFamily: fonts.body, fontSize: 14,
-        color: colors.textMuted, flex: 1,
+    textInput: {
+        fontSize: 15, padding: spacing.md,
+        lineHeight: 22,
     },
-    doneButton: {
-        paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-        borderRadius: borderRadius.full, backgroundColor: colors.emerald,
+    // Footer
+    footer: {
+        paddingHorizontal: spacing.lg, paddingBottom: spacing.xl,
     },
-    doneButtonText: {
-        fontFamily: fonts.bodySemiBold, fontSize: 16, color: colors.void,
+    nextBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 8, borderRadius: borderRadius.lg,
+        paddingVertical: 18,
+        shadowOpacity: 0.2, shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
+    nextBtnText: { fontSize: 16 },
+    // Complete
+    completeContainer: {
+        flex: 1, alignItems: 'center', justifyContent: 'center',
+        paddingHorizontal: spacing.xl, gap: spacing.md,
+    },
+    completeCircle: {
+        width: 110, height: 110, borderRadius: 55,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 2, marginBottom: spacing.md,
+    },
+    completeTitle: { fontSize: 28, textAlign: 'center', letterSpacing: -0.5 },
+    completeSubtitle: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: spacing.md },
+    completeActions: { gap: spacing.md, width: '100%', marginTop: spacing.lg },
+    completeBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 8, borderRadius: borderRadius.lg, paddingVertical: 18,
+        shadowOpacity: 0.3, shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    },
+    completeBtnText: { fontSize: 16 },
+    restartBtn: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 8, borderRadius: borderRadius.lg, paddingVertical: spacing.md,
+        borderWidth: 1,
+    },
+    restartText: { fontSize: 14 },
 });
