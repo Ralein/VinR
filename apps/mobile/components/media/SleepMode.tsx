@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useMediaStore } from '../../stores/mediaStore';
+import { MoonStar, Moon } from 'lucide-react-native';
 
 const TIMER_OPTIONS = [
     { label: '30 min', value: 30 },
@@ -42,7 +43,7 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
             <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(7,9,15,0.92)' : 'rgba(252,251,247,0.92)' }]}>
                 <View style={[styles.container, { backgroundColor: colors.elevated, borderRadius: borderRadius.xl, padding: spacing.xl }]}>
                     {/* Moon */}
-                    <Text style={styles.moonEmoji}>🌙</Text>
+                    <MoonStar size={48} color={colors.gold} style={{ marginBottom: 16 }} />
                     <Text style={[styles.title, { color: colors.textPrimary, fontFamily: fonts.display }]}>Sleep Mode</Text>
                     <Text style={[styles.subtitle, { color: colors.textMuted, fontFamily: fonts.body }]}>
                         Dim the lights. Breathe slowly.{'\n'}VinR will stop playing after your timer.
@@ -76,9 +77,12 @@ export default function SleepMode({ visible, onClose }: SleepModeProps) {
                     {/* Status */}
                     {sleepTimerMinutes && (
                         <View style={[styles.statusBanner, { backgroundColor: colors.gold + '10', borderRadius: borderRadius.md, padding: spacing.sm }]}>
-                            <Text style={[styles.statusText, { color: colors.gold, fontFamily: fonts.body }]}>
-                                😴 Sleep timer active: {sleepTimerMinutes} min
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                                <Moon size={14} color={colors.gold} />
+                                <Text style={[styles.statusText, { color: colors.gold, fontFamily: fonts.body }]}>
+                                    Sleep timer active: {sleepTimerMinutes} min
+                                </Text>
+                            </View>
                         </View>
                     )}
 
