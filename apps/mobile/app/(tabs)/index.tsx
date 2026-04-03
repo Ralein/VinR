@@ -25,7 +25,7 @@ import { fonts, spacing, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { useStreak } from '../../hooks/useStreak';
 import { useAdaptiveHome } from '../../hooks/useAdaptive';
-import { useEventSearch } from '../../hooks/useEvents';
+import { useEventSearch, useUserLocation } from '../../hooks/useEvents';
 
 import SleepMode from '../../components/media/SleepMode';
 import GlassCard from '../../components/ui/GlassCard';
@@ -87,7 +87,11 @@ export default function HomeScreen() {
     const [showSleepMode, setShowSleepMode] = useState(false);
     const { streak, todayDone, weeklyDays } = useStreak();
     const { data: adaptiveData } = useAdaptiveHome();
-    const { data: eventsData, isLoading: eventsLoading } = useEventSearch(40.7128, -74.006);
+    const { location: userLocation } = useUserLocation();
+    const { data: eventsData, isLoading: eventsLoading } = useEventSearch(
+        userLocation?.latitude ?? null,
+        userLocation?.longitude ?? null,
+    );
     const insets = useSafeAreaInsets();
 
     return (

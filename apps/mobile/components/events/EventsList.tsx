@@ -1,19 +1,34 @@
+/**
+ * EventsList — Sectioned event list with pull-to-refresh.
+ * Groups: "Nearby Places" (Google) + "Upcoming Events" (Eventbrite) + "Virtual"
+ */
+
 import React from 'react';
-import { View, Text, SectionList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, SectionList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { MapPinOff } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
 import EventCard from './EventCard';
-import { 
-    type EventResult, 
-    useEventBookmarks, 
-    useBookmarkEvent, 
-    useRemoveBookmark 
+import {
+    type EventResult,
+    useEventBookmarks,
+    useBookmarkEvent,
+    useRemoveBookmark,
 } from '../../hooks/useEvents';
+
+interface EventsListProps {
+    events: EventResult[];
+    isLoading: boolean;
+    scrollEnabled?: boolean;
+    onRefresh?: () => void;
+    isRefreshing?: boolean;
+}
 
 export default function EventsList({
     events,
     isLoading,
-    scrollEnabled = true
+    scrollEnabled = true,
+    onRefresh,
+    isRefreshing = false,
 }: EventsListProps) {
     const { colors, fonts, spacing } = useTheme();
     const { data: bookmarks } = useEventBookmarks();
@@ -33,19 +48,29 @@ export default function EventsList({
 
     /**
      * Grouping logic:
-     * - "Nearby Events"
-     * - "Virtual Experiences"
+     * 1. "Nearby Places" — Google Places (in-person)
+     * 2. "Upcoming Events" — Eventbrite (in-person)
+     * 3. "Virtual Experiences" — all virtual events
      */
+    const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
+    const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
+    const virtualEvents = events.filter(e => e.is_virtual);
+
     const sections = [
         {
             title: 'Nearby Wellness',
-            description: 'In-person events and safe spaces near you',
-            data: events.filter(e => !e.is_virtual),
+            description: 'Wellness spots and spaces near you',
+            data: nearbyPlaces,
+        },
+        {
+            title: 'Upcoming Events',
+            description: 'Scheduled wellness events and workshops',
+            data: upcomingEvents,
         },
         {
             title: 'Digital Sanctuaries',
-            description: 'Guided sessions & workshops you can join from anywhere',
-            data: events.filter(e => e.is_virtual),
+            description: 'Guided sessions you can join from anywhere',
+            data: virtualEvents,
         },
     ].filter(s => s.data.length > 0);
 
@@ -53,7 +78,9 @@ export default function EventsList({
         return (
             <View style={[styles.center, { padding: spacing.xl }]}>
                 <ActivityIndicator color={colors.gold} />
-                <Text style={[styles.loadingText, { color: colors.textMuted, fontFamily: fonts.body, marginTop: spacing.md }]}>Gathering local sanctuaries...</Text>
+                <Text style={[styles.loadingText, { color: colors.textMuted, fontFamily: fonts.body, marginTop: spacing.md }]}>
+                    Discovering nearby sanctuaries...
+                </Text>
             </View>
         );
     }
@@ -63,9 +90,11 @@ export default function EventsList({
             <View style={[styles.center, { padding: spacing.xl, gap: spacing.md }]}>
                 <MapPinOff size={48} color={colors.textGhost} strokeWidth={1} />
                 <View style={styles.emptyTextCol}>
-                    <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>No events found</Text>
+                    <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                        No events found
+                    </Text>
                     <Text style={[styles.emptySub, { color: colors.textMuted, fontFamily: fonts.body }]}>
-                        We couldn't find any events matching your criteria. Try adjusting your preferences or check back later!
+                        We couldn't find wellness spots nearby. Try expanding your search or check back later.
                     </Text>
                 </View>
             </View>
@@ -78,8 +107,12 @@ export default function EventsList({
                 {sections.map((section, sIndex) => (
                     <View key={`section-${sIndex}`} style={{ marginBottom: spacing.lg }}>
                         <View style={[styles.header, { paddingVertical: spacing.sm }]}>
-                            <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>{section.title}</Text>
-                            <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>{section.description}</Text>
+                            <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                                {section.title}
+                            </Text>
+                            <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                {section.description}
+                            </Text>
                         </View>
                         {section.data.map((item, iIndex) => (
                             <EventCard
@@ -108,28 +141,34 @@ export default function EventsList({
             )}
             renderSectionHeader={({ section: { title, description } }) => (
                 <View style={[styles.header, { backgroundColor: colors.void, paddingVertical: spacing.md }]}>
-                    <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>{title}</Text>
-                    <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>{description}</Text>
+                    <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                        {title}
+                    </Text>
+                    <Text style={[styles.headerDesc, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                        {description}
+                    </Text>
                 </View>
             )}
-            contentContainerStyle={[styles.listContent, { padding: spacing.md, paddingBottom: 100 }]}
+            contentContainerStyle={[styles.listContent, { paddingBottom: 120 }]}
             stickySectionHeadersEnabled={false}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+                onRefresh ? (
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={onRefresh}
+                        tintColor={colors.gold}
+                        colors={[colors.gold]}
+                    />
+                ) : undefined
+            }
         />
     );
 }
 
-interface EventsListProps {
-    events: EventResult[];
-    isLoading: boolean;
-    scrollEnabled?: boolean;
-}
-
 const styles = StyleSheet.create({
-    listContent: {
-    },
-    staticContainer: {
-    },
+    listContent: {},
+    staticContainer: {},
     header: {
         gap: 4,
     },
@@ -164,4 +203,3 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
 });
-

@@ -1,4 +1,4 @@
-"""Pydantic schemas for events endpoints."""
+"""Pydantic schemas for events endpoints — enriched with location data."""
 
 from datetime import datetime
 from uuid import UUID
@@ -6,19 +6,30 @@ from pydantic import BaseModel, Field
 
 
 class EventResponse(BaseModel):
-    """A single event from search results."""
+    """A single event from search results (Google Places or Eventbrite)."""
     event_id: str
     name: str
     description: str | None = None
     venue: str | None = None
     address: str | None = None
-    date: str | None = None  # Human-readable date string
+    date: str | None = None
     start_time: str | None = None
-    category: str | None = None  # yoga, meditation, support-group, outdoor, art-therapy, social
+    category: str | None = None
     distance_miles: float | None = None
-    url: str | None = None  # Deep link to Eventbrite/Meetup
+    url: str | None = None
     is_virtual: bool = False
     image_url: str | None = None
+
+    # ── New enriched fields ──
+    latitude: float | None = None
+    longitude: float | None = None
+    google_maps_url: str | None = None
+    source: str | None = None          # "google_places" | "eventbrite"
+    photo_url: str | None = None       # Google Places photo or Eventbrite logo
+    rating: float | None = None        # Google Places rating (1-5)
+    rating_count: int | None = None    # Total user ratings
+    opening_hours: list[str] | None = None  # e.g. ["Mon: 9AM-5PM", ...]
+    place_id: str | None = None        # Google Places ID for deep linking
 
 
 class EventSearchResponse(BaseModel):
@@ -26,6 +37,7 @@ class EventSearchResponse(BaseModel):
     events: list[EventResponse]
     total: int
     cached: bool = False
+    location_name: str | None = None   # Reverse-geocoded area name
 
 
 class EventBookmarkCreate(BaseModel):
