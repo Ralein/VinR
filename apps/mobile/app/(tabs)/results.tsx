@@ -119,15 +119,17 @@ function TechniqueCard({
                                 {item.duration}
                             </Text>
                         </View>
-                        <View style={[styles.difficultyChip, {
-                            backgroundColor: isDark ? `${difficultyColor}18` : `${difficultyColor}25`,
-                            borderColor: isDark ? `${difficultyColor}35` : `${difficultyColor}45`,
-                        }]}>
-                            <Flame size={10} color={difficultyColor} fill={difficultyColor} strokeWidth={2} />
-                            <Text style={[styles.difficultyLabel, { color: difficultyColor }]}>
-                                {DIFFICULTY_LABEL[difficulty]}
-                            </Text>
-                        </View>
+                        {difficulty !== 'easy' && (
+                            <View style={[styles.difficultyChip, {
+                                backgroundColor: isDark ? `${difficultyColor}18` : `${difficultyColor}25`,
+                                borderColor: isDark ? `${difficultyColor}35` : `${difficultyColor}45`,
+                            }]}>
+                                <Flame size={10} color={difficultyColor} fill={difficultyColor} strokeWidth={2} />
+                                <Text style={[styles.difficultyLabel, { color: difficultyColor }]}>
+                                    {DIFFICULTY_LABEL[difficulty]}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </View>
 
@@ -170,6 +172,21 @@ export default function ResultsScreen() {
         reset();
         router.replace('/(tabs)');
     };
+
+    // Transform items (Short Walk -> Yoga)
+    const transformItem = (item: ReliefItem) => {
+        if (item.name.toLowerCase().includes('short walk')) {
+            return {
+                ...item,
+                name: 'Yoga',
+                category: 'movement' // Ensure it maps to movement icon/color
+            };
+        }
+        return item;
+    };
+
+    const immediateRelief = plan?.immediateRelief.map(transformItem) || [];
+    const dailyHabits = plan?.dailyHabits.map(transformItem) || [];
 
     if (!plan) {
         return (
@@ -263,7 +280,7 @@ export default function ResultsScreen() {
                         borderTopColor: colors.gold,
                         borderWidth: isDark ? 1 : 1,
                     }]}>
-                        {plan.immediateRelief.map((item, index) => (
+                        {immediateRelief.map((item, index) => (
                             <TechniqueCard
                                 key={item.id}
                                 item={item}
@@ -298,7 +315,7 @@ export default function ResultsScreen() {
                         borderTopColor: colors.emerald,
                         borderWidth: isDark ? 1 : 1,
                     }]}>
-                        {plan.dailyHabits.map((item, index) => (
+                        {dailyHabits.map((item, index) => (
                             <TechniqueCard
                                 key={item.id}
                                 item={item}
