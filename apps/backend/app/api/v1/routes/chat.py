@@ -1,18 +1,17 @@
-"""VinR Buddy chat routes."""
+"""VinR Buddy chat routes — Ephemeral in-memory chat (Genshin-style)."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.services.chat_service import (
-    get_chat_history,
-    save_message,
-    clear_chat_history,
+    memory_get_history,
+    memory_save_message,
+    memory_clear,
     generate_buddy_response,
 )
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from app.services.audio_service import transcribe_audio_whisper
 from app.services.kokoro_service import text_to_speech, audio_bytes_to_data_uri
 
@@ -49,9 +48,9 @@ class SendMessageResponse(BaseModel):
 async def send_message(
     request: SendMessageRequest,
     current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db),  # Still needed for adaptive_service user profile
 ):
-    """Send a message to VinR Buddy and get a response."""
+    """Send a message to VinR Buddy and get a response (ephemeral — no DB save)."""
     user_id = current_user["sub"]
 
     # Check for /voice command or voice_enabled flag
@@ -63,12 +62,12 @@ async def send_message(
     if not clean_text:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    # Save user message
-    user_msg = await save_message(
-        db, user_id, "user", clean_text, persona=request.persona
+    # Save user message to memory (not DB)
+    user_msg = memory_save_message(
+        user_id, "user", clean_text, persona=request.persona
     )
 
-    # Generate buddy response
+    # Generate buddy response (reads memory for context)
     buddy_text = await generate_buddy_response(
         db, user_id, clean_text, persona=request.persona
     )
@@ -76,31 +75,30 @@ async def send_message(
     # Optional: generate voice
     audio_url = None
     if is_voice:
-        # Generate voice using local Kokoro-ONNX
         audio_bytes = await text_to_speech(buddy_text, persona=request.persona)
         if audio_bytes:
             audio_url = audio_bytes_to_data_uri(audio_bytes)
 
-    # Save buddy message
-    buddy_msg = await save_message(
-        db, user_id, "assistant", buddy_text,
+    # Save buddy message to memory (not DB)
+    buddy_msg = memory_save_message(
+        user_id, "assistant", buddy_text,
         audio_url=audio_url, persona=request.persona,
     )
 
     return SendMessageResponse(
         user_message=ChatMessageResponse(
-            id=str(user_msg.id),
-            role=user_msg.role,
-            content=user_msg.content,
-            audio_url=user_msg.audio_url,
-            created_at=user_msg.created_at.isoformat(),
+            id=user_msg["id"],
+            role=user_msg["role"],
+            content=user_msg["content"],
+            audio_url=user_msg["audio_url"],
+            created_at=user_msg["created_at"],
         ),
         buddy_message=ChatMessageResponse(
-            id=str(buddy_msg.id),
-            role=buddy_msg.role,
-            content=buddy_msg.content,
-            audio_url=buddy_msg.audio_url,
-            created_at=buddy_msg.created_at.isoformat(),
+            id=buddy_msg["id"],
+            role=buddy_msg["role"],
+            content=buddy_msg["content"],
+            audio_url=buddy_msg["audio_url"],
+            created_at=buddy_msg["created_at"],
         ),
     )
 
@@ -144,10 +142,8 @@ async def generate_tts(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate TTS audio for arbitrary text (e.g. intro greetings)."""
-    # Generate using persona name
     audio_bytes = await text_to_speech(request.text, persona=request.persona)
     if not audio_bytes:
-        # Return gracefully — client handles missing audio
         return {"audio_url": None}
 
     return {"audio_url": audio_bytes_to_data_uri(audio_bytes)}
@@ -156,20 +152,19 @@ async def generate_tts(
 @router.get("/history")
 async def get_history(
     current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
-    """Fetch conversation history for the current user."""
+    """Fetch conversation history from in-memory store (ephemeral)."""
     user_id = current_user["sub"]
-    messages = await get_chat_history(db, user_id, limit=50)
+    messages = memory_get_history(user_id, limit=50)
 
     return {
         "messages": [
             {
-                "id": str(msg.id),
-                "role": msg.role,
-                "content": msg.content,
-                "audio_url": msg.audio_url,
-                "created_at": msg.created_at.isoformat(),
+                "id": msg["id"],
+                "role": msg["role"],
+                "content": msg["content"],
+                "audio_url": msg["audio_url"],
+                "created_at": msg["created_at"],
             }
             for msg in messages
         ]
@@ -179,9 +174,8 @@ async def get_history(
 @router.delete("/history")
 async def delete_history(
     current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
-    """Clear all conversation history for the current user."""
+    """Clear all conversation history from memory for the current user."""
     user_id = current_user["sub"]
-    count = await clear_chat_history(db, user_id)
+    count = memory_clear(user_id)
     return {"deleted": count, "message": "Conversation cleared"}

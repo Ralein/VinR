@@ -3,6 +3,7 @@
  */
 
 import { create } from 'zustand';
+import { useChatStore } from './chatStore';
 
 interface User {
     id: string;
@@ -43,6 +44,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     setLoading: (isLoading) =>
         set({ isLoading }),
 
-    signOut: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
+    signOut: () => {
+        useChatStore.getState().clearMessages();
+        set({ user: null, token: null, isAuthenticated: false });
+    },
 }));

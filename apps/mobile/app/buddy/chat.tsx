@@ -46,6 +46,7 @@ import { PERSONAS, Persona } from '../../constants/personas';
 import { config } from '../../constants/config';
 import { Modal, TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { useChatStore, ChatMessage } from '../../stores/chatStore';
 
 
 
@@ -87,17 +88,8 @@ const triggerHaptic = async (style: 'light' | 'medium' | 'heavy' = 'medium') => 
     } catch (e) { /* fallback */ }
 };
 
-interface Message {
-    id: string;
-    text: string;
-    sender: 'user' | 'ai';
-    timestamp: Date;
-    audioUri?: string;
-    isVoice?: boolean;
-    duration?: number;
-    isRead?: boolean;
-    reactions?: string[];
-}
+// Re-export ChatMessage type from store as Message alias for backward compat
+type Message = ChatMessage;
 
 interface MessageAction {
     messageId: string;
@@ -131,10 +123,14 @@ export default function ChatScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { colors, isDark } = useTheme();
-    const [persona, setPersona] = useState<string>(personaId as string || 'vinr');
+    const { messages, addMessage, setMessages, removeMessage, clearMessages, persona: storePersona, setPersona: setStorePersona } = useChatStore();
+    const [persona, setPersonaLocal] = useState<string>(personaId as string || storePersona || 'vinr');
 
     useEffect(() => {
-        if (personaId) setPersona(personaId as string);
+        if (personaId) {
+            setPersonaLocal(personaId as string);
+            setStorePersona(personaId as string);
+        }
     }, [personaId]);
 
     const triggerPersonaGreeting = useCallback(async (pId: string) => {
@@ -149,18 +145,19 @@ export default function ChatScreen() {
 
     const changePersona = (id: string) => {
         if (id === persona) return;
-        setPersona(id);
+        setPersonaLocal(id);
+        setStorePersona(id);
         triggerHaptic('medium');
         const pName = PERSONAS.find(p => p.id === id)?.name;
         
-        // Add switch message
-        setMessages(prev => [...prev, {
+        // Add switch message to store
+        addMessage({
             id: Date.now().toString(),
             text: `Switched to ${pName}. How can I help you?`,
             sender: 'ai',
             timestamp: new Date(),
             isRead: true
-        }]);
+        });
 
         // If voice mode is on, play greetings
         if (voiceEnabled) {
@@ -168,15 +165,19 @@ export default function ChatScreen() {
         }
     };
 
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            text: `Hey! I'm ${PERSONAS.find((p: Persona) => p.id === persona)?.name}. How can I help you today?`,
-            sender: 'ai',
-            timestamp: new Date(),
-            isRead: true
+    // Seed initial greeting only if store is empty (first open / after logout)
+    useEffect(() => {
+        if (messages.length === 0) {
+            const pName = PERSONAS.find((p: Persona) => p.id === persona)?.name;
+            addMessage({
+                id: '1',
+                text: `Hey! I'm ${pName}. How can I help you today?`,
+                sender: 'ai',
+                timestamp: new Date(),
+                isRead: true
+            });
         }
-    ]);
+    }, []);  // eslint-disable-line react-hooks/exhaustive-deps
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
@@ -337,12 +338,10 @@ export default function ChatScreen() {
             isRead: true
         };
 
+        addMessage(userMsg);
         if (!textOverride) {
-            setMessages(prev => [...prev, userMsg]);
             setInput('');
             setReplyingTo(null);
-        } else {
-            setMessages(prev => [...prev, userMsg]);
         }
 
         setIsLoading(true);
@@ -366,7 +365,7 @@ export default function ChatScreen() {
                 isRead: true
             };
 
-            setMessages(prev => [...prev, buddyMsg]);
+            addMessage(buddyMsg);
             triggerHaptic('medium');
 
             // Auto-play if voice is enabled and audio_url exists
@@ -380,14 +379,13 @@ export default function ChatScreen() {
             }
         } catch (error) {
             console.error('Chat error:', error);
-            const errorMsg: Message = {
+            addMessage({
                 id: (Date.now() + 1).toString(),
                 text: "I'm having a little trouble connecting. Could you try saying that again?",
                 sender: 'ai',
                 timestamp: new Date(),
                 isRead: true
-            };
-            setMessages(prev => [...prev, errorMsg]);
+            });
         } finally {
             setIsLoading(false);
         }
@@ -398,12 +396,12 @@ export default function ChatScreen() {
         if (!message) return;
         switch (action) {
             case 'copy':
-                await Clipboard.setString(message.text || 'Voice Message');
+                Clipboard.setString(message.text || 'Voice Message');
                 Alert.alert('Copied', 'Message copied to clipboard');
                 triggerHaptic('light');
                 break;
             case 'delete':
-                setMessages(prev => prev.filter(m => m.id !== messageId));
+                removeMessage(messageId);
                 triggerHaptic('medium');
                 break;
             case 'reply':
@@ -417,12 +415,12 @@ export default function ChatScreen() {
     const clearHistory = async () => {
         try {
             await api.delete('/chat/history');
-            setMessages([]);
-            setShowPersonaMenu(false);
-            triggerHaptic('heavy');
         } catch (error) {
-            console.error('Failed to clear history:', error);
+            console.error('Failed to clear backend memory:', error);
         }
+        clearMessages();
+        setShowPersonaMenu(false);
+        triggerHaptic('heavy');
     };
 
     const toggleVoice = async () => {
@@ -437,15 +435,14 @@ export default function ChatScreen() {
             const greetingText = `Hey! I'm ${pName}. Voice mode is now active — I'll speak my replies to you.`;
 
             // Add a greeting message to the chat
-            const greetingMsg: Message = {
+            addMessage({
                 id: `voice-greeting-${Date.now()}`,
                 text: greetingText,
                 sender: 'ai',
                 timestamp: new Date(),
                 isRead: true,
-                isVoice: true, // Mark as voice immediately
-            };
-            setMessages(prev => [...prev, greetingMsg]);
+                isVoice: true,
+            });
 
             // Play the pre-generated greeting from public/wav
             triggerPersonaGreeting(persona);
