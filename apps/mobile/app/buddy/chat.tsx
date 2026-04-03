@@ -142,24 +142,16 @@ export default function ChatScreen() {
             const baseUrl = config.API_BASE_URL.replace('/api/v1/', '');
             const greetingUrl = `${baseUrl}/public/wav/greetings/${pId}.wav`;
             AudioService.togglePlayback(greetingUrl);
-            return greetingUrl;
         } catch (e) {
             console.error('Failed to trigger greeting:', e);
-            return null;
         }
-    }, [config.API_BASE_URL]);
+    }, []);
 
-    const changePersona = async (id: string) => {
+    const changePersona = (id: string) => {
         if (id === persona) return;
         setPersona(id);
         triggerHaptic('medium');
         const pName = PERSONAS.find(p => p.id === id)?.name;
-
-        // If voice mode is on, play greetings and add audio to message
-        let audioUri = undefined;
-        if (voiceEnabled) {
-            audioUri = await triggerPersonaGreeting(id) || undefined;
-        }
         
         // Add switch message
         setMessages(prev => [...prev, {
@@ -167,10 +159,13 @@ export default function ChatScreen() {
             text: `Switched to ${pName}. How can I help you?`,
             sender: 'ai',
             timestamp: new Date(),
-            isRead: true,
-            isVoice: voiceEnabled,
-            audioUri: audioUri
+            isRead: true
         }]);
+
+        // If voice mode is on, play greetings
+        if (voiceEnabled) {
+            triggerPersonaGreeting(id);
+        }
     };
 
     const [messages, setMessages] = useState<Message[]>([
@@ -441,19 +436,19 @@ export default function ChatScreen() {
             const pName = PERSONAS.find((p: Persona) => p.id === persona)?.name || 'VinR Buddy';
             const greetingText = `Hey! I'm ${pName}. Voice mode is now active — I'll speak my replies to you.`;
 
-            // Play first, then get URI to add to message
-            triggerPersonaGreeting(persona).then((url) => {
-                const greetingMsg: Message = {
-                    id: `voice-greeting-${Date.now()}`,
-                    text: greetingText,
-                    sender: 'ai',
-                    timestamp: new Date(),
-                    isRead: true,
-                    isVoice: true, // Mark as voice immediately
-                    audioUri: url || undefined
-                };
-                setMessages(prev => [...prev, greetingMsg]);
-            });
+            // Add a greeting message to the chat
+            const greetingMsg: Message = {
+                id: `voice-greeting-${Date.now()}`,
+                text: greetingText,
+                sender: 'ai',
+                timestamp: new Date(),
+                isRead: true,
+                isVoice: true, // Mark as voice immediately
+            };
+            setMessages(prev => [...prev, greetingMsg]);
+
+            // Play the pre-generated greeting from public/wav
+            triggerPersonaGreeting(persona);
         }
     };
 
