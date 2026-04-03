@@ -51,6 +51,7 @@ class Settings(BaseSettings):
 
     # Events APIs
     EVENTBRITE_API_KEY: str = ""
+    GOOGLE_PLACES_API_KEY: str = ""
 
     # CORS
     CORS_ORIGINS: list[str] = [

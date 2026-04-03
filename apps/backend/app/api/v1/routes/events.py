@@ -23,11 +23,12 @@ async def search_nearby_events(
     lat: float = Query(..., description="Latitude"),
     lon: float = Query(..., description="Longitude"),
     radius: int = Query(25, ge=1, le=100, description="Radius in miles"),
+    keyword: str | None = Query(None, description="Search keyword (e.g. yoga, meditation)"),
     emotion: str | None = Query(None, description="User's current emotion for personalization"),
     current_user: dict = Depends(get_current_user),
 ):
-    """Search for nearby wellness events."""
-    events = await search_events(lat, lon, radius)
+    """Search for nearby wellness events from Google Places + Eventbrite."""
+    events = await search_events(lat, lon, radius, keyword)
 
     # Personalize based on emotion
     if emotion:
@@ -55,9 +56,9 @@ async def bookmark_event(
         .where(BookmarkedEvent.user_id == user_id)
         .where(BookmarkedEvent.event_id == request.event_id)
     )
-    if existing.scalar_one_or_none():
-        # Return existing bookmark
-        return existing.scalar_one()
+    bookmark = existing.scalar_one_or_none()
+    if bookmark:
+        return bookmark
 
     bookmark = BookmarkedEvent(
         user_id=user_id,
