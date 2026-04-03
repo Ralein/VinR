@@ -84,7 +84,7 @@ class KokoroService:
             for persona_id, voice in PERSONA_VOICE_MAP.items():
                 file_path = os.path.join(STATIC_GREETINGS_DIR, f"{persona_id}.wav")
                 
-                # If migrating, we want to overwrite old chatterbox files
+                # Ensure we have the greeting for each persona
                 if os.path.exists(file_path) and not force:
                     continue
                 
