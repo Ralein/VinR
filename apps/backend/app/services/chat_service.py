@@ -1,11 +1,14 @@
-"""Chat Service — VinR Buddy conversational AI with RAG + user context."""
+"""Chat Service — VinR Buddy conversational AI with ephemeral in-memory history.
 
-import json
+Genshin-style: messages live only in server memory. Logout, app restart,
+or server restart clears everything. No database writes for chat.
+"""
+
+import hashlib
+from collections import defaultdict
 from openai import AsyncOpenAI
-from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.chat import ChatMessage
 from app.services.rag_service import retrieve_context
 from app.services.adaptive_service import build_user_context
 from app.core.config import get_settings
@@ -21,7 +24,6 @@ Always be positive, encouraging, and helpful.
 Your primary goal is to support the user's wellbeing and productivity."""
 
 # ── Persona system prompts ──────────────────────────────────────────
-
 
 HOPE_PROMPT = f"""{BASE_IDENTITY_PROMPT}
 You are Hope — a kind, calm, and deeply empathetic VinR Buddy.
@@ -79,68 +81,72 @@ def _get_client() -> AsyncOpenAI:
     return _client
 
 
-# ── DB operations ────────────────────────────────────────────────────
+# ── In-Memory Chat Hash Map (Genshin-style ephemeral) ────────────────
+#
+# Structure: { hashed_user_id: [ { role, content, persona, audio_url, created_at }, ... ] }
+# - Keyed by SHA-256 hash of user_id for privacy in memory dumps
+# - FIFO eviction: max 30 messages per user
+# - Cleared on: server restart (natural), explicit clear, or logout API call
+#
 
-async def get_chat_history(
-    db: AsyncSession, user_id: str, limit: int = 30,
-) -> list[ChatMessage]:
-    """Fetch recent chat messages for a user, oldest first."""
-    result = await db.execute(
-        select(ChatMessage)
-        .where(ChatMessage.user_id == user_id)
-        .order_by(ChatMessage.created_at.desc())
-        .limit(limit)
-    )
-    messages = list(result.scalars().all())
-    messages.reverse()  # oldest first for LLM context
-    return messages
+MAX_MEMORY_PER_USER = 30
+
+_chat_memory: dict[str, list[dict]] = defaultdict(list)
 
 
-async def save_message(
-    db: AsyncSession, user_id: str, role: str, content: str,
-    audio_url: str | None = None, persona: str | None = "hope",
-) -> ChatMessage:
-    """Persist a chat message and enforce FIFO limit (20 max)."""
-    msg = ChatMessage(
-        user_id=user_id, role=role, content=content,
-        audio_url=audio_url, persona=persona,
-    )
-    db.add(msg)
-    await db.commit()
-    await db.refresh(msg)
+def _hash_uid(user_id: str) -> str:
+    """Hash user_id for privacy-safe memory keying."""
+    return hashlib.sha256(user_id.encode()).hexdigest()[:16]
 
-    # Enforce history limit (20 messages max per user)
-    await enforce_chat_limit(db, user_id, limit=20)
+
+def memory_get_history(user_id: str, limit: int = 30) -> list[dict]:
+    """Fetch recent messages from in-memory store."""
+    key = _hash_uid(user_id)
+    history = _chat_memory.get(key, [])
+    return history[-limit:]
+
+
+def memory_save_message(
+    user_id: str,
+    role: str,
+    content: str,
+    audio_url: str | None = None,
+    persona: str | None = "hope",
+) -> dict:
+    """Save a message to in-memory store with FIFO eviction."""
+    from datetime import datetime
+    import uuid
+
+    key = _hash_uid(user_id)
+    msg = {
+        "id": str(uuid.uuid4()),
+        "role": role,
+        "content": content,
+        "audio_url": audio_url,
+        "persona": persona,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    _chat_memory[key].append(msg)
+
+    # FIFO: keep only the latest N messages
+    if len(_chat_memory[key]) > MAX_MEMORY_PER_USER:
+        _chat_memory[key] = _chat_memory[key][-MAX_MEMORY_PER_USER:]
 
     return msg
 
 
-async def enforce_chat_limit(db: AsyncSession, user_id: str, limit: int = 20):
-    """Prune chat history to keep only the most recent N messages (Genshin-style poof)."""
-    # Find all messages beyond the limit
-    subquery = (
-        select(ChatMessage.id)
-        .where(ChatMessage.user_id == user_id)
-        .order_by(ChatMessage.created_at.desc())
-        .offset(limit)
-    )
-    ids_to_delete = await db.execute(subquery)
-    id_list = [row[0] for row in ids_to_delete.fetchall()]
-
-    if id_list:
-        await db.execute(
-            delete(ChatMessage).where(ChatMessage.id.in_(id_list))
-        )
-        await db.commit()
+def memory_clear(user_id: str) -> int:
+    """Clear all messages for a user. Returns count deleted."""
+    key = _hash_uid(user_id)
+    count = len(_chat_memory.get(key, []))
+    _chat_memory.pop(key, None)
+    return count
 
 
-async def clear_chat_history(db: AsyncSession, user_id: str) -> int:
-    """Delete all chat messages for a user. Returns count deleted."""
-    result = await db.execute(
-        delete(ChatMessage).where(ChatMessage.user_id == user_id)
-    )
-    await db.commit()
-    return result.rowcount
+def memory_clear_all():
+    """Nuclear option: clear all chat memory (e.g., admin endpoint)."""
+    _chat_memory.clear()
 
 
 # ── Buddy response generation ───────────────────────────────────────
@@ -149,7 +155,8 @@ async def generate_buddy_response(
     db: AsyncSession, user_id: str, message: str, persona: str = "hope",
 ) -> str:
     """
-    Orchestrate: history + RAG + user context → Groq LLM → response.
+    Orchestrate: in-memory history + RAG + user context → Groq LLM → response.
+    DB is only used for user profile context (adaptive service), NOT chat storage.
     """
     try:
         # 1. Retrieve RAG context from knowledge base
@@ -158,8 +165,8 @@ async def generate_buddy_response(
         # 2. Build adaptive user context (mood trend, streak, preferences)
         user_context = await build_user_context(db, user_id)
 
-        # 3. Fetch conversation history for continuity
-        history = await get_chat_history(db, user_id, limit=20)
+        # 3. Fetch conversation history from memory (not DB)
+        history = memory_get_history(user_id, limit=20)
 
         # 4. Build LLM messages
         normalized_persona = (persona or "hope").lower()
@@ -190,9 +197,9 @@ async def generate_buddy_response(
                 "content": "\n\n".join(context_parts),
             })
 
-        # Add conversation history
+        # Add conversation history from memory
         for msg in history:
-            llm_messages.append({"role": msg.role, "content": msg.content})
+            llm_messages.append({"role": msg["role"], "content": msg["content"]})
 
         # Add current user message
         llm_messages.append({"role": "user", "content": message})
