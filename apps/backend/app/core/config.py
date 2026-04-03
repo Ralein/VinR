@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # YouTube Data API v3
     YOUTUBE_API_KEY: str = ""
+    youtube_api_key2: str = ""
 
     # Events APIs
     EVENTBRITE_API_KEY: str = ""

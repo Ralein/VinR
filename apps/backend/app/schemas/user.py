@@ -62,6 +62,8 @@ class UserResponse(BaseModel):
     onboarding_complete: bool
     preferred_language: str
     timezone: str
+    app_streak_count: int | None = 0
+    longest_app_streak: int | None = 0
     age: str | None = None
     primary_reason: str | None = None
     relaxation_methods: list[str] | None = None

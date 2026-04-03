@@ -24,9 +24,11 @@ interface StreakResponse {
     plan_id: string;
     current_streak: number;
     longest_streak: number;
+    global_streak: number;
     total_days_completed: number;
     start_date: string;
     last_completed_date: string | null;
+    is_completed_today: boolean;
     daily_completions: DailyCompletion[];
     created_at: string;
 }
@@ -56,6 +58,7 @@ export function useActiveStreak() {
                     id: data.id,
                     currentStreak: data.current_streak,
                     longestStreak: data.longest_streak,
+                    globalStreak: data.global_streak || 0,
                     totalDaysCompleted: data.total_days_completed,
                     startDate: data.start_date,
                     dailyCompletions: data.daily_completions.map((c) => ({
@@ -65,9 +68,7 @@ export function useActiveStreak() {
                         reflectionNote: c.reflection_note,
                         moodRating: c.mood_rating,
                     })),
-                    isCompletedToday: data.last_completed_date 
-                        ? new Date(data.last_completed_date).toDateString() === new Date().toDateString()
-                        : false,
+                    isCompletedToday: data.is_completed_today,
                 });
             }
             return data;
@@ -114,19 +115,17 @@ export function useCompleteDay() {
  */
 export function useStreak() {
     const { isLoading } = useActiveStreak();
-    const { currentStreak, isCompletedToday, dailyCompletions } = useStreakStore();
+    const { globalStreak, isCompletedToday } = useStreakStore();
 
     // Simple weekly approximation: map recent completion days to week index 0-6 (Mon-Sun)
-    // In a real app, this should use date-fns to map local dates to the current week.
     const weeklyDays = [false, false, false, false, false, false, false];
     if (isCompletedToday) {
-        // Just mark today as done as a placeholder
         const todayIdx = (new Date().getDay() + 6) % 7; // 0 for Mon, 6 for Sun
         weeklyDays[todayIdx] = true;
     }
 
     return {
-        streak: currentStreak,
+        streak: globalStreak,
         todayDone: isCompletedToday,
         weeklyDays,
         isLoading,

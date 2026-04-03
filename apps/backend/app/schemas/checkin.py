@@ -40,6 +40,7 @@ class CheckinResponse(BaseModel):
     plan: PlanResponse
     streak_id: str | None = None
     current_streak: int = 0
+    global_streak: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}

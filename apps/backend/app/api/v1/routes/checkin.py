@@ -75,64 +75,39 @@ async def create_checkin(
     db.add(plan)
     await db.flush()
 
-    # Step 5: Create or update streak (if not emergency)
+    # Step 5: Update streaks (Unified)
+    from app.services.unified_streak_service import update_user_streak
+    
     streak_id = None
     current_streak = 0
+    global_streak = 0
 
-    if not ai_response.get("isEmergency", False):
-        today = date.today()
-
-        # Find the user's existing (most recent) streak
-        existing_result = await db.execute(
-            select(Streak)
-            .where(Streak.user_id == user_id)
-            .order_by(Streak.created_at.desc())
-            .limit(1)
+    if not ai_response.get("is_emergency", False):
+        # Update both global and plan streak
+        result = await update_user_streak(
+            db, 
+            user_id, 
+            activity_type="checkin", 
+            plan_id=str(plan.id)
         )
-        streak = existing_result.scalar_one_or_none()
-
-        if streak:
-            last = streak.last_completed_date
-
-            if last == today:
-                # Already checked in today — no double count, just keep current
-                pass
-            elif last == today - timedelta(days=1):
-                # Consecutive day — increment
-                streak.current_streak += 1
-                streak.total_days_completed += 1
-                streak.last_completed_date = today
-                if streak.current_streak > streak.longest_streak:
-                    streak.longest_streak = streak.current_streak
-            else:
-                # Gap in streak — reset to 1
-                streak.current_streak = 1
-                streak.total_days_completed += 1
-                streak.last_completed_date = today
-
-            # Always update plan reference to the latest plan
-            streak.plan_id = plan.id
-            streak_id = str(streak.id)
-            current_streak = streak.current_streak
-        else:
-            # First ever check-in — create streak from scratch
-            new_streak = Streak(
-                user_id=user_id,
-                plan_id=plan.id,
-                current_streak=1,
-                longest_streak=1,
-                total_days_completed=1,
-                last_completed_date=today,
+        if result:
+            current_streak = result.get("plan_streak") or 0
+            global_streak = result.get("global_streak") or 0
+            
+            # Find the streak id for the response
+            # (We just created/updated it in the service)
+            streak_result = await db.execute(
+                select(Streak).where(Streak.plan_id == str(plan.id))
             )
-            db.add(new_streak)
-            await db.flush()
-            streak_id = str(new_streak.id)
-            current_streak = 1
+            streak = streak_result.scalar_one_or_none()
+            if streak:
+                streak_id = str(streak.id)
 
     return CheckinResponse(
         checkin_id=str(checkin.id),
         plan=PlanResponse(**ai_response),
         streak_id=streak_id,
         current_streak=current_streak,
+        global_streak=global_streak,
         created_at=checkin.created_at,
     )

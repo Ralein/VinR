@@ -55,6 +55,10 @@ async def create_journal_entry(
     await db.flush()
     await db.refresh(entry)
 
+    # Update streaks (Journal counts towards Global Streak)
+    from app.services.unified_streak_service import update_user_streak
+    await update_user_streak(db, user_id, activity_type="journal")
+
     return entry
 
 

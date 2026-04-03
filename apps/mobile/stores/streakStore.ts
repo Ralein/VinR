@@ -16,6 +16,7 @@ interface StreakState {
     activeStreakId: string | null;
     currentStreak: number;
     longestStreak: number;
+    globalStreak: number;
     totalDaysCompleted: number;
     startDate: string | null;
     dailyCompletions: DailyCompletion[];
@@ -27,6 +28,7 @@ interface StreakState {
         id: string;
         currentStreak: number;
         longestStreak: number;
+        globalStreak: number;
         totalDaysCompleted: number;
         startDate: string;
         dailyCompletions: DailyCompletion[];
@@ -44,6 +46,7 @@ export const useStreakStore = create<StreakState>((set) => ({
     activeStreakId: null,
     currentStreak: 0,
     longestStreak: 0,
+    globalStreak: 0,
     totalDaysCompleted: 0,
     startDate: null,
     dailyCompletions: [],
@@ -51,24 +54,26 @@ export const useStreakStore = create<StreakState>((set) => ({
     milestone: null,
     isWinner: false,
 
-    setActiveStreak: (data) =>
-        set({
-            activeStreakId: data.id,
-            currentStreak: data.currentStreak,
-            longestStreak: data.longestStreak,
-            totalDaysCompleted: data.totalDaysCompleted,
-            startDate: data.startDate,
-            dailyCompletions: data.dailyCompletions,
-            isCompletedToday: data.isCompletedToday,
-            isWinner: data.totalDaysCompleted >= JOURNEY_GOAL_DAYS,
-        }),
+    setActiveStreak: (data) => set({
+        activeStreakId: data.id,
+        currentStreak: data.currentStreak,
+        longestStreak: data.longestStreak,
+        globalStreak: data.globalStreak || 0,
+        totalDaysCompleted: data.totalDaysCompleted,
+        startDate: data.startDate,
+        dailyCompletions: data.dailyCompletions,
+        isCompletedToday: data.isCompletedToday,
+        isWinner: data.totalDaysCompleted >= JOURNEY_GOAL_DAYS,
+    }),
 
     markDayComplete: (completion) =>
         set((state) => {
             const newTotalCompleted = state.totalDaysCompleted + 1;
+            const newCurrentStreak = state.currentStreak + 1;
             return {
                 dailyCompletions: [...state.dailyCompletions, completion],
-                currentStreak: state.currentStreak + 1,
+                currentStreak: newCurrentStreak,
+                globalStreak: Math.max(state.globalStreak, newCurrentStreak),
                 totalDaysCompleted: newTotalCompleted,
                 isCompletedToday: true,
                 isWinner: newTotalCompleted >= JOURNEY_GOAL_DAYS,
@@ -82,6 +87,7 @@ export const useStreakStore = create<StreakState>((set) => ({
             activeStreakId: null,
             currentStreak: 0,
             longestStreak: 0,
+            globalStreak: 0,
             totalDaysCompleted: 0,
             startDate: null,
             dailyCompletions: [],
@@ -90,14 +96,8 @@ export const useStreakStore = create<StreakState>((set) => ({
             isWinner: false,
         }),
 
-    setStreak: (newStreak: number) =>
-        set((state) => {
-            // This is a helper mainly for testing or manual overrides
-            // If we update currentStreak, we should ideally also align totalDaysCompleted
-            // if we assume this update is correcting a missed day or similar.
-            // For now, let's just update the currentStreak as requested by existing UI if any.
-            return {
-                currentStreak: newStreak,
-            };
-        }),
+    setStreak: (newStreak) => set((state) => ({ 
+        currentStreak: newStreak,
+        globalStreak: Math.max(state.globalStreak, newStreak)
+    })),
 }));
