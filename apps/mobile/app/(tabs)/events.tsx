@@ -2,6 +2,7 @@
  * Events Tab — Premium event discovery with real Google Places + Eventbrite data.
  *
  * Features:
+ * - Discover / Saved toggle
  * - Real GPS location via expo-location
  * - Search bar with keyword search
  * - Horizontal category filter chips
@@ -19,17 +20,22 @@ import {
     Keyboard, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInRight, FadeInUp, Layout } from 'react-native-reanimated';
 import {
     Calendar, MapPin, Search, X, Sparkles, PersonStanding, Brain,
     Wind, Dumbbell, Trees, Users, Heart, Palette, Sun, Leaf,
-    Navigation, RefreshCw,
+    Navigation, RefreshCw, Bookmark, Compass, BookmarkCheck,
+    MapPinOff,
 } from 'lucide-react-native';
 import { fonts, spacing, borderRadius } from '../../constants/theme';
 import { useTheme } from '../../context/ThemeContext';
-import { useEventSearch, useUserLocation } from '../../hooks/useEvents';
+import {
+    useEventSearch, useUserLocation, useEventBookmarks,
+    useRemoveBookmark, type EventResult,
+} from '../../hooks/useEvents';
 import { useQueryClient } from '@tanstack/react-query';
 import EventsList from '../../components/events/EventsList';
+import EventCard from '../../components/events/EventCard';
 import AmbientBackground from '../../components/ui/AmbientBackground';
 import { haptics } from '../../services/haptics';
 
@@ -68,6 +74,7 @@ export default function EventsScreen() {
     const [searchText, setSearchText] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activeTab, setActiveTab] = useState<'discover' | 'saved'>('discover');
     const searchInputRef = useRef<TextInput>(null);
 
     // Build keyword from search + category
@@ -88,15 +95,29 @@ export default function EventsScreen() {
         combinedKeyword,
     );
 
+    // Bookmarks
+    const { data: bookmarks, isLoading: bookmarksLoading } = useEventBookmarks();
+    const removeBookmark = useRemoveBookmark();
+
+    // Convert bookmarks to EventResult[]
+    const savedEvents: EventResult[] = (bookmarks || []).map(b => ({
+        ...b.event_data,
+        event_id: b.event_id,
+    } as EventResult));
+
     // Pull-to-refresh
     const handleRefresh = useCallback(async () => {
         setIsRefreshing(true);
         haptics.light();
-        await refreshLocation();
-        queryClient.invalidateQueries({ queryKey: ['events-search'] });
-        await refetch();
+        if (activeTab === 'discover') {
+            await refreshLocation();
+            queryClient.invalidateQueries({ queryKey: ['events-search'] });
+            await refetch();
+        } else {
+            queryClient.invalidateQueries({ queryKey: ['event-bookmarks'] });
+        }
         setIsRefreshing(false);
-    }, [refetch, refreshLocation, queryClient]);
+    }, [refetch, refreshLocation, queryClient, activeTab]);
 
     // Category chip press
     const handleCategoryPress = (key: string) => {
@@ -109,6 +130,12 @@ export default function EventsScreen() {
         setSearchText('');
         searchInputRef.current?.blur();
         Keyboard.dismiss();
+    };
+
+    // Tab switch
+    const handleTabSwitch = (tab: 'discover' | 'saved') => {
+        haptics.light();
+        setActiveTab(tab);
     };
 
     return (
@@ -138,109 +165,250 @@ export default function EventsScreen() {
                 </View>
             </Animated.View>
 
-            {/* Search bar */}
-            <Animated.View entering={FadeInDown.delay(120).duration(400)} style={styles.searchWrap}>
+            {/* ── Discover / Saved toggle ── */}
+            <Animated.View entering={FadeInDown.delay(90).duration(400)} style={styles.tabRow}>
                 <View style={[
-                    styles.searchBar,
+                    styles.tabContainer,
                     {
                         backgroundColor: isDark ? colors.surface : '#F2EFE9',
                         borderColor: isDark ? colors.border : '#E0DAC8',
                     },
                 ]}>
-                    <Search size={16} color={colors.textGhost} strokeWidth={2} />
-                    <TextInput
-                        ref={searchInputRef}
+                    <Pressable
                         style={[
-                            styles.searchInput,
-                            {
-                                color: colors.textPrimary,
-                                fontFamily: fonts.body,
-                            },
+                            styles.tab,
+                            activeTab === 'discover' && [
+                                styles.tabActive,
+                                {
+                                    backgroundColor: isDark ? colors.void : '#FFFFFF',
+                                    borderColor: isDark ? colors.border : '#D4CDB8',
+                                },
+                            ],
                         ]}
-                        placeholder="Search yoga, meditation, parks..."
-                        placeholderTextColor={colors.textGhost}
-                        value={searchText}
-                        onChangeText={setSearchText}
-                        returnKeyType="search"
-                        onSubmitEditing={() => Keyboard.dismiss()}
-                    />
-                    {searchText.length > 0 && (
-                        <Pressable onPress={handleClearSearch} hitSlop={8}>
-                            <X size={16} color={colors.textMuted} strokeWidth={2} />
-                        </Pressable>
-                    )}
+                        onPress={() => handleTabSwitch('discover')}
+                    >
+                        <Compass
+                            size={14}
+                            color={activeTab === 'discover' ? colors.emerald : colors.textGhost}
+                            strokeWidth={activeTab === 'discover' ? 2.2 : 1.6}
+                        />
+                        <Text style={[
+                            styles.tabText,
+                            {
+                                color: activeTab === 'discover' ? colors.textPrimary : colors.textGhost,
+                                fontFamily: activeTab === 'discover' ? fonts.bodySemiBold : fonts.body,
+                            },
+                        ]}>
+                            Discover
+                        </Text>
+                    </Pressable>
+
+                    <Pressable
+                        style={[
+                            styles.tab,
+                            activeTab === 'saved' && [
+                                styles.tabActive,
+                                {
+                                    backgroundColor: isDark ? colors.void : '#FFFFFF',
+                                    borderColor: isDark ? colors.border : '#D4CDB8',
+                                },
+                            ],
+                        ]}
+                        onPress={() => handleTabSwitch('saved')}
+                    >
+                        <Bookmark
+                            size={14}
+                            color={activeTab === 'saved' ? colors.gold : colors.textGhost}
+                            strokeWidth={activeTab === 'saved' ? 2.2 : 1.6}
+                            fill={activeTab === 'saved' ? colors.gold : 'none'}
+                        />
+                        <Text style={[
+                            styles.tabText,
+                            {
+                                color: activeTab === 'saved' ? colors.textPrimary : colors.textGhost,
+                                fontFamily: activeTab === 'saved' ? fonts.bodySemiBold : fonts.body,
+                            },
+                        ]}>
+                            Saved
+                        </Text>
+                        {savedEvents.length > 0 && (
+                            <View style={[styles.badge, { backgroundColor: colors.gold }]}>
+                                <Text style={styles.badgeText}>{savedEvents.length}</Text>
+                            </View>
+                        )}
+                    </Pressable>
                 </View>
             </Animated.View>
 
-            {/* Category chips */}
-            <Animated.View entering={FadeInDown.delay(180).duration(400)}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipsContainer}
-                >
-                    {CATEGORIES.map((cat, index) => {
-                        const isActive = activeCategory === cat.key;
-                        const chipColor = isActive ? colors.gold : colors.textGhost;
-
-                        return (
-                            <Animated.View
-                                key={cat.key}
-                                entering={FadeInRight.delay(200 + index * 40).duration(300)}
-                            >
-                                <Pressable
-                                    style={[
-                                        styles.chip,
-                                        {
-                                            backgroundColor: isActive
-                                                ? (isDark ? `${colors.gold}20` : `${colors.gold}18`)
-                                                : (isDark ? colors.surface : '#F2EFE9'),
-                                            borderColor: isActive
-                                                ? colors.gold
-                                                : (isDark ? colors.border : '#E0DAC8'),
-                                        },
-                                    ]}
-                                    onPress={() => handleCategoryPress(cat.key)}
-                                >
-                                    <cat.Icon
-                                        size={13}
-                                        color={chipColor}
-                                        strokeWidth={isActive ? 2.2 : 1.6}
-                                    />
-                                    <Text style={[
-                                        styles.chipText,
-                                        {
-                                            color: chipColor,
-                                            fontFamily: isActive ? fonts.bodySemiBold : fonts.body,
-                                        },
-                                    ]}>
-                                        {cat.label}
-                                    </Text>
+            {/* ── DISCOVER TAB ── */}
+            {activeTab === 'discover' && (
+                <>
+                    {/* Search bar */}
+                    <Animated.View entering={FadeInDown.delay(120).duration(400)} style={styles.searchWrap}>
+                        <View style={[
+                            styles.searchBar,
+                            {
+                                backgroundColor: isDark ? colors.surface : '#F2EFE9',
+                                borderColor: isDark ? colors.border : '#E0DAC8',
+                            },
+                        ]}>
+                            <Search size={16} color={colors.textGhost} strokeWidth={2} />
+                            <TextInput
+                                ref={searchInputRef}
+                                style={[
+                                    styles.searchInput,
+                                    {
+                                        color: colors.textPrimary,
+                                        fontFamily: fonts.body,
+                                    },
+                                ]}
+                                placeholder="Search yoga, meditation, parks..."
+                                placeholderTextColor={colors.textGhost}
+                                value={searchText}
+                                onChangeText={setSearchText}
+                                returnKeyType="search"
+                                onSubmitEditing={() => Keyboard.dismiss()}
+                            />
+                            {searchText.length > 0 && (
+                                <Pressable onPress={handleClearSearch} hitSlop={8}>
+                                    <X size={16} color={colors.textMuted} strokeWidth={2} />
                                 </Pressable>
-                            </Animated.View>
-                        );
-                    })}
-                </ScrollView>
-            </Animated.View>
+                            )}
+                        </View>
+                    </Animated.View>
 
-            {/* Results count */}
-            {eventsData && !isLoading && (
-                <Animated.View entering={FadeIn.delay(300).duration(300)} style={styles.resultsMeta}>
-                    <Text style={[styles.resultsCount, { color: colors.textMuted, fontFamily: fonts.body }]}>
-                        {eventsData.total} {eventsData.total === 1 ? 'result' : 'results'} found
-                    </Text>
-                </Animated.View>
+                    {/* Category chips */}
+                    <Animated.View entering={FadeInDown.delay(180).duration(400)}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.chipsContainer}
+                        >
+                            {CATEGORIES.map((cat, index) => {
+                                const isActive = activeCategory === cat.key;
+                                const chipColor = isActive ? colors.gold : colors.textGhost;
+
+                                return (
+                                    <Animated.View
+                                        key={cat.key}
+                                        entering={FadeInRight.delay(200 + index * 40).duration(300)}
+                                    >
+                                        <Pressable
+                                            style={[
+                                                styles.chip,
+                                                {
+                                                    backgroundColor: isActive
+                                                        ? (isDark ? `${colors.gold}20` : `${colors.gold}18`)
+                                                        : (isDark ? colors.surface : '#F2EFE9'),
+                                                    borderColor: isActive
+                                                        ? colors.gold
+                                                        : (isDark ? colors.border : '#E0DAC8'),
+                                                },
+                                            ]}
+                                            onPress={() => handleCategoryPress(cat.key)}
+                                        >
+                                            <cat.Icon
+                                                size={13}
+                                                color={chipColor}
+                                                strokeWidth={isActive ? 2.2 : 1.6}
+                                            />
+                                            <Text style={[
+                                                styles.chipText,
+                                                {
+                                                    color: chipColor,
+                                                    fontFamily: isActive ? fonts.bodySemiBold : fonts.body,
+                                                },
+                                            ]}>
+                                                {cat.label}
+                                            </Text>
+                                        </Pressable>
+                                    </Animated.View>
+                                );
+                            })}
+                        </ScrollView>
+                    </Animated.View>
+
+                    {/* Results count */}
+                    {eventsData && !isLoading && (
+                        <Animated.View entering={FadeIn.delay(300).duration(300)} style={styles.resultsMeta}>
+                            <Text style={[styles.resultsCount, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                {eventsData.total} {eventsData.total === 1 ? 'result' : 'results'} found
+                            </Text>
+                        </Animated.View>
+                    )}
+
+                    {/* Events List */}
+                    <Animated.View entering={FadeInDown.delay(250).duration(400)} style={styles.listContainer}>
+                        <EventsList
+                            events={eventsData?.events || []}
+                            isLoading={isLoading || locationLoading}
+                            onRefresh={handleRefresh}
+                            isRefreshing={isRefreshing}
+                        />
+                    </Animated.View>
+                </>
             )}
 
-            {/* Events List */}
-            <Animated.View entering={FadeInDown.delay(250).duration(400)} style={styles.listContainer}>
-                <EventsList
-                    events={eventsData?.events || []}
-                    isLoading={isLoading || locationLoading}
-                    onRefresh={handleRefresh}
-                    isRefreshing={isRefreshing}
-                />
-            </Animated.View>
+            {/* ── SAVED TAB ── */}
+            {activeTab === 'saved' && (
+                <Animated.View entering={FadeIn.duration(350)} style={styles.listContainer}>
+                    {bookmarksLoading ? (
+                        <View style={styles.savedEmpty}>
+                            <ActivityIndicator color={colors.gold} />
+                        </View>
+                    ) : savedEvents.length === 0 ? (
+                        <View style={styles.savedEmpty}>
+                            <View style={[styles.savedEmptyIconWrap, { backgroundColor: `${colors.gold}10` }]}>
+                                <BookmarkCheck size={40} color={colors.gold} strokeWidth={1.2} />
+                            </View>
+                            <Text style={[styles.savedEmptyTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                                No saved events
+                            </Text>
+                            <Text style={[styles.savedEmptyBody, { color: colors.textMuted, fontFamily: fonts.body }]}>
+                                Bookmark events you're interested in and they'll appear here for easy access.
+                            </Text>
+                            <Pressable
+                                style={[styles.savedEmptyBtn, { borderColor: `${colors.emerald}40` }]}
+                                onPress={() => handleTabSwitch('discover')}
+                            >
+                                <Compass size={14} color={colors.emerald} strokeWidth={2} />
+                                <Text style={[styles.savedEmptyBtnText, { color: colors.emerald, fontFamily: fonts.bodySemiBold }]}>
+                                    Discover events
+                                </Text>
+                            </Pressable>
+                        </View>
+                    ) : (
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 120 }}
+                        >
+                            {/* Saved header */}
+                            <View style={styles.savedHeader}>
+                                <Bookmark size={14} color={colors.gold} fill={colors.gold} strokeWidth={0} />
+                                <Text style={[styles.savedHeaderText, { color: colors.textPrimary, fontFamily: fonts.display }]}>
+                                    Your Saved Events
+                                </Text>
+                                <Text style={[styles.savedCount, { color: colors.textGhost, fontFamily: fonts.body }]}>
+                                    {savedEvents.length}
+                                </Text>
+                            </View>
+
+                            {savedEvents.map((event, index) => (
+                                <Animated.View
+                                    key={event.event_id}
+                                    entering={FadeInDown.delay(index * 60).duration(350)}
+                                >
+                                    <EventCard
+                                        event={event}
+                                        isBookmarked={true}
+                                        onBookmarkToggle={() => removeBookmark.mutate(event.event_id)}
+                                    />
+                                </Animated.View>
+                            ))}
+                        </ScrollView>
+                    )}
+                </Animated.View>
+            )}
         </SafeAreaView>
     );
 }
@@ -280,6 +448,45 @@ const styles = StyleSheet.create({
     locationText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 12,
+    },
+    // ── Discover / Saved tabs ──
+    tabRow: {
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.sm,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        borderRadius: borderRadius.lg,
+        borderWidth: 1,
+        padding: 3,
+    },
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        borderRadius: borderRadius.md,
+    },
+    tabActive: {
+        borderWidth: 1,
+    },
+    tabText: {
+        fontSize: 13,
+    },
+    badge: {
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 5,
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontFamily: fonts.bodySemiBold,
     },
     // Search
     searchWrap: {
@@ -330,5 +537,58 @@ const styles = StyleSheet.create({
     listContainer: {
         flex: 1,
         paddingHorizontal: spacing.lg,
+    },
+    // Saved tab
+    savedEmpty: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 14,
+        paddingHorizontal: spacing.xl,
+    },
+    savedEmptyIconWrap: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
+    },
+    savedEmptyTitle: {
+        fontSize: 20,
+        letterSpacing: -0.3,
+    },
+    savedEmptyBody: {
+        fontSize: 14,
+        lineHeight: 20,
+        textAlign: 'center',
+    },
+    savedEmptyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+        marginTop: 8,
+    },
+    savedEmptyBtnText: {
+        fontSize: 13,
+    },
+    savedHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 12,
+        paddingTop: 4,
+    },
+    savedHeaderText: {
+        fontSize: 18,
+        letterSpacing: -0.3,
+        flex: 1,
+    },
+    savedCount: {
+        fontSize: 13,
     },
 });
