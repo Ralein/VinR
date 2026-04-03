@@ -197,7 +197,7 @@ function InsightCardView({ insight }: { insight: InsightCard }) {
     const { colors, spacing, isDark } = useTheme();
     return (
         <View style={{ marginBottom: spacing.sm }}>
-            <GlassCard accent="gold" elevated={!isDark} shimmer={!isDark} noBorder={isDark} hideGlow={isDark} style={{ padding: spacing.md }}>
+            <GlassCard accent="gold" elevated={isDark} shimmer={!isDark} noBorder={isDark} hideGlow={isDark} style={{ padding: spacing.md }}>
                 <View style={insightStyles.contentRow}>
                     <View style={[insightStyles.iconWrap, { backgroundColor: `${colors.gold}10` }]}>
                         <TrendingUp size={18} color={colors.gold} strokeWidth={2} />
