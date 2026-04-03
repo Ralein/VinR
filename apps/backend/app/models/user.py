@@ -1,7 +1,7 @@
 """User ORM model."""
 
-from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Text, Integer, JSON
+from datetime import datetime, date
+from sqlalchemy import String, Boolean, DateTime, Text, Integer, JSON, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -23,6 +23,9 @@ class User(Base):
     onboarding_complete: Mapped[bool] = mapped_column(Boolean, default=False)
     preferred_language: Mapped[str] = mapped_column(String(10), default="en")
     timezone: Mapped[str] = mapped_column(String(50), default="UTC")
+    app_streak_count: Mapped[int] = mapped_column(Integer, default=0)
+    longest_app_streak: Mapped[int] = mapped_column(Integer, default=0)
+    last_activity_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     age: Mapped[str | None] = mapped_column(String(50), nullable=True)
     primary_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     relaxation_methods: Mapped[list | None] = mapped_column(JSON, nullable=True)
@@ -32,10 +35,10 @@ class User(Base):
     )
 
     # Relationships
-    checkins = relationship("Checkin", back_populates="user", lazy="selectin")
-    streaks = relationship("Streak", back_populates="user", lazy="selectin")
-    push_tokens = relationship("PushToken", back_populates="user", lazy="selectin")
+    checkins = relationship("Checkin", back_populates="user", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
+    streaks = relationship("Streak", back_populates="user", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
+    push_tokens = relationship("PushToken", back_populates="user", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)
     notification_preferences = relationship(
-        "NotificationPreferences", back_populates="user", uselist=False, lazy="selectin"
+        "NotificationPreferences", back_populates="user", uselist=False, lazy="selectin", cascade="all, delete-orphan", passive_deletes=True
     )
-    journal_entries = relationship("JournalEntry", back_populates="user", lazy="selectin")
+    journal_entries = relationship("JournalEntry", back_populates="user", lazy="selectin", cascade="all, delete-orphan", passive_deletes=True)

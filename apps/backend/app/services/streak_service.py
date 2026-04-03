@@ -26,18 +26,17 @@ async def complete_day(
 ) -> DailyCompletion:
     """
     Mark today as completed for a streak.
-
-    - Increments current_streak and total_days_completed
-    - Updates longest_streak if current > longest
-    - Detects milestones (5, 10, 15, 21)
+    - Increments plan-specific counters via UnifiedStreakService
+    - Saves a record of the DailyCompletion
     """
+    # 1. Fetch the streak first to find the plan_id and user_id
     streak = await db.get(Streak, streak_id)
     if not streak:
         raise ValueError("Streak not found")
 
     today = date.today()
 
-    # Check if already completed today
+    # 2. Check if already completed today (Journey specifically)
     existing = await db.execute(
         select(DailyCompletion).where(
             DailyCompletion.streak_id == streak_id,
@@ -45,13 +44,9 @@ async def complete_day(
         )
     )
     if existing.scalar_one_or_none():
-        raise ValueError("Already completed today")
+        raise ValueError("Journey already marked complete for today")
 
-    # Check for streak break (grace period: if last completed > 1 day ago)
-    if streak.last_completed_date and (today - streak.last_completed_date).days > 1:
-        streak.current_streak = 0  # Reset streak
-
-    # Create completion
+    # 3. Save the detail record
     day_number = streak.total_days_completed + 1
     completion = DailyCompletion(
         streak_id=streak_id,
@@ -61,12 +56,14 @@ async def complete_day(
     )
     db.add(completion)
 
-    # Update streak counters
-    streak.current_streak += 1
-    streak.total_days_completed += 1
-    streak.last_completed_date = today
-    if streak.current_streak > streak.longest_streak:
-        streak.longest_streak = streak.current_streak
+    # 4. Use unified service to update counters for both User and Streak models
+    from app.services.unified_streak_service import update_user_streak
+    await update_user_streak(
+        db, 
+        str(streak.user_id), 
+        activity_type="journey", 
+        plan_id=str(streak.plan_id)
+    )
 
     return completion
 

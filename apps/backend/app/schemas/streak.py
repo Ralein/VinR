@@ -37,6 +37,8 @@ class StreakResponse(BaseModel):
     last_completed_date: date | None
     daily_completions: list[DailyCompletionResponse] = []
     created_at: datetime
+    is_completed_today: bool = False
+    global_streak: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -50,6 +52,7 @@ class StreakSummary(BaseModel):
     """Lightweight streak info for dashboard."""
     current_streak: int
     longest_streak: int
+    global_streak: int = 0
     total_days_completed: int
     start_date: date
     is_completed_today: bool = False

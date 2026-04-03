@@ -22,7 +22,21 @@ async def get_active(
     """Get the user's currently active streak."""
     user_id = current_user["sub"]
     streak = await get_active_streak(db, user_id)
-    return streak
+    if streak:
+        # Calculate if completed today
+        from datetime import date
+        from app.models.user import User
+        is_done = streak.last_completed_date == date.today()
+        # Get global streak from user
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalar_one_or_none()
+        global_streak = user.app_streak_count if user else 0
+        # Build response with extra fields
+        streak_data = StreakResponse.model_validate(streak)
+        streak_data.is_completed_today = is_done
+        streak_data.global_streak = global_streak
+        return streak_data
+    return None
 
 
 @router.get("/history", response_model=list[StreakSummary])
@@ -38,10 +52,16 @@ async def get_history(
         .order_by(Streak.created_at.desc())
     )
     streaks = result.scalars().all()
+    from app.models.user import User
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    global_streak = user.app_streak_count if user else 0
+
     return [
         StreakSummary(
             current_streak=s.current_streak,
             longest_streak=s.longest_streak,
+            global_streak=global_streak,
             total_days_completed=s.total_days_completed,
             start_date=s.start_date,
         )
@@ -71,9 +91,14 @@ async def mark_day_complete(
     streak = await db.get(Streak, streak_id)
     milestone = detect_milestone(streak.current_streak) if streak else None
 
+    # Update Global Streak as well
+    from app.services.unified_streak_service import update_user_streak
+    streak_result = await update_user_streak(db, str(current_user["sub"]), activity_type="journey", plan_id=str(streak.plan_id))
+
     return {
         "success": True,
         "day_number": completion.day_number,
         "current_streak": streak.current_streak if streak else 0,
+        "global_streak": streak_result.get("global_streak") if streak_result else 0,
         "milestone": milestone,
     }
