@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
+    useAnimatedProps,
     withTiming,
     withRepeat,
     withSequence,
@@ -26,12 +27,17 @@ import Animated, {
     FadeOut,
     FadeInDown,
     runOnJS,
+    withSpring,
 } from 'react-native-reanimated';
-import { X, Play, Pause, Wind, Clock, Info, ChevronLeft, Timer } from 'lucide-react-native';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { X, Play, Pause, Wind, Clock, Info, ChevronLeft, Timer, Sparkles } from 'lucide-react-native';
 import { fonts, spacing, borderRadius } from '../constants/theme';
 import { useTheme } from '../context/ThemeContext';
 import AmbientBackground from '../components/ui/AmbientBackground';
 import { haptics } from '../services/haptics';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -101,16 +107,31 @@ export default function BreathingScreen() {
         return () => clearInterval(interval);
     }, [isActive, timeRemaining]);
 
+    const phaseColor = useSharedValue<string>(colors.sapphire as string);
+
+    const updatePhase = (newPhase: Phase) => {
+        setPhase(newPhase);
+        // Map phase to color for interpolation
+        let targetColor: string = colors.sapphire;
+        if (newPhase === 'inhale') targetColor = colors.sapphire;
+        else if (newPhase === 'holdInhale') targetColor = colors.lavender || '#8B7EC8';
+        else if (newPhase === 'exhale') targetColor = colors.emerald;
+        else if (newPhase === 'holdExhale') targetColor = colors.gold;
+        
+        phaseColor.value = withTiming(targetColor, { duration: 800 });
+    };
+
     const runCycle = useCallback(() => {
         if (!isActive) return;
 
-        setPhase('inhale');
+        runOnJS(updatePhase)('inhale');
         haptics.medium();
+        
         progress.value = withTiming(1, { duration: config.inhale, easing: Easing.inOut(Easing.quad) }, (finished) => {
             if (finished && isActive) {
                 const startExhale = () => {
                     if (!isActive) return;
-                    setPhase('exhale');
+                    runOnJS(updatePhase)('exhale');
                     haptics.medium();
                     progress.value = withTiming(0, { duration: config.exhale, easing: Easing.inOut(Easing.quad) }, (exFinished) => {
                         if (exFinished && isActive) {
@@ -118,7 +139,7 @@ export default function BreathingScreen() {
                                 if (isActive) runCycle();
                             };
                             if (config.holdExhale > 0) {
-                                setPhase('holdExhale');
+                                runOnJS(updatePhase)('holdExhale');
                                 progress.value = withTiming(0, { duration: config.holdExhale }, (hkFinished) => {
                                     if (hkFinished && isActive) runOnJS(startNextCycle)();
                                 });
@@ -128,8 +149,9 @@ export default function BreathingScreen() {
                         }
                     });
                 };
+
                 if (config.holdInhale > 0) {
-                    setPhase('holdInhale');
+                    runOnJS(updatePhase)('holdInhale');
                     progress.value = withTiming(1, { duration: config.holdInhale }, (holdFinished) => {
                         if (holdFinished && isActive) runOnJS(startExhale)();
                     });
@@ -139,6 +161,7 @@ export default function BreathingScreen() {
             }
         });
     }, [isActive, config]);
+
 
     useEffect(() => {
         if (isActive) {
@@ -188,14 +211,22 @@ export default function BreathingScreen() {
 
     const circleStyle = useAnimatedStyle(() => {
         const scale = interpolate(progress.value, [0, 1], [1, 2.5]);
-        const opacity = interpolate(progress.value, [0, 1], [0.3, 0.8]);
-        return { transform: [{ scale }], opacity };
+        const opacity = interpolate(progress.value, [0, 1], [0.4, 0.9]);
+        return { 
+            transform: [{ scale }], 
+            opacity,
+            backgroundColor: phaseColor.value
+        };
     });
 
     const outerRingStyle = useAnimatedStyle(() => {
-        const scale = interpolate(progress.value, [0, 1], [1.2, 3]);
-        const opacity = interpolate(progress.value, [0, 1], [0.1, 0.4]);
-        return { transform: [{ scale: scale * pulse.value }], opacity };
+        const scale = interpolate(progress.value, [0, 1], [1.2, 3.2]);
+        const opacity = interpolate(progress.value, [0, 1], [0.15, 0.5]);
+        return { 
+            transform: [{ scale: scale * pulse.value }], 
+            opacity,
+            backgroundColor: phaseColor.value
+        };
     });
 
     const getPhaseText = () => {
@@ -223,7 +254,10 @@ export default function BreathingScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.void }]}>
-            <AmbientBackground hideBlobs={true} />
+            <AmbientBackground 
+                topColor={isActive ? `${phaseColor.value}15` : undefined} 
+                hideBlobs={!isActive}
+            />
 
             {/* Header */}
             <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
@@ -256,20 +290,25 @@ export default function BreathingScreen() {
                                 styles.durationChip,
                                 {
                                     backgroundColor: selectedDuration === index
-                                        ? (isDark ? `${colors.sapphire}20` : `${colors.sapphire}15`)
-                                        : (isDark ? colors.surface : '#F2EFE9'),
+                                        ? (isDark ? `${colors.sapphire}25` : `${colors.sapphire}15`)
+                                        : (isDark ? colors.elevated : '#FAF8F4'),
                                     borderColor: selectedDuration === index
                                         ? colors.sapphire
-                                        : (isDark ? colors.border : '#E0DAC8'),
+                                        : (isDark ? colors.border : '#E2DBC8'),
+                                    transform: [{ scale: selectedDuration === index ? 1.05 : 1 }],
                                 },
                             ]}
                             onPress={() => handleDurationSelect(index)}
                         >
-                            <Timer size={12} color={selectedDuration === index ? colors.sapphire : colors.textGhost} strokeWidth={2} />
+                            {selectedDuration === index && (
+                                <Animated.View entering={FadeIn.duration(200)}>
+                                    <Sparkles size={12} color={colors.sapphire} strokeWidth={2.5} />
+                                </Animated.View>
+                            )}
                             <Text style={[
                                 styles.durationText,
                                 {
-                                    color: selectedDuration === index ? colors.sapphire : colors.textGhost,
+                                    color: selectedDuration === index ? colors.sapphire : colors.textMuted,
                                     fontFamily: selectedDuration === index ? fonts.bodySemiBold : fonts.body,
                                 },
                             ]}>
@@ -280,28 +319,50 @@ export default function BreathingScreen() {
                 </Animated.View>
             )}
 
-            {/* Progress Bar (when active) */}
-            {isActive && (
-                <Animated.View entering={FadeIn.duration(300)} style={styles.progressBarWrap}>
-                    <View style={[styles.progressBarTrack, { backgroundColor: isDark ? colors.surface : '#E0DAC8' }]}>
-                        <Animated.View
-                            style={[
-                                styles.progressBarFill,
-                                {
-                                    backgroundColor: colors.sapphire,
-                                    width: `${progressPercent * 100}%`,
-                                },
-                            ]}
-                        />
-                    </View>
-                </Animated.View>
-            )}
 
-            {/* Visualizer */}
+            {/* Visualizer & Progress Ring */}
             <View style={styles.content}>
                 <View style={styles.visualizerContainer}>
-                    <Animated.View style={[styles.outerRing, outerRingStyle, { backgroundColor: colors.sapphire }]} />
-                    <Animated.View style={[styles.circle, circleStyle, { backgroundColor: colors.sapphire }]} />
+                    {/* SVG Progress Ring */}
+                    <Svg width={SCREEN_WIDTH * 0.85} height={SCREEN_WIDTH * 0.85} style={StyleSheet.absoluteFill}>
+                        <Circle
+                            cx={(SCREEN_WIDTH * 0.85) / 2}
+                            cy={(SCREEN_WIDTH * 0.85) / 2}
+                            r={(SCREEN_WIDTH * 0.85) / 2 - 4}
+                            stroke={isDark ? colors.surface : '#E0DAC8'}
+                            strokeWidth={3}
+                            fill="transparent"
+                        />
+                        <AnimatedCircle
+                            cx={(SCREEN_WIDTH * 0.85) / 2}
+                            cy={(SCREEN_WIDTH * 0.85) / 2}
+                            r={(SCREEN_WIDTH * 0.85) / 2 - 4}
+                            stroke={colors.sapphire}
+                            strokeWidth={4}
+                            fill="transparent"
+                            strokeDasharray={(SCREEN_WIDTH * 0.85 - 8) * Math.PI}
+                            strokeLinecap="round"
+                            transform={`rotate(-90 ${(SCREEN_WIDTH * 0.85) / 2} ${(SCREEN_WIDTH * 0.85) / 2})`}
+                            animatedProps={useAnimatedProps(() => ({
+                                strokeDashoffset: ((SCREEN_WIDTH * 0.85 - 8) * Math.PI) * (1 - (1 - (timeRemaining / DURATION_OPTIONS[selectedDuration].seconds))),
+                                stroke: phaseColor.value,
+                            }))}
+                        />
+                    </Svg>
+
+                    <Animated.View style={[styles.outerRing, outerRingStyle]} />
+                    <Animated.View style={[styles.circle, circleStyle]}>
+                        <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE} style={StyleSheet.absoluteFill}>
+                            <Defs>
+                                <LinearGradient id="orbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <Stop offset="0%" stopColor="rgba(255,255,255,0.3)" />
+                                    <Stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
+                                    <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                                </LinearGradient>
+                            </Defs>
+                            <Circle cx={CIRCLE_SIZE/2} cy={CIRCLE_SIZE/2} r={CIRCLE_SIZE/2} fill="url(#orbGrad)" />
+                        </Svg>
+                    </Animated.View>
 
                     <View style={styles.textOverlay}>
                         <Text style={[styles.phaseText, {
@@ -339,6 +400,7 @@ export default function BreathingScreen() {
                     </Pressable>
                 </Animated.View>
             </View>
+
 
             {/* Technique Info Panel */}
             {showInfo && (
@@ -402,22 +464,13 @@ const styles = StyleSheet.create({
         borderRadius: borderRadius.full, borderWidth: 1,
     },
     durationText: { fontSize: 13 },
-    // Progress bar
-    progressBarWrap: {
-        paddingHorizontal: spacing.xl, marginTop: spacing.md,
-    },
-    progressBarTrack: {
-        height: 3, borderRadius: 2, overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%', borderRadius: 2,
-    },
     // Visualizer
     content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     visualizerContainer: {
-        width: SCREEN_WIDTH, height: SCREEN_WIDTH * 0.8,
+        width: SCREEN_WIDTH * 0.85, height: SCREEN_WIDTH * 0.85,
         alignItems: 'center', justifyContent: 'center',
     },
+
     outerRing: {
         position: 'absolute', width: CIRCLE_SIZE, height: CIRCLE_SIZE,
         borderRadius: CIRCLE_SIZE / 2,
@@ -425,6 +478,9 @@ const styles = StyleSheet.create({
     circle: {
         position: 'absolute', width: CIRCLE_SIZE, height: CIRCLE_SIZE,
         borderRadius: CIRCLE_SIZE / 2, overflow: 'hidden',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
     },
     textOverlay: {
         position: 'absolute', alignItems: 'center', justifyContent: 'center', gap: 10,

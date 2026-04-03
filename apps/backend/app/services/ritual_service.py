@@ -94,6 +94,82 @@ async def get_morning_ritual(db: AsyncSession, user_id: str) -> dict:
     }
 
 
+async def get_afternoon_ritual(db: AsyncSession, user_id: str) -> dict:
+    """
+    Build a personalized mid-day / afternoon ritual.
+
+    Focuses on recharging, mid-day reflection, and momentum.
+    """
+    user = await db.get(User, user_id)
+    name = user.name if user and user.name else "friend"
+
+    # Get active streak & habit
+    streak_result = await db.execute(
+        select(Streak)
+        .where(Streak.user_id == user_id)
+        .order_by(Streak.created_at.desc())
+        .limit(1)
+    )
+    streak = streak_result.scalar_one_or_none()
+
+    streak_status = None
+    daily_habit = None
+    if streak:
+        streak_status = {
+            "current_streak": streak.current_streak,
+            "total_days": streak.total_days_completed,
+            "message": f"Keep it up, {name}! You're on a {streak.current_streak} day journey.",
+        }
+        plan_result = await db.execute(select(Plan).where(Plan.id == streak.plan_id))
+        plan = plan_result.scalar_one_or_none()
+        if plan and plan.daily_habits:
+            habits = plan.daily_habits if isinstance(plan.daily_habits, list) else []
+            if habits:
+                idx = streak.total_days_completed % len(habits)
+                daily_habit = habits[idx]
+
+    # Get latest affirmation
+    latest_plan = await db.execute(
+        select(Plan.affirmation)
+        .where(Plan.user_id == user_id)
+        .order_by(Plan.created_at.desc())
+        .limit(1)
+    )
+    affirmation_row = latest_plan.first()
+    affirmation = (
+        affirmation_row.affirmation
+        if affirmation_row and affirmation_row.affirmation
+        else "I am focused, present, and capable of handling whatever comes my way."
+    )
+
+    # Afternoon gratitude / reflection prompts
+    afternoon_prompts = [
+        "What's one win you've had so far today?",
+        "Name a small thing that went better than expected.",
+        "What's helping you stay focused right now?",
+        "Who has made your day a little easier?",
+        "What's a piece of beauty you've noticed today?",
+        "How have you shown kindness to yourself so far?",
+        "What are you proud of accomplishing before noon?",
+    ]
+    prompt_idx = date.today().toordinal() % len(afternoon_prompts)
+
+    return {
+        "greeting": f"Good afternoon, {name}.",
+        "affirmation": affirmation,
+        "streak_status": streak_status,
+        "daily_habit": daily_habit,
+        "gratitude_prompt": afternoon_prompts[prompt_idx],
+        "breathing_suggestion": {
+            "name": "Mid-day Recharge",
+            "technique": "box",
+            "duration_seconds": 180,
+            "instructions": "4-4-4-4: Inhale 4, Hold 4, Exhale 4, Hold 4. Resets the nervous system.",
+        },
+    }
+
+
+
 async def get_evening_winddown(db: AsyncSession, user_id: str) -> dict:
     """
     Build a personalized evening wind-down.
