@@ -105,10 +105,13 @@ class KokoroService:
         try:
             voice = PERSONA_VOICE_MAP.get(persona.lower(), "af_heart")
             
+            # Clean markdown for TTS
+            clean_text = text.replace('*', '').replace('_', '').replace('#', '').strip()
+            
             # Kokoro.create returns (samples, sample_rate)
             # Run in threadpool as it's CPU intensive
             samples, sample_rate = await asyncio.to_thread(
-                self.engine.create, text, voice=voice, speed=1.1, lang="en-us"
+                self.engine.create, clean_text, voice=voice, speed=1.1, lang="en-us"
             )
             
             # Save to buffer using soundfile
