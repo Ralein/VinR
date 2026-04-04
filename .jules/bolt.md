@@ -1,0 +1,3 @@
+## 2024-04-04 - Backend concurrency for independent API calls
+**Learning:** Found sequential independent network calls in `apps/backend/app/services/events_service.py` where `_search_google_places` and `_search_eventbrite` are executed sequentially via `await ...`. This effectively doubles the latency. In an async context with independent IO-bound calls, `asyncio.gather` should be used instead.
+**Action:** When making multiple independent API requests to third parties, wrap them in `asyncio.gather` to execute concurrently, reducing latency to the duration of the slowest call instead of the sum of both.
