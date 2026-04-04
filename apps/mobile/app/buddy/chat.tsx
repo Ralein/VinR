@@ -234,9 +234,25 @@ export default function ChatScreen() {
     }, [isLoading]);
 
     const formatTime = (seconds: number) => {
+        if (!seconds || isNaN(seconds)) return '0:00';
         const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
+        const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const renderFormattedText = (text: string, baseStyle: any) => {
+        if (!text) return null;
+        const parts = text.split(/(\*\*.*?\*\*)/g);
+        return (
+            <Text style={baseStyle}>
+                {parts.map((part, index) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                        return <Text key={index} style={{ fontWeight: 'bold' }}>{part.slice(2, -2)}</Text>;
+                    }
+                    return <Text key={index}>{part}</Text>;
+                })}
+            </Text>
+        );
     };
 
     const formatMessageTime = (date: Date) => {
@@ -433,6 +449,8 @@ export default function ChatScreen() {
             // Voice just turned ON — play the pre-generated greeting
             const pName = PERSONAS.find((p: Persona) => p.id === persona)?.name || 'VinR Buddy';
             const greetingText = `Hey! I'm ${pName}. Voice mode is now active — I'll speak my replies to you.`;
+            const baseUrl = config.API_BASE_URL.replace('/api/v1/', '');
+            const greetingUrl = `${baseUrl}/public/wav/greetings/${persona}.wav`;
 
             // Add a greeting message to the chat
             addMessage({
@@ -442,6 +460,7 @@ export default function ChatScreen() {
                 timestamp: new Date(),
                 isRead: true,
                 isVoice: true,
+                audioUri: greetingUrl,
             });
 
             // Play the pre-generated greeting from public/wav
@@ -551,14 +570,10 @@ export default function ChatScreen() {
                         <View style={[styles.replyIndicator, { borderLeftColor: colors.gold }]} />
                     )}
 
-                    {!!item.text && (
-                        <Text style={[
+                    {!!item.text && renderFormattedText(item.text, [
                             styles.msgText,
                             isUser ? styles.msgTextUser : { color: colors.textPrimary }
-                        ]}>
-                            {item.text}
-                        </Text>
-                    )}
+                    ])}
 
                     <Text style={[
                         styles.msgTimestamp,
@@ -607,7 +622,9 @@ export default function ChatScreen() {
                                 styles.playText,
                                 { color: item.sender === 'user' ? '#FFFFFF' : colors.textPrimary, fontSize: 12 }
                             ]}>
-                                {item.duration ? formatTime(item.duration) : '0:00'}
+                                {playbackUri === item.audioUri && playbackStatus?.playing
+                                    ? formatTime(playbackStatus.currentTime)
+                                    : (item.duration ? formatTime(item.duration) : formatTime(playbackUri === item.audioUri && playbackStatus?.duration ? playbackStatus.duration : 0))}
                             </Text>
                         </View>
                     )}
