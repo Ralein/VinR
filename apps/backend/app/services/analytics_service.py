@@ -41,41 +41,35 @@ async def get_summary(db: AsyncSession, user_id: str) -> dict:
     Returns total check-ins, days completed, best streak,
     journal entries, and meditation count.
     """
-    # Total check-ins
-    checkin_count = await db.scalar(
-        select(func.count(Checkin.id)).where(Checkin.user_id == user_id)
-    ) or 0
+    # ⚡ Bolt Optimization: Batched 5 sequential DB roundtrips into 1 single query
+    # using scalar subqueries to reduce network latency.
 
-    # Total days completed (across all streaks)
-    days_completed = await db.scalar(
-        select(func.coalesce(func.sum(Streak.total_days_completed), 0))
-        .where(Streak.user_id == user_id)
-    ) or 0
+    checkin_subq = select(func.count(Checkin.id)).where(Checkin.user_id == user_id).scalar_subquery()
+    days_subq = select(func.coalesce(func.sum(Streak.total_days_completed), 0)).where(Streak.user_id == user_id).scalar_subquery()
+    best_streak_subq = select(func.coalesce(func.max(Streak.longest_streak), 0)).where(Streak.user_id == user_id).scalar_subquery()
+    journal_subq = select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id).scalar_subquery()
+    meditation_subq = select(func.count(DailyCompletion.id)).select_from(DailyCompletion).join(Streak, DailyCompletion.streak_id == Streak.id).where(Streak.user_id == user_id).scalar_subquery()
 
-    # Best streak
-    best_streak = await db.scalar(
-        select(func.coalesce(func.max(Streak.longest_streak), 0))
-        .where(Streak.user_id == user_id)
-    ) or 0
+    # Execute all independent aggregations in a single database roundtrip
+    result = await db.execute(
+        select(
+            func.coalesce(checkin_subq, 0).label("checkin_count"),
+            func.coalesce(days_subq, 0).label("days_completed"),
+            func.coalesce(best_streak_subq, 0).label("best_streak"),
+            func.coalesce(journal_subq, 0).label("journal_count"),
+            func.coalesce(meditation_subq, 0).label("meditation_count"),
+        )
+    )
 
-    # Journal entries count
-    journal_count = await db.scalar(
-        select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id)
-    ) or 0
+    row = result.first()
 
-    # Meditation sessions (from daily completions with mood_rating)
-    meditation_count = await db.scalar(
-        select(func.count(DailyCompletion.id))
-        .join(Streak, DailyCompletion.streak_id == Streak.id)
-        .where(Streak.user_id == user_id)
-    ) or 0
-
+    # Fallback zeros in case no row is returned (e.g. empty subqueries returns None)
     return {
-        "total_checkins": checkin_count,
-        "total_days_completed": days_completed,
-        "best_streak": best_streak,
-        "journal_entries": journal_count,
-        "meditations": meditation_count,
+        "total_checkins": getattr(row, "checkin_count", 0) or 0,
+        "total_days_completed": getattr(row, "days_completed", 0) or 0,
+        "best_streak": getattr(row, "best_streak", 0) or 0,
+        "journal_entries": getattr(row, "journal_count", 0) or 0,
+        "meditations": getattr(row, "meditation_count", 0) or 0,
     }
 
 
