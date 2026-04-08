@@ -466,6 +466,7 @@ export default function ChatScreen() {
             // Play the pre-generated greeting from public/wav
             triggerPersonaGreeting(persona);
         }
+        
     };
 
 
