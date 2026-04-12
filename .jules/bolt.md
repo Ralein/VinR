@@ -1,0 +1,3 @@
+## 2025-04-12 - [Background tasks sequential external HTTP calls bottleneck]
+**Learning:** Background loop processing that calls external APIs per user creates an N+1 HTTP request bottleneck, delaying task completion and unnecessarily holding database connections or resources.
+**Action:** When sending notifications to a list of users, always collect the payload in memory and use a batching API such as `send_bulk_push_notifications` instead of waiting sequentially per-message.
