@@ -1,0 +1,3 @@
+## 2024-03-24 - Parallelize independent external HTTP requests
+**Learning:** Sequential execution of independent external API calls (e.g., fetching from Google Places and Eventbrite one after the other) causes unnecessary performance bottlenecks. Since the underlying operations are I/O bound and handled via non-blocking HTTP clients (like `httpx.AsyncClient`), they don't share the same concurrency limitations as SQLAlchemy database calls.
+**Action:** Use `asyncio.gather` to execute independent external API calls concurrently in backend services, significantly reducing overall response time.
