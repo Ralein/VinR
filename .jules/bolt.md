@@ -1,0 +1,3 @@
+## 2024-05-24 - Parallelize independent API calls using asyncio.gather
+**Learning:** Independent external HTTP requests in Python/FastAPI (like calling Eventbrite and Google Places) can and should be parallelized using `asyncio.gather` rather than sequentially awaited, which reduces total latency of the combined result. While database operations using SQLAlchemy AsyncSession restrict concurrent execution, standard httpx operations do not share this limitation.
+**Action:** When a service needs to pull data from multiple independent APIs, use `asyncio.gather` to perform these operations concurrently.
