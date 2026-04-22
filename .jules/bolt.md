@@ -1,0 +1,3 @@
+## 2024-04-22 - Parallelizing External API Calls Safely
+**Learning:** While SQLAlchemy AsyncSession restricts concurrent execution for database calls (meaning we can't use `asyncio.gather` for db queries), independent external HTTP requests (e.g., via httpx.AsyncClient) do not share this limitation. The `events_service.py` was sequentially waiting for Google Places and Eventbrite API results, causing N+1 latency accumulation on the backend.
+**Action:** Use `asyncio.gather` to parallelize independent external HTTP calls to drastically reduce endpoint latency, while remembering NOT to apply this pattern to SQLAlchemy database queries.
