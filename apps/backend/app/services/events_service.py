@@ -4,6 +4,7 @@ Real events only — no mock data. Combines Google Places Nearby Search
 with Eventbrite event listings, merges and deduplicates results.
 """
 
+import asyncio
 import hashlib
 import httpx
 import time
@@ -330,10 +331,13 @@ async def search_events(
     if cached is not None:
         return cached
 
-    # Fire both API calls
+    # ⚡ Bolt: Execute both independent external API calls concurrently to reduce overall latency
     radius_meters = int(radius * 1609.34)  # miles → meters for Google
-    google_results = await _search_google_places(lat, lon, radius_meters, keyword)
-    eb_results = await _search_eventbrite(lat, lon, radius, keyword)
+
+    google_results, eb_results = await asyncio.gather(
+        _search_google_places(lat, lon, radius_meters, keyword),
+        _search_eventbrite(lat, lon, radius, keyword)
+    )
 
     merged = _merge_events(google_results, eb_results)
 

@@ -1,0 +1,3 @@
+## 2024-04-23 - Concurrent External API Calls in FastAPI
+**Learning:** External API requests in Python using `httpx.AsyncClient` do not block the thread and don't have the concurrency restrictions of SQLAlchemy AsyncSession. When a single route (like `search_events`) needs data from multiple independent providers (e.g., Google Places and Eventbrite), making these requests sequentially doubles the overall network latency.
+**Action:** Always use `asyncio.gather()` to fetch data from independent HTTP APIs in parallel rather than sequentially, to make the total request time bounded by the slowest individual request rather than the sum of all requests.
