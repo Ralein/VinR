@@ -4,6 +4,7 @@ Real events only — no mock data. Combines Google Places Nearby Search
 with Eventbrite event listings, merges and deduplicates results.
 """
 
+import asyncio
 import hashlib
 import httpx
 import time
@@ -50,9 +51,9 @@ _cache: dict[str, tuple[float, list[dict]]] = {}
 CACHE_TTL = 300  # 5 minutes
 
 
-def _cache_key(lat: float, lon: float, keyword: str | None) -> str:
-    """Generate a cache key from location + keyword."""
-    raw = f"{round(lat, 3)}:{round(lon, 3)}:{keyword or ''}"
+def _cache_key(lat: float, lon: float, radius: int, keyword: str | None) -> str:
+    """Generate a cache key from location, radius + keyword."""
+    raw = f"{round(lat, 3)}:{round(lon, 3)}:{radius}:{keyword or ''}"
     return hashlib.md5(raw.encode()).hexdigest()
 
 
@@ -325,15 +326,18 @@ async def search_events(
 
     Returns merged, deduplicated results. Uses in-memory TTL cache.
     """
-    key = _cache_key(lat, lon, keyword)
+    key = _cache_key(lat, lon, radius, keyword)
     cached = _get_cached(key)
     if cached is not None:
         return cached
 
-    # Fire both API calls
+    # Fire both API calls concurrently to reduce latency: O(t1 + t2) -> O(max(t1, t2))
     radius_meters = int(radius * 1609.34)  # miles → meters for Google
-    google_results = await _search_google_places(lat, lon, radius_meters, keyword)
-    eb_results = await _search_eventbrite(lat, lon, radius, keyword)
+
+    google_results, eb_results = await asyncio.gather(
+        _search_google_places(lat, lon, radius_meters, keyword),
+        _search_eventbrite(lat, lon, radius, keyword)
+    )
 
     merged = _merge_events(google_results, eb_results)
 
