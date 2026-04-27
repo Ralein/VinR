@@ -1,0 +1,3 @@
+## 2024-04-27 - [Concurrent External API Calls]
+**Learning:** While internal database queries with SQLAlchemy `AsyncSession` cannot be executed concurrently in `asyncio.gather` due to session state sharing restrictions, this limitation does NOT apply to independent external HTTP requests (e.g., fetching from Google Places and Eventbrite via `httpx.AsyncClient`).
+**Action:** When working with multiple independent external APIs within the same service method, always parallelize them using `asyncio.gather` instead of running them sequentially. This converts additive latency `O(N+M)` to bounded maximum latency `O(max(N, M))`.
