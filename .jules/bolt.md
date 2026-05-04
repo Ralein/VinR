@@ -1,0 +1,3 @@
+## 2024-05-04 - [events_service] Parallelize independent HTTP requests
+**Learning:** External API requests in FastAPI handlers were being awaited sequentially. While SQLAlchemy `AsyncSession` cannot execute concurrently, standard independent `httpx` API calls have no such restriction and should always be run via `asyncio.gather` to minimize latency. Also, caching results combined from multiple APIs required including all search parameters (like `radius`) to prevent silent collisions when search areas differ.
+**Action:** When making multiple external API calls, check if they depend on each other. If not, use `asyncio.gather` to execute them in parallel and ensure all parameters modifying search outcomes are included in any caching logic.
