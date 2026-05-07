@@ -1,0 +1,3 @@
+## 2024-05-24 - Parallelizing Independent External API Calls
+**Learning:** External API calls in asynchronous Python applications (using libraries like `httpx`) are purely I/O bound. If they do not depend on each other and do not share constraints like SQLAlchemy's non-thread-safe `AsyncSession`, they should be executed concurrently. Sequential execution artificially bloats the overall latency.
+**Action:** When consuming multiple external data sources (like Google Places and Eventbrite), always combine them using `asyncio.gather()` rather than sequential `await`s to reduce the total response time to `max(T1, T2)` instead of `T1 + T2`.
