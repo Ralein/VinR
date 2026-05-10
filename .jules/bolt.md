@@ -1,0 +1,3 @@
+## 2024-05-10 - Parallelize external HTTP requests with asyncio.gather
+**Learning:** While SQLAlchemy `AsyncSession` restricts concurrent execution for database calls (meaning independent queries using `session` cannot be parallelized with `asyncio.gather`), external HTTP requests (e.g., via `httpx.AsyncClient`) do *not* share this limitation. The `search_events` function was sequentially awaiting Google Places and Eventbrite API calls.
+**Action:** Use `asyncio.gather` to execute independent external API calls concurrently to reduce overall latency (max of the two rather than the sum). Ensure to distinguish between database I/O limits and network I/O concurrency limits.
