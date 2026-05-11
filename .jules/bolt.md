@@ -1,0 +1,3 @@
+## 2024-05-11 - Parallelizing Independent HTTP Requests in FastAPI
+**Learning:** In FastAPI/Starlette, while SQLAlchemy `AsyncSession` restricts concurrent execution for database queries (requiring sequential awaits or independent session instantiation), external independent HTTP requests (e.g. via `httpx.AsyncClient`) do not share this limitation. The `events_service` was previously `await`ing `_search_google_places` and `_search_eventbrite` sequentially, resulting in the sum of both latencies.
+**Action:** Use `await asyncio.gather(...)` to concurrently execute independent asynchronous external network I/O operations to significantly reduce total wait time.
