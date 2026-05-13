@@ -1,0 +1,3 @@
+## 2024-05-13 - Use asyncio.gather for parallel external API requests
+**Learning:** Sequential execution of independent external HTTP requests (like fetching from Google Places and Eventbrite) creates an N+1 API call bottleneck. However, unlike SQLAlchemy AsyncSession which does not support concurrent queries, independent HTTP requests via httpx.AsyncClient can be safely parallelized using `asyncio.gather` to reduce total latency to the slowest request.
+**Action:** Whenever fetching data from multiple independent external sources, use `asyncio.gather` instead of sequential `await`s to minimize network wait times.
