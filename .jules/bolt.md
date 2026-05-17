@@ -1,0 +1,3 @@
+## 2024-05-17 - Parallelizing Independent Third-Party API Calls
+**Learning:** In backend services that aggregate data from multiple third-party APIs (e.g., Google Places and Eventbrite), fetching them sequentially causes the total latency to be the sum of both network requests. Unlike database calls with SQLAlchemy `AsyncSession` which cannot execute concurrently, external HTTP requests (e.g., via `httpx.AsyncClient`) are perfectly safe to parallelize.
+**Action:** Use `asyncio.gather` for independent HTTP calls to third-party APIs to optimize I/O performance and bound the latency to the slowest single request, instead of the sum of all requests.
