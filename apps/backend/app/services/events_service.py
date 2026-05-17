@@ -5,6 +5,7 @@ with Eventbrite event listings, merges and deduplicates results.
 """
 
 import hashlib
+import asyncio
 import httpx
 import time
 from urllib.parse import quote_plus
@@ -332,8 +333,13 @@ async def search_events(
 
     # Fire both API calls
     radius_meters = int(radius * 1609.34)  # miles → meters for Google
-    google_results = await _search_google_places(lat, lon, radius_meters, keyword)
-    eb_results = await _search_eventbrite(lat, lon, radius, keyword)
+
+    # Bolt: Parallelized independent HTTP requests to reduce total network latency.
+    # Overall latency is now max(google_latency, eb_latency) instead of google_latency + eb_latency.
+    google_results, eb_results = await asyncio.gather(
+        _search_google_places(lat, lon, radius_meters, keyword),
+        _search_eventbrite(lat, lon, radius, keyword)
+    )
 
     merged = _merge_events(google_results, eb_results)
 
