@@ -1,0 +1,3 @@
+## 2024-05-18 - Concurrent API Execution for Events Service
+**Learning:** In backend operations that require fetching data from multiple independent external services (e.g., Google Places and Eventbrite APIs), executing them sequentially creates a noticeable latency bottleneck by accumulating the response time of each API call.
+**Action:** When dealing with multiple independent external HTTP calls, always use `asyncio.gather` to execute them concurrently, parallelizing the workload and ensuring the total wait time is constrained to the slowest individual request rather than the sum of all requests.
