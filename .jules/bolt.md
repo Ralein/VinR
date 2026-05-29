@@ -1,0 +1,3 @@
+## 2024-05-29 - Parallelizing Independent External HTTP Requests
+**Learning:** Independent external API calls (e.g., to Google Places and Eventbrite) can and should be parallelized using `asyncio.gather` to minimize latency. While SQLAlchemy `AsyncSession` strictly prohibits concurrent execution, independent HTTP requests using `httpx.AsyncClient` do not share this limitation and benefit immensely from concurrency.
+**Action:** Always identify sequential independent API calls in background services and parallelize them via `asyncio.gather` to reduce overall execution time to the maximum of the individual requests, rather than their sum.
