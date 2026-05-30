@@ -1,0 +1,3 @@
+## 2026-05-30 - [Performance Optimization: Concurrent External API Calls]
+**Learning:** In the backend structure (like in `events_service.py`), making independent external HTTP requests (e.g., via `httpx.AsyncClient`) can safely and significantly benefit from parallel execution using `asyncio.gather`. This stands in sharp contrast to executing backend database queries, since `SQLAlchemy`'s `AsyncSession` is not inherently thread-safe and requires separate instances if queried concurrently.
+**Action:** When working on future IO-bound network calls that are independent of each other, explicitly look for opportunities to parallelize them via `asyncio.gather` while maintaining sequential operations for shared database sessions unless session management is refactored.
