@@ -1,0 +1,3 @@
+## 2024-05-31 - Parallelizing Independent HTTP Requests vs SQLAlchemy AsyncSession limitations
+**Learning:** While SQLAlchemy AsyncSession restricts concurrent execution for database calls (sessions are not thread-safe and concurrent-safe), independent external HTTP requests (e.g., via httpx.AsyncClient) do not share this limitation. In `events_service.py`, requests to Google Places and Eventbrite were executed sequentially, doubling the latency.
+**Action:** Always parallelize independent external HTTP requests using `asyncio.gather` to minimize overall response time, while continuing to batch or sequentially execute database operations on shared SQLAlchemy sessions.
