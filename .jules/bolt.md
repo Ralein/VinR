@@ -1,0 +1,3 @@
+## 2024-03-24 - [Concurrent API Requests]
+**Learning:** Independent external HTTP requests in Python backend services (like `search_events` querying Google Places and Eventbrite) can be executed concurrently using `asyncio.gather()`. Unlike database operations within the same SQLAlchemy AsyncSession (which restrict concurrency), HTTP requests using `httpx` do not share this limitation and should be parallelized to avoid sequential bottlenecks.
+**Action:** When aggregating data from multiple third-party APIs, always wrap the awaitable tasks in `asyncio.gather()` to dramatically reduce endpoint latency, rather than sequentially awaiting each call.
