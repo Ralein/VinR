@@ -1,0 +1,3 @@
+## 2024-06-11 - Batch Push Notifications to Avoid N+1 API Calls
+**Learning:** Expo Push Notifications support batching multiple payloads via array, making sequential loops an anti-pattern. However, batching has limitations like 100 max payloads per request, so list chunking is required. Also, Python's SQLAlchemy `AsyncSession` isn't fully thread-safe for gather/concurrency without careful setup, so batch API requests outside loops when possible!
+**Action:** When working with 3rd-party services (like Expo) over loops, ALWAYS check if a bulk/batch endpoint exists. Use list chunking (e.g. `[i:i+100]`) to respect upstream payload limitations.
