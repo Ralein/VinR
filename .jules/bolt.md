@@ -1,0 +1,3 @@
+## 2024-06-21 - Parallelizing Independent API Requests
+**Learning:** Sequential execution of independent external API calls (like fetching from Google Places and Eventbrite) creates unnecessary latency bottlenecks, as the process waits for each I/O operation to complete individually. This is a common performance pitfall in asynchronous Python codebases where `await` is called successively instead of concurrently.
+**Action:** When aggregating data from multiple independent external sources, always use `asyncio.gather` to parallelize the requests, reducing total execution time to the slowest individual request rather than the sum of all requests.
