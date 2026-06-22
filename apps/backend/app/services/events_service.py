@@ -4,6 +4,7 @@ Real events only — no mock data. Combines Google Places Nearby Search
 with Eventbrite event listings, merges and deduplicates results.
 """
 
+import asyncio
 import hashlib
 import httpx
 import time
@@ -15,22 +16,47 @@ settings = get_settings()
 
 # ── Wellness-related place types for Google Places ───────────────────────
 GOOGLE_PLACE_TYPES = [
-    "gym", "spa", "yoga_studio", "health", "park",
+    "gym",
+    "spa",
+    "yoga_studio",
+    "health",
+    "park",
     "physiotherapist",
 ]
 
 # Wellness keywords for Google text search fallback
 WELLNESS_KEYWORDS = [
-    "yoga", "meditation", "mindfulness", "wellness center",
-    "fitness studio", "mental health", "therapy", "breathwork",
-    "support group", "hiking trail", "art therapy", "self-care",
+    "yoga",
+    "meditation",
+    "mindfulness",
+    "wellness center",
+    "fitness studio",
+    "mental health",
+    "therapy",
+    "breathwork",
+    "support group",
+    "hiking trail",
+    "art therapy",
+    "self-care",
 ]
 
 # Eventbrite wellness categories
 WELLNESS_CATEGORIES = {
-    "yoga", "meditation", "mindfulness", "mental health", "wellness",
-    "support group", "outdoor", "hiking", "walking", "art therapy",
-    "therapy", "breathwork", "fitness", "self-care", "journaling",
+    "yoga",
+    "meditation",
+    "mindfulness",
+    "mental health",
+    "wellness",
+    "support group",
+    "outdoor",
+    "hiking",
+    "walking",
+    "art therapy",
+    "therapy",
+    "breathwork",
+    "fitness",
+    "self-care",
+    "journaling",
 }
 
 # Emotion → event type mapping for personalization
@@ -71,7 +97,10 @@ def _set_cache(key: str, data: list[dict]):
 
 # ── Google Places API ────────────────────────────────────────────────────
 
-def _build_google_maps_url(lat: float, lng: float, name: str | None = None, place_id: str | None = None) -> str:
+
+def _build_google_maps_url(
+    lat: float, lng: float, name: str | None = None, place_id: str | None = None
+) -> str:
     """Build a Google Maps deep link URL using the official search API."""
     query = quote_plus(name) if name else f"{lat},{lng}"
     url = f"https://www.google.com/maps/search/?api=1&query={query}"
@@ -115,7 +144,9 @@ async def _search_google_places(
             data = response.json()
 
             if data.get("status") != "OK":
-                print(f"Google Places API status: {data.get('status')} — {data.get('error_message', '')}")
+                print(
+                    f"Google Places API status: {data.get('status')} — {data.get('error_message', '')}"
+                )
                 return []
 
             for place in data.get("results", [])[:20]:
@@ -140,29 +171,33 @@ async def _search_google_places(
                 types = place.get("types", [])
                 category = _categorize_from_types(types, place.get("name", ""))
 
-                events.append({
-                    "event_id": f"gp_{place_id}",
-                    "name": place.get("name", ""),
-                    "description": place.get("vicinity", ""),
-                    "venue": place.get("name", ""),
-                    "address": place.get("vicinity", ""),
-                    "date": None,
-                    "start_time": None,
-                    "category": category,
-                    "distance_miles": None,
-                    "url": None,
-                    "is_virtual": False,
-                    "image_url": photo_url,
-                    "latitude": p_lat,
-                    "longitude": p_lng,
-                    "google_maps_url": _build_google_maps_url(p_lat, p_lng, place.get("name"), place_id),
-                    "source": "google_places",
-                    "photo_url": photo_url,
-                    "rating": place.get("rating"),
-                    "rating_count": place.get("user_ratings_total"),
-                    "opening_hours": opening_hours,
-                    "place_id": place_id,
-                })
+                events.append(
+                    {
+                        "event_id": f"gp_{place_id}",
+                        "name": place.get("name", ""),
+                        "description": place.get("vicinity", ""),
+                        "venue": place.get("name", ""),
+                        "address": place.get("vicinity", ""),
+                        "date": None,
+                        "start_time": None,
+                        "category": category,
+                        "distance_miles": None,
+                        "url": None,
+                        "is_virtual": False,
+                        "image_url": photo_url,
+                        "latitude": p_lat,
+                        "longitude": p_lng,
+                        "google_maps_url": _build_google_maps_url(
+                            p_lat, p_lng, place.get("name"), place_id
+                        ),
+                        "source": "google_places",
+                        "photo_url": photo_url,
+                        "rating": place.get("rating"),
+                        "rating_count": place.get("user_ratings_total"),
+                        "opening_hours": opening_hours,
+                        "place_id": place_id,
+                    }
+                )
 
     except Exception as e:
         print(f"❌ Google Places search error: {e}")
@@ -196,6 +231,7 @@ def _categorize_from_types(types: list[str], name: str) -> str:
 
 
 # ── Eventbrite API ───────────────────────────────────────────────────────
+
 
 async def _search_eventbrite(
     lat: float, lon: float, radius: int = 25, keyword: str | None = None
@@ -240,7 +276,9 @@ async def _search_eventbrite(
                 # Google Maps URL
                 maps_url = None
                 if lat_val and lng_val:
-                    maps_url = _build_google_maps_url(lat_val, lng_val, event.get("name", {}).get("text", ""))
+                    maps_url = _build_google_maps_url(
+                        lat_val, lng_val, event.get("name", {}).get("text", "")
+                    )
 
                 # Image
                 logo = event.get("logo", {}) or {}
@@ -250,31 +288,35 @@ async def _search_eventbrite(
                 start = event.get("start", {}) or {}
                 raw_date = start.get("local", "")
 
-                events.append({
-                    "event_id": f"eb_{event['id']}",
-                    "name": event.get("name", {}).get("text", ""),
-                    "description": (event.get("description", {}).get("text", "") or "")[:200],
-                    "venue": venue.get("name", ""),
-                    "address": address_info.get("localized_address_display", ""),
-                    "date": raw_date,
-                    "start_time": raw_date,
-                    "category": _categorize_event_name(
-                        event.get("name", {}).get("text", "")
-                    ),
-                    "distance_miles": None,
-                    "url": event.get("url", ""),
-                    "is_virtual": event.get("online_event", False),
-                    "image_url": image_url,
-                    "latitude": lat_val,
-                    "longitude": lng_val,
-                    "google_maps_url": maps_url,
-                    "source": "eventbrite",
-                    "photo_url": image_url,
-                    "rating": None,
-                    "rating_count": None,
-                    "opening_hours": None,
-                    "place_id": None,
-                })
+                events.append(
+                    {
+                        "event_id": f"eb_{event['id']}",
+                        "name": event.get("name", {}).get("text", ""),
+                        "description": (
+                            event.get("description", {}).get("text", "") or ""
+                        )[:200],
+                        "venue": venue.get("name", ""),
+                        "address": address_info.get("localized_address_display", ""),
+                        "date": raw_date,
+                        "start_time": raw_date,
+                        "category": _categorize_event_name(
+                            event.get("name", {}).get("text", "")
+                        ),
+                        "distance_miles": None,
+                        "url": event.get("url", ""),
+                        "is_virtual": event.get("online_event", False),
+                        "image_url": image_url,
+                        "latitude": lat_val,
+                        "longitude": lng_val,
+                        "google_maps_url": maps_url,
+                        "source": "eventbrite",
+                        "photo_url": image_url,
+                        "rating": None,
+                        "rating_count": None,
+                        "opening_hours": None,
+                        "place_id": None,
+                    }
+                )
 
     except Exception as e:
         print(f"❌ Eventbrite search error: {e}")
@@ -292,6 +334,7 @@ def _categorize_event_name(name: str) -> str:
 
 
 # ── Merge + Deduplicate ──────────────────────────────────────────────────
+
 
 def _merge_events(google_events: list[dict], eb_events: list[dict]) -> list[dict]:
     """Merge Google Places and Eventbrite results, deduplicating by name proximity."""
@@ -317,6 +360,7 @@ def _merge_events(google_events: list[dict], eb_events: list[dict]) -> list[dict
 
 # ── Public API ───────────────────────────────────────────────────────────
 
+
 async def search_events(
     lat: float, lon: float, radius: int = 25, keyword: str | None = None
 ) -> list[dict]:
@@ -330,10 +374,12 @@ async def search_events(
     if cached is not None:
         return cached
 
-    # Fire both API calls
+    # Fire both API calls concurrently
     radius_meters = int(radius * 1609.34)  # miles → meters for Google
-    google_results = await _search_google_places(lat, lon, radius_meters, keyword)
-    eb_results = await _search_eventbrite(lat, lon, radius, keyword)
+    google_results, eb_results = await asyncio.gather(
+        _search_google_places(lat, lon, radius_meters, keyword),
+        _search_eventbrite(lat, lon, radius, keyword),
+    )
 
     merged = _merge_events(google_results, eb_results)
 
