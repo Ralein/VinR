@@ -17,7 +17,9 @@ def get_client() -> AsyncOpenAI:
     if _client is None:
         if not settings.GROQ_API_KEY:
             raise ValueError("GROQ_API_KEY is not set.")
-        _client = AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1")
+        _client = AsyncOpenAI(
+            api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1"
+        )
     return _client
 
 
@@ -134,7 +136,9 @@ async def analyze_emotions(
 
     except json.JSONDecodeError as e:
         # Fallback to mock if JSON parsing fails
-        print(f"⚠️ Failed to parse Groq response as JSON: {e}\nResponse was: {response_text}")
+        print(
+            f"⚠️ Failed to parse Groq response as JSON: {e}\nResponse was: {response_text}"
+        )
         return _get_fallback_response(mood_tag, raw_text)
     except openai.APIError as e:
         print(f"⚠️ Groq API error: {e}")

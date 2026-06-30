@@ -155,11 +155,14 @@ OLD_KNOWLEDGE_BASE = [
     },
 ]
 
+
 async def seed():
     print("Starting RAG seeding...")
     async with AsyncSessionLocal() as session:
         # Check if already seeded
-        existing_count = await session.execute(select(sa.func.count()).select_from(KnowledgeChunk))
+        existing_count = await session.execute(
+            select(sa.func.count()).select_from(KnowledgeChunk)
+        )
         if existing_count.scalar() > 0:
             print("Database already contains knowledge chunks. Skipping.")
             return
@@ -172,14 +175,16 @@ async def seed():
                 topic=item["topic"],
                 content=item["content"],
                 source=item["source"],
-                embedding=vector
+                embedding=vector,
             )
             chunks.append(chunk)
-        
+
         session.add_all(chunks)
         await session.commit()
         print(f"Successfully seeded {len(chunks)} knowledge chunks.")
 
+
 if __name__ == "__main__":
     import sqlalchemy as sa
+
     asyncio.run(seed())

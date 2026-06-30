@@ -6,15 +6,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.models.streak import Streak, DailyCompletion
 
+
 async def update_user_streak(
-    db: AsyncSession, 
-    user_id: str, 
-    activity_type: str = "general", # 'general', 'journey', 'checkin', 'journal'
-    plan_id: str | None = None
+    db: AsyncSession,
+    user_id: str,
+    activity_type: str = "general",  # 'general', 'journey', 'checkin', 'journal'
+    plan_id: str | None = None,
 ):
     """
     Increments the user's global streak and plan-specific streak if applicable.
-    
+
     Logic:
     - If user hasn't active today:
         - If last_activity was yesterday: Increment Global Streak.
@@ -25,11 +26,11 @@ async def update_user_streak(
         - Increment plan's current_streak (with same consecutive-day logic).
     """
     today = date.today()
-    
+
     # 1. Update Global App Streak
     user_result = await db.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
-    
+
     if not user:
         return None
 
@@ -60,14 +61,14 @@ async def update_user_streak(
             select(Streak).where(Streak.user_id == user_id, Streak.plan_id == plan_id)
         )
         streak = streak_result.scalar_one_or_none()
-        
+
         if streak:
             if streak.last_completed_date < today:
                 if streak.last_completed_date == today - timedelta(days=1):
                     streak.current_streak += 1
                 else:
                     streak.current_streak = 1
-                
+
                 streak.total_days_completed += 1
                 streak.last_completed_date = today
                 if streak.current_streak > streak.longest_streak:
@@ -81,7 +82,7 @@ async def update_user_streak(
                 current_streak=1,
                 longest_streak=1,
                 total_days_completed=1,
-                last_completed_date=today
+                last_completed_date=today,
             )
             db.add(new_streak)
             current_plan_streak = new_streak
@@ -90,5 +91,7 @@ async def update_user_streak(
     return {
         "global_streak": user.app_streak_count,
         "is_new_day": is_new_day_activity,
-        "plan_streak": current_plan_streak.current_streak if current_plan_streak else None
+        "plan_streak": current_plan_streak.current_streak
+        if current_plan_streak
+        else None,
     }

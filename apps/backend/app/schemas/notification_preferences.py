@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class NotificationPreferencesResponse(BaseModel):
     """Response schema for notification preferences."""
+
     id: UUID
     user_id: str
     daily_reminder_enabled: bool
@@ -21,6 +22,7 @@ class NotificationPreferencesResponse(BaseModel):
 
 class NotificationPreferencesUpdate(BaseModel):
     """Update schema — all fields optional."""
+
     daily_reminder_enabled: bool | None = None
     daily_reminder_time: time | None = None
     streak_at_risk_enabled: bool | None = None
@@ -30,4 +32,5 @@ class NotificationPreferencesUpdate(BaseModel):
 
 class SnoozeRequest(BaseModel):
     """Snooze notifications for N hours."""
+
     hours: int = Field(default=2, ge=1, le=24)

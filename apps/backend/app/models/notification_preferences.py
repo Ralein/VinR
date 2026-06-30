@@ -15,14 +15,18 @@ class NotificationPreferences(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, unique=True, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
     )
 
     # Daily reminder
     daily_reminder_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     daily_reminder_time: Mapped[time] = mapped_column(
-        Time, default=time(8, 0)  # 8:00 AM default
+        Time,
+        default=time(8, 0),  # 8:00 AM default
     )
 
     # Streak at risk (11 PM warning)

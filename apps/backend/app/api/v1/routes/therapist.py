@@ -78,7 +78,8 @@ async def get_directory(
 
     if specialty:
         providers = [
-            p for p in providers
+            p
+            for p in providers
             if "all" in p["specialties"] or specialty.lower() in p["specialties"]
         ]
 

@@ -7,8 +7,10 @@ from pydantic import BaseModel, Field
 
 # --- Audio Library ---
 
+
 class AudioTrack(BaseModel):
     """A single audio track in the library."""
+
     id: str
     title: str
     artist: str | None = None
@@ -21,14 +23,17 @@ class AudioTrack(BaseModel):
 
 class AudioLibraryResponse(BaseModel):
     """Audio library response for a category."""
+
     category: str
     tracks: list[AudioTrack]
 
 
 # --- YouTube ---
 
+
 class YouTubeResult(BaseModel):
     """A single YouTube video result."""
+
     video_id: str
     title: str
     channel: str
@@ -38,6 +43,7 @@ class YouTubeResult(BaseModel):
 
 class YouTubeSearchResponse(BaseModel):
     """YouTube search results."""
+
     genre: str
     content_type: str  # music or motivation
     results: list[YouTubeResult]
@@ -45,9 +51,13 @@ class YouTubeSearchResponse(BaseModel):
 
 # --- Sessions ---
 
+
 class MediaSessionCreate(BaseModel):
     """Log a listening session."""
-    media_type: str = Field(..., description="sleep, breathing, meditation, affirmation, youtube")
+
+    media_type: str = Field(
+        ..., description="sleep, breathing, meditation, affirmation, youtube"
+    )
     media_id: str = Field(..., description="Track ID or YouTube video ID")
     duration_seconds: int | None = Field(None, ge=0)
     completed: bool = False
@@ -55,6 +65,7 @@ class MediaSessionCreate(BaseModel):
 
 class MediaSessionResponse(BaseModel):
     """Response for a logged session."""
+
     id: UUID
     user_id: str
     media_type: str

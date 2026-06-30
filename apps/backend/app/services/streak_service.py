@@ -58,11 +58,9 @@ async def complete_day(
 
     # 4. Use unified service to update counters for both User and Streak models
     from app.services.unified_streak_service import update_user_streak
+
     await update_user_streak(
-        db, 
-        str(streak.user_id), 
-        activity_type="journey", 
-        plan_id=str(streak.plan_id)
+        db, str(streak.user_id), activity_type="journey", plan_id=str(streak.plan_id)
     )
 
     return completion

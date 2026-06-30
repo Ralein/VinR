@@ -9,7 +9,11 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.streak import Streak
 from app.schemas.streak import StreakResponse, StreakSummary, DayCompleteRequest
-from app.services.streak_service import get_active_streak, complete_day, detect_milestone
+from app.services.streak_service import (
+    get_active_streak,
+    complete_day,
+    detect_milestone,
+)
 
 router = APIRouter(prefix="/streaks", tags=["streaks"])
 
@@ -26,6 +30,7 @@ async def get_active(
         # Calculate if completed today
         from datetime import date
         from app.models.user import User
+
         is_done = streak.last_completed_date == date.today()
         # Get global streak from user
         user_result = await db.execute(select(User).where(User.id == user_id))
@@ -53,6 +58,7 @@ async def get_history(
     )
     streaks = result.scalars().all()
     from app.models.user import User
+
     user_result = await db.execute(select(User).where(User.id == user_id))
     user = user_result.scalar_one_or_none()
     global_streak = user.app_streak_count if user else 0
@@ -93,7 +99,13 @@ async def mark_day_complete(
 
     # Update Global Streak as well
     from app.services.unified_streak_service import update_user_streak
-    streak_result = await update_user_streak(db, str(current_user["sub"]), activity_type="journey", plan_id=str(streak.plan_id))
+
+    streak_result = await update_user_streak(
+        db,
+        str(current_user["sub"]),
+        activity_type="journey",
+        plan_id=str(streak.plan_id),
+    )
 
     return {
         "success": True,

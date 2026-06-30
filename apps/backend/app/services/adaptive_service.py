@@ -68,15 +68,17 @@ async def build_user_context(db: AsyncSession, user_id: str) -> str:
         parts.append(f"User tends to skip: {', '.join(preferences['avoided'])}")
 
     # Journal frequency
-    journal_count = await db.scalar(
-        select(func.count(JournalEntry.id))
-        .where(
-            and_(
-                JournalEntry.user_id == user_id,
-                JournalEntry.date >= date.today() - timedelta(days=14),
+    journal_count = (
+        await db.scalar(
+            select(func.count(JournalEntry.id)).where(
+                and_(
+                    JournalEntry.user_id == user_id,
+                    JournalEntry.date >= date.today() - timedelta(days=14),
+                )
             )
         )
-    ) or 0
+        or 0
+    )
     if journal_count > 0:
         parts.append(f"Journal activity: {journal_count} entries in the last 2 weeks.")
 
@@ -115,11 +117,14 @@ async def get_habit_preferences(db: AsyncSession, user_id: str) -> dict:
                 offered_categories[cat] += 1
 
     # Get completions count for this user's streaks
-    completion_count = await db.scalar(
-        select(func.count(DailyCompletion.id))
-        .join(Streak, DailyCompletion.streak_id == Streak.id)
-        .where(Streak.user_id == user_id)
-    ) or 0
+    completion_count = (
+        await db.scalar(
+            select(func.count(DailyCompletion.id))
+            .join(Streak, DailyCompletion.streak_id == Streak.id)
+            .where(Streak.user_id == user_id)
+        )
+        or 0
+    )
 
     # Determine preferred vs avoided based on ratios
     preferred = []
@@ -167,7 +172,9 @@ async def check_escalation(db: AsyncSession, user_id: str) -> dict:
     if len(recent_checkins) >= 3:
         scores = [mood_tag_to_score(c.mood_tag) for c in recent_checkins]
         # Check if each score is lower than the previous
-        declining = all(scores[i] <= scores[i + 1] for i in range(min(len(scores) - 1, 2)))
+        declining = all(
+            scores[i] <= scores[i + 1] for i in range(min(len(scores) - 1, 2))
+        )
         if declining and scores[0] <= 2:
             result["should_escalate"] = True
             result["reason"] = "Your mood has been declining over recent check-ins."
@@ -179,7 +186,9 @@ async def check_escalation(db: AsyncSession, user_id: str) -> dict:
         days_since = (date.today() - last_checkin_date).days
         if days_since >= 5:
             result["should_escalate"] = True
-            result["reason"] = "It's been a while since you checked in. We're here for you."
+            result["reason"] = (
+                "It's been a while since you checked in. We're here for you."
+            )
             result["severity"] = "mild"
     elif not recent_checkins:
         # No check-ins at all — not escalation, just new user
@@ -191,7 +200,9 @@ async def check_escalation(db: AsyncSession, user_id: str) -> dict:
         avg = sum(scores) / len(scores)
         if avg <= 1.5:
             result["should_escalate"] = True
-            result["reason"] = "You've been going through a tough time. Professional support can help."
+            result["reason"] = (
+                "You've been going through a tough time. Professional support can help."
+            )
             result["severity"] = "high"
 
     return result
@@ -210,14 +221,16 @@ async def get_adaptive_home_data(db: AsyncSession, user_id: str) -> dict:
 
     # Escalation nudge
     if escalation["should_escalate"]:
-        nudge_cards.append({
-            "type": "therapist",
-            "emoji": "🫂",
-            "title": "Professional support can help",
-            "message": escalation["reason"],
-            "action": "therapist_directory",
-            "priority": 1,
-        })
+        nudge_cards.append(
+            {
+                "type": "therapist",
+                "emoji": "🫂",
+                "title": "Professional support can help",
+                "message": escalation["reason"],
+                "action": "therapist_directory",
+                "priority": 1,
+            }
+        )
 
     # Streak nudge
     streak_result = await db.execute(
@@ -228,25 +241,29 @@ async def get_adaptive_home_data(db: AsyncSession, user_id: str) -> dict:
     )
     streak = streak_result.scalar_one_or_none()
     if streak and streak.current_streak > 0:
-        nudge_cards.append({
-            "type": "streak",
-            "emoji": "🔥",
-            "title": "VinR knows you better now",
-            "message": f"You're on a {streak.current_streak}-day streak. Your preferred techniques are being prioritized.",
-            "action": "journey",
-            "priority": 2,
-        })
+        nudge_cards.append(
+            {
+                "type": "streak",
+                "emoji": "🔥",
+                "title": "VinR knows you better now",
+                "message": f"You're on a {streak.current_streak}-day streak. Your preferred techniques are being prioritized.",
+                "action": "journey",
+                "priority": 2,
+            }
+        )
 
     # Habit preference nudge
     if preferences.get("preferred"):
-        nudge_cards.append({
-            "type": "preference",
-            "emoji": "🎯",
-            "title": "Personalized for you",
-            "message": f"We've noticed you respond well to {preferences['preferred'][0]} techniques.",
-            "action": None,
-            "priority": 3,
-        })
+        nudge_cards.append(
+            {
+                "type": "preference",
+                "emoji": "🎯",
+                "title": "Personalized for you",
+                "message": f"We've noticed you respond well to {preferences['preferred'][0]} techniques.",
+                "action": None,
+                "priority": 3,
+            }
+        )
 
     # Sort by priority
     nudge_cards.sort(key=lambda x: x["priority"])

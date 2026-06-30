@@ -15,7 +15,10 @@ class Checkin(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     mood_tag: Mapped[str] = mapped_column(String(50), nullable=False)
     raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -27,7 +30,9 @@ class Checkin(Base):
 
     # Relationships
     user = relationship("User", back_populates="checkins")
-    plan = relationship("Plan", back_populates="checkin", uselist=False, lazy="selectin")
+    plan = relationship(
+        "Plan", back_populates="checkin", uselist=False, lazy="selectin"
+    )
 
 
 class Plan(Base):
@@ -37,10 +42,16 @@ class Plan(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     checkin_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("checkins.id", ondelete="CASCADE"), unique=True, nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("checkins.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     immediate_relief: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
     daily_habits: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)

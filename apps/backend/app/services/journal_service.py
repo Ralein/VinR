@@ -6,7 +6,13 @@ from openai import AsyncOpenAI
 from app.core.config import get_settings
 
 settings = get_settings()
-client = AsyncOpenAI(api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1") if settings.GROQ_API_KEY else None
+client = (
+    AsyncOpenAI(
+        api_key=settings.GROQ_API_KEY, base_url="https://api.groq.com/openai/v1"
+    )
+    if settings.GROQ_API_KEY
+    else None
+)
 
 
 async def generate_journal_reflection(
@@ -20,7 +26,9 @@ async def generate_journal_reflection(
     Returns 1 empathetic observation + 1 gentle prompt for tomorrow.
     """
     mood_map = {1: "really low", 2: "a bit low", 3: "okay", 4: "good", 5: "great"}
-    mood_desc = mood_map.get(mood_at_entry, "unspecified") if mood_at_entry else "unspecified"
+    mood_desc = (
+        mood_map.get(mood_at_entry, "unspecified") if mood_at_entry else "unspecified"
+    )
     name = user_name or "friend"
 
     gratitude_list = "\n".join(f"  - {item}" for item in gratitude_items)
@@ -30,7 +38,7 @@ async def generate_journal_reflection(
 Mood: {mood_desc}
 Gratitude items:
 {gratitude_list}
-{f'Reflection: {reflection_text}' if reflection_text else ''}
+{f"Reflection: {reflection_text}" if reflection_text else ""}
 
 Write exactly 2 sentences:
 1. A warm, specific observation about what they shared (reference something they wrote)
@@ -46,7 +54,7 @@ Rules:
     try:
         if not client:
             raise ValueError("GROQ_API_KEY not configured")
-        
+
         response = await client.chat.completions.create(
             model=settings.GROQ_MODEL,
             max_tokens=200,
@@ -75,7 +83,9 @@ async def generate_weekly_insight(
     for entry in entries:
         entries_text += f"\nDate: {entry['date']}\n"
         entries_text += f"  Mood: {entry.get('mood_at_entry', '?')}/5\n"
-        entries_text += f"  Grateful for: {', '.join(entry.get('gratitude_items', []))}\n"
+        entries_text += (
+            f"  Grateful for: {', '.join(entry.get('gratitude_items', []))}\n"
+        )
         if entry.get("reflection_text"):
             entries_text += f"  Reflection: {entry['reflection_text']}\n"
 
@@ -97,7 +107,7 @@ Rules:
     try:
         if not client:
             raise ValueError("GROQ_API_KEY not configured")
-        
+
         response = await client.chat.completions.create(
             model=settings.GROQ_MODEL,
             max_tokens=250,

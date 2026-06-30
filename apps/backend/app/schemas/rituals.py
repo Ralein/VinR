@@ -38,6 +38,8 @@ class EveningWindDownResponse(BaseModel):
     gratitude_prompt: str
     sleep_suggestion: SleepSuggestion
     breathing_suggestion: BreathingSuggestion
+
+
 class AfternoonRitualResponse(BaseModel):
     greeting: str
     affirmation: str

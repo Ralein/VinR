@@ -93,7 +93,7 @@ async def google_login(user_in: GoogleLogin, db: AsyncSession = Depends(get_db))
     # idinfo = id_token.verify_oauth2_token(user_in.id_token, Request(), CLIENT_ID)
     # email = idinfo['email']
     # google_id = idinfo['sub']
-    
+
     # Placeholder implementation:
     raise HTTPException(status_code=501, detail="Google verify logic needs library")
 
@@ -103,16 +103,16 @@ async def forgot_password(data: ForgotPassword, db: AsyncSession = Depends(get_d
     """Send password reset email."""
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
-    
+
     if user:
         token = secrets.token_urlsafe(32)
         user.password_reset_token = token
         user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
         await db.commit()
-        
+
         # Send password reset email
         send_password_reset_email(user.email, token)
-        
+
     return {"message": "If that email exists, a reset link has been sent"}
 
 
@@ -122,19 +122,19 @@ async def reset_password(data: ResetPassword, db: AsyncSession = Depends(get_db)
     result = await db.execute(
         select(User).where(
             User.password_reset_token == data.token,
-            User.password_reset_expires > datetime.utcnow()
+            User.password_reset_expires > datetime.utcnow(),
         )
     )
     user = result.scalar_one_or_none()
-    
+
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-        
+
     user.password_hash = get_password_hash(data.new_password)
     user.password_reset_token = None
     user.password_reset_expires = None
     await db.commit()
-    
+
     return {"message": "Password reset successfully"}
 
 

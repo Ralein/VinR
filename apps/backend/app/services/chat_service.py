@@ -151,8 +151,12 @@ def memory_clear_all():
 
 # ── Buddy response generation ───────────────────────────────────────
 
+
 async def generate_buddy_response(
-    db: AsyncSession, user_id: str, message: str, persona: str = "hope",
+    db: AsyncSession,
+    user_id: str,
+    message: str,
+    persona: str = "hope",
 ) -> str:
     """
     Orchestrate: in-memory history + RAG + user context → Groq LLM → response.
@@ -174,14 +178,16 @@ async def generate_buddy_response(
         llm_messages = [{"role": "system", "content": sys_prompt}]
 
         # Inject static "Evidence Grounding" rule
-        llm_messages.append({
-            "role": "system",
-            "content": (
-                "IMPORTANT: When suggesting activities or health facts, ONLY speak "
-                "based on the provided wellness knowledge. If no knowledge is relevant, "
-                "provide general empathetic validation without technical claims."
-            )
-        })
+        llm_messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "IMPORTANT: When suggesting activities or health facts, ONLY speak "
+                    "based on the provided wellness knowledge. If no knowledge is relevant, "
+                    "provide general empathetic validation without technical claims."
+                ),
+            }
+        )
 
         # Inject RAG + user context as a system-level preamble
         if rag_context or user_context:
@@ -192,10 +198,12 @@ async def generate_buddy_response(
                 context_parts.append(
                     f"--- Relevant Wellness Knowledge ---\n{rag_context}"
                 )
-            llm_messages.append({
-                "role": "system",
-                "content": "\n\n".join(context_parts),
-            })
+            llm_messages.append(
+                {
+                    "role": "system",
+                    "content": "\n\n".join(context_parts),
+                }
+            )
 
         # Add conversation history from memory
         for msg in history:
@@ -216,6 +224,7 @@ async def generate_buddy_response(
 
     except Exception as e:
         import traceback
+
         print(f"❌ Buddy generation error: {str(e)}")
         print(traceback.format_exc())
         return (

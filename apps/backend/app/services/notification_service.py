@@ -51,7 +51,10 @@ async def send_push_notification(
                 timeout=10.0,
             )
             result = response.json()
-            if response.status_code == 200 and result.get("data", {}).get("status") == "ok":
+            if (
+                response.status_code == 200
+                and result.get("data", {}).get("status") == "ok"
+            ):
                 return True
             else:
                 print(f"Push notification failed: {result}")

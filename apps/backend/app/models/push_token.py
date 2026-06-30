@@ -15,7 +15,10 @@ class PushToken(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     token: Mapped[str] = mapped_column(String(500), nullable=False)
     platform: Mapped[str] = mapped_column(String(20), nullable=False)  # ios, android

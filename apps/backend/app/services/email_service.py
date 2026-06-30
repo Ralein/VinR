@@ -6,6 +6,7 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+
 def send_password_reset_email(to_email: str, token: str) -> None:
     """Send a password reset email."""
     if not settings.SMTP_HOST:
@@ -13,7 +14,7 @@ def send_password_reset_email(to_email: str, token: str) -> None:
         return
 
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
-    
+
     msg = EmailMessage()
     msg.set_content(
         f"You requested a password reset.\\n\\n"

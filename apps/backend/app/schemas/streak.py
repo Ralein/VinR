@@ -50,6 +50,7 @@ class StreakResponse(BaseModel):
 
 class StreakSummary(BaseModel):
     """Lightweight streak info for dashboard."""
+
     current_streak: int
     longest_streak: int
     global_streak: int = 0

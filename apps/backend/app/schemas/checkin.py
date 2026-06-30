@@ -6,6 +6,7 @@ from datetime import datetime
 
 class ReliefItem(BaseModel):
     """A single immediate relief or daily habit technique."""
+
     id: str
     name: str
     emoji: str
@@ -23,6 +24,7 @@ class CheckinRequest(BaseModel):
 
 class PlanResponse(BaseModel):
     """Complete AI-generated plan response."""
+
     isEmergency: bool = False
     primaryEmotion: str = ""
     emotionSummary: str = ""
@@ -36,6 +38,7 @@ class PlanResponse(BaseModel):
 
 class CheckinResponse(BaseModel):
     """Full check-in response with plan and streak info."""
+
     checkin_id: str
     plan: PlanResponse
     streak_id: str | None = None

@@ -21,11 +21,11 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 # ── Request / Response schemas ───────────────────────────────────────
 
+
 class SendMessageRequest(BaseModel):
     text: str
     voice_enabled: bool = False
     persona: str = "vinr"  # Default persona
-
 
 
 class ChatMessageResponse(BaseModel):
@@ -44,11 +44,14 @@ class SendMessageResponse(BaseModel):
 
 # ── Routes ───────────────────────────────────────────────────────────
 
+
 @router.post("/message", response_model=SendMessageResponse)
 async def send_message(
     request: SendMessageRequest,
     current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),  # Still needed for adaptive_service user profile
+    db: AsyncSession = Depends(
+        get_db
+    ),  # Still needed for adaptive_service user profile
 ):
     """Send a message to VinR Buddy and get a response (ephemeral — no DB save)."""
     user_id = current_user["sub"]
@@ -63,9 +66,7 @@ async def send_message(
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     # Save user message to memory (not DB)
-    user_msg = memory_save_message(
-        user_id, "user", clean_text, persona=request.persona
-    )
+    user_msg = memory_save_message(user_id, "user", clean_text, persona=request.persona)
 
     # Generate buddy response (reads memory for context)
     buddy_text = await generate_buddy_response(
@@ -81,8 +82,11 @@ async def send_message(
 
     # Save buddy message to memory (not DB)
     buddy_msg = memory_save_message(
-        user_id, "assistant", buddy_text,
-        audio_url=audio_url, persona=request.persona,
+        user_id,
+        "assistant",
+        buddy_text,
+        audio_url=audio_url,
+        persona=request.persona,
     )
 
     return SendMessageResponse(
@@ -109,23 +113,28 @@ async def transcribe_audio(
 ):
     """Voice to text using Groq Whisper."""
     try:
-        print(f"🎤 Received transcription request: {file.filename} ({file.content_type})")
+        print(
+            f"🎤 Received transcription request: {file.filename} ({file.content_type})"
+        )
         content = await file.read()
         print(f"📊 Audio data size: {len(content)} bytes")
-        
+
         if len(content) == 0:
             raise ValueError("Empty audio file received")
 
         text = await transcribe_audio_whisper(content, filename=file.filename)
-        
+
         if not text:
             print("⚠️ Transcription service returned no text")
-            raise HTTPException(status_code=400, detail="Transcription failed to produce text")
-            
+            raise HTTPException(
+                status_code=400, detail="Transcription failed to produce text"
+            )
+
         print(f"📝 Transcribed text: {text[:50]}...")
         return {"text": text}
     except Exception as e:
         import traceback
+
         print(f"❌ Transcribe route error: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))

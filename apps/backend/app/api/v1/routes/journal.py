@@ -15,7 +15,10 @@ from app.schemas.journal import (
     JournalCalendarResponse,
     WeeklyInsightResponse,
 )
-from app.services.journal_service import generate_journal_reflection, generate_weekly_insight
+from app.services.journal_service import (
+    generate_journal_reflection,
+    generate_weekly_insight,
+)
 
 router = APIRouter(prefix="/journal", tags=["journal"])
 
@@ -57,6 +60,7 @@ async def create_journal_entry(
 
     # Update streaks (Journal counts towards Global Streak)
     from app.services.unified_streak_service import update_user_streak
+
     await update_user_streak(db, user_id, activity_type="journal")
 
     return entry
@@ -65,8 +69,7 @@ async def create_journal_entry(
 @router.get("", response_model=list[JournalEntryResponse])
 async def get_journal_entries(
     month: str = Query(
-        ..., pattern=r"^\d{4}-\d{2}$",
-        description="Month in YYYY-MM format"
+        ..., pattern=r"^\d{4}-\d{2}$", description="Month in YYYY-MM format"
     ),
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -89,8 +92,7 @@ async def get_journal_entries(
 @router.get("/calendar", response_model=JournalCalendarResponse)
 async def get_journal_calendar(
     month: str = Query(
-        ..., pattern=r"^\d{4}-\d{2}$",
-        description="Month in YYYY-MM format"
+        ..., pattern=r"^\d{4}-\d{2}$", description="Month in YYYY-MM format"
     ),
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -172,7 +174,9 @@ async def search_journal_entries(
         .where(JournalEntry.user_id == user_id)
         .where(
             JournalEntry.reflection_text.ilike(f"%{q}%")
-            | func.cast(JournalEntry.gratitude_items, db.bind.dialect.type_descriptor(type(str))).ilike(f"%{q}%")
+            | func.cast(
+                JournalEntry.gratitude_items, db.bind.dialect.type_descriptor(type(str))
+            ).ilike(f"%{q}%")
         )
         .order_by(JournalEntry.date.desc())
         .limit(20)

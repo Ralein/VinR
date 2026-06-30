@@ -1,6 +1,6 @@
 """RAG Service — Semantic mental health knowledge base.
 
-Utilizes pgvector for high-fidelity semantic similarity search, 
+Utilizes pgvector for high-fidelity semantic similarity search,
 providing evidence-based context to the LLM.
 """
 
@@ -10,14 +10,15 @@ from app.core.database import AsyncSessionLocal
 from app.models.rag import KnowledgeChunk
 from app.core.embeddings import embedding_service
 
+
 async def retrieve_context(query: str, top_k: int = 3) -> str:
     """
     Retrieve relevant knowledge chunks using pgvector semantic search.
-    
+
     Args:
         query: User's emotional text input
         top_k: Number of chunks to retrieve
-        
+
     Returns:
         Concatenated relevant context string with source attribution
     """
@@ -36,7 +37,7 @@ async def retrieve_context(query: str, top_k: int = 3) -> str:
                 .order_by(KnowledgeChunk.embedding.l2_distance(query_vector))
                 .limit(top_k)
             )
-            
+
             result = await session.execute(stmt)
             chunks = result.scalars().all()
 

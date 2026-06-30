@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Union
 import numpy as np
 
+
 class EmbeddingService:
     _instance = None
     _model = None
@@ -25,8 +26,11 @@ class EmbeddingService:
 
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for a batch of text strings."""
-        embeddings = self._model.encode(texts, convert_to_batch=True, convert_to_tensor=False)
+        embeddings = self._model.encode(
+            texts, convert_to_batch=True, convert_to_tensor=False
+        )
         return embeddings.tolist()
+
 
 # Singleton instance
 embedding_service = EmbeddingService()

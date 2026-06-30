@@ -41,10 +41,7 @@ async def get_morning_ritual(db: AsyncSession, user_id: str) -> dict:
         }
 
         # Get today's habit from the associated plan
-        plan_result = await db.execute(
-            select(Plan)
-            .where(Plan.id == streak.plan_id)
-        )
+        plan_result = await db.execute(select(Plan).where(Plan.id == streak.plan_id))
         plan = plan_result.scalar_one_or_none()
         if plan and plan.daily_habits:
             habits = plan.daily_habits if isinstance(plan.daily_habits, list) else []
@@ -169,7 +166,6 @@ async def get_afternoon_ritual(db: AsyncSession, user_id: str) -> dict:
     }
 
 
-
 async def get_evening_winddown(db: AsyncSession, user_id: str) -> dict:
     """
     Build a personalized evening wind-down.
@@ -207,8 +203,7 @@ async def get_evening_winddown(db: AsyncSession, user_id: str) -> dict:
     habit_completed = False
     if streak:
         comp = await db.execute(
-            select(DailyCompletion)
-            .where(
+            select(DailyCompletion).where(
                 and_(
                     DailyCompletion.streak_id == streak.id,
                     func.date(DailyCompletion.completed_at) == today,

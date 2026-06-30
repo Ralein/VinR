@@ -3,7 +3,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
-from app.api.v1.routes import auth, checkin, streaks, notifications, journal, media, events, analytics, therapist, rituals, chat
+from app.api.v1.routes import (
+    auth,
+    checkin,
+    streaks,
+    notifications,
+    journal,
+    media,
+    events,
+    analytics,
+    therapist,
+    rituals,
+    chat,
+)
 from app.services.kokoro_service import tts_service
 
 settings = get_settings()
@@ -26,12 +38,15 @@ PUBLIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public")
 os.makedirs(PUBLIC_DIR, exist_ok=True)
 app.mount("/public", StaticFiles(directory=PUBLIC_DIR), name="public")
 
+
 @app.on_event("startup")
 async def startup_event():
     """Trigger background tasks on startup."""
     # Pre-generate persona greetings in background to avoid blocking API startup
     import asyncio
+
     asyncio.create_task(tts_service.pregenerate_greetings())
+
 
 # CORS
 app.add_middleware(

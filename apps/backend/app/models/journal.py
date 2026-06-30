@@ -15,8 +15,10 @@ class JournalEntry(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     date: Mapped[date] = mapped_column(Date, default=date.today, index=True)
 

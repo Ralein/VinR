@@ -85,8 +85,7 @@ async def send_daily_reminders():
             select(User, PushToken, NotificationPreferences, Streak)
             .join(PushToken, PushToken.user_id == User.id)
             .outerjoin(
-                NotificationPreferences,
-                NotificationPreferences.user_id == User.id
+                NotificationPreferences, NotificationPreferences.user_id == User.id
             )
             .outerjoin(Streak, Streak.user_id == User.id)
             .where(PushToken.active == True)
@@ -107,11 +106,14 @@ async def send_daily_reminders():
             reminder_time = prefs.daily_reminder_time if prefs else None
             if reminder_time is None:
                 from datetime import time
+
                 reminder_time = time(8, 0)
 
             # Simple time window check (UTC for now)
-            if not (reminder_time.hour == now.hour and
-                    abs(reminder_time.minute - now.minute) <= 15):
+            if not (
+                reminder_time.hour == now.hour
+                and abs(reminder_time.minute - now.minute) <= 15
+            ):
                 continue
 
             # Skip if already completed today
@@ -142,8 +144,7 @@ async def send_streak_at_risk_notifications():
             select(User, PushToken, NotificationPreferences, Streak)
             .join(PushToken, PushToken.user_id == User.id)
             .outerjoin(
-                NotificationPreferences,
-                NotificationPreferences.user_id == User.id
+                NotificationPreferences, NotificationPreferences.user_id == User.id
             )
             .join(Streak, Streak.user_id == User.id)
             .where(PushToken.active == True)
@@ -186,8 +187,7 @@ async def send_milestone_notifications():
             select(User, PushToken, NotificationPreferences, Streak)
             .join(PushToken, PushToken.user_id == User.id)
             .outerjoin(
-                NotificationPreferences,
-                NotificationPreferences.user_id == User.id
+                NotificationPreferences, NotificationPreferences.user_id == User.id
             )
             .join(Streak, Streak.user_id == User.id)
             .where(PushToken.active == True)
@@ -243,8 +243,7 @@ async def send_re_engagement_notifications():
             select(User, PushToken, NotificationPreferences, Streak)
             .join(PushToken, PushToken.user_id == User.id)
             .outerjoin(
-                NotificationPreferences,
-                NotificationPreferences.user_id == User.id
+                NotificationPreferences, NotificationPreferences.user_id == User.id
             )
             .outerjoin(Streak, Streak.user_id == User.id)
             .where(PushToken.active == True)
@@ -277,7 +276,9 @@ async def send_re_engagement_notifications():
                 channel_id="streaks",
             )
 
+
 # --- Celery Tasks ---
+
 
 @shared_task
 def send_daily_reminders_task():

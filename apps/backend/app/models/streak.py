@@ -15,7 +15,10 @@ class Streak(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        String(255),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     plan_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("plans.id", ondelete="CASCADE"), nullable=False
@@ -32,7 +35,10 @@ class Streak(Base):
     # Relationships
     user = relationship("User", back_populates="streaks")
     daily_completions = relationship(
-        "DailyCompletion", back_populates="streak", lazy="selectin", order_by="DailyCompletion.day_number"
+        "DailyCompletion",
+        back_populates="streak",
+        lazy="selectin",
+        order_by="DailyCompletion.day_number",
     )
 
 
@@ -43,7 +49,10 @@ class DailyCompletion(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     streak_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("streaks.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("streaks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     day_number: Mapped[int] = mapped_column(Integer, nullable=False)
     completed_at: Mapped[datetime] = mapped_column(

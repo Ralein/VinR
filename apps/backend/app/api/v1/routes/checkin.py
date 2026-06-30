@@ -77,7 +77,7 @@ async def create_checkin(
 
     # Step 5: Update streaks (Unified)
     from app.services.unified_streak_service import update_user_streak
-    
+
     streak_id = None
     current_streak = 0
     global_streak = 0
@@ -85,15 +85,12 @@ async def create_checkin(
     if not ai_response.get("is_emergency", False):
         # Update both global and plan streak
         result = await update_user_streak(
-            db, 
-            user_id, 
-            activity_type="checkin", 
-            plan_id=str(plan.id)
+            db, user_id, activity_type="checkin", plan_id=str(plan.id)
         )
         if result:
             current_streak = result.get("plan_streak") or 0
             global_streak = result.get("global_streak") or 0
-            
+
             # Find the streak id for the response
             # (We just created/updated it in the service)
             streak_result = await db.execute(

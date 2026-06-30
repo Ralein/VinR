@@ -41,7 +41,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-
 class UserUpdate(BaseModel):
     name: str | None = None
     avatar_url: str | None = None

@@ -1,6 +1,7 @@
 import asyncio
 from app.services.kokoro_service import tts_service
 
+
 async def main():
     await tts_service.bootstrap()
     engine = tts_service.engine
@@ -10,5 +11,6 @@ async def main():
         print("Success! Got bytes:", len(res))
     else:
         print("Failed to generate audio.")
+
 
 asyncio.run(main())

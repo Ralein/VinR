@@ -27,10 +27,12 @@ AsyncSessionLocal = async_sessionmaker(
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
+
     pass
 
 
 from collections.abc import AsyncGenerator
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async database session."""

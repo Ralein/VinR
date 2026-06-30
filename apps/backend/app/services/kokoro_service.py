@@ -35,8 +35,10 @@ PERSONA_VOICE_MAP = {
     "coach": "am_michael",
 }
 
+
 class KokoroService:
     """Singleton TTS service using Kokoro-82M ONNX for high-speed synthesis."""
+
     _instance = None
     _kokoro = None
 
@@ -49,13 +51,15 @@ class KokoroService:
         """Download model and voices if they don't exist."""
         urls = {
             MODEL_PATH: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
-            VOICES_PATH: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+            VOICES_PATH: "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
         }
 
         async with httpx.AsyncClient(follow_redirects=True, timeout=600.0) as client:
             for path, url in urls.items():
                 if not os.path.exists(path):
-                    print(f"📦 Downloading Kokoro asset to {os.path.basename(path)}... (This may take a minute)")
+                    print(
+                        f"📦 Downloading Kokoro asset to {os.path.basename(path)}... (This may take a minute)"
+                    )
                     response = await client.get(url)
                     response.raise_for_status()
                     with open(path, "wb") as f:
@@ -68,7 +72,7 @@ class KokoroService:
         if self._kokoro is None:
             if not os.path.exists(MODEL_PATH) or not os.path.exists(VOICES_PATH):
                 raise RuntimeError("Kokoro assets not found. Run bootstrap() first.")
-            
+
             print(f"🚀 Loading Kokoro-ONNX engine...")
             self._kokoro = Kokoro(MODEL_PATH, VOICES_PATH)
             print("✅ Kokoro-ONNX engine ready.")
@@ -83,14 +87,16 @@ class KokoroService:
             print("🎙️ Refreshing persona greetings with Kokoro...")
             for persona_id, voice in PERSONA_VOICE_MAP.items():
                 file_path = os.path.join(STATIC_GREETINGS_DIR, f"{persona_id}.wav")
-                
+
                 # Ensure we have the greeting for each persona
                 if os.path.exists(file_path) and not force:
                     continue
-                
-                persona_name = persona_id.capitalize() if persona_id != "vinr" else "VinR Buddy"
+
+                persona_name = (
+                    persona_id.capitalize() if persona_id != "vinr" else "VinR Buddy"
+                )
                 text = f"Hey! I'm {persona_name}. Voice mode is now active — I'll speak my replies to you."
-                
+
                 print(f"   - Synthesizing {persona_id} ({voice})...")
                 audio_bytes = await self.text_to_speech(text, persona=persona_id)
                 if audio_bytes:
@@ -104,30 +110,33 @@ class KokoroService:
         """Generate WAV bytes from text using Kokoro-ONNX."""
         try:
             voice = PERSONA_VOICE_MAP.get(persona.lower(), "af_heart")
-            
+
             # Clean markdown for TTS
-            clean_text = text.replace('*', '').replace('_', '').replace('#', '').strip()
-            
+            clean_text = text.replace("*", "").replace("_", "").replace("#", "").strip()
+
             # Kokoro.create returns (samples, sample_rate)
             # Run in threadpool as it's CPU intensive
             samples, sample_rate = await asyncio.to_thread(
                 self.engine.create, clean_text, voice=voice, speed=1.1, lang="en-us"
             )
-            
+
             # Save to buffer using soundfile
             buffer = io.BytesIO()
-            sf.write(buffer, samples, sample_rate, format='WAV')
+            sf.write(buffer, samples, sample_rate, format="WAV")
             return buffer.getvalue()
         except Exception as e:
             print(f"❌ Kokoro TTS error: {str(e)}")
             return None
 
+
 def audio_bytes_to_data_uri(audio_bytes: bytes, mime_type: str = "audio/wav") -> str:
     base64_audio = base64.b64encode(audio_bytes).decode("utf-8")
     return f"data:{mime_type};base64,{base64_audio}"
 
+
 # Exportable singleton
 tts_service = KokoroService()
+
 
 async def text_to_speech(text: str, persona: str = "vinr") -> bytes | None:
     return await tts_service.text_to_speech(text, persona)

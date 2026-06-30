@@ -5,8 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.schemas.rituals import MorningRitualResponse, EveningWindDownResponse, AfternoonRitualResponse
-from app.services.ritual_service import get_morning_ritual, get_evening_winddown, get_afternoon_ritual
+from app.schemas.rituals import (
+    MorningRitualResponse,
+    EveningWindDownResponse,
+    AfternoonRitualResponse,
+)
+from app.services.ritual_service import (
+    get_morning_ritual,
+    get_evening_winddown,
+    get_afternoon_ritual,
+)
 
 router = APIRouter(prefix="/rituals", tags=["rituals"])
 

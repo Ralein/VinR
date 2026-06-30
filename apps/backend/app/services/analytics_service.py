@@ -42,33 +42,50 @@ async def get_summary(db: AsyncSession, user_id: str) -> dict:
     journal entries, and meditation count.
     """
     # Total check-ins
-    checkin_count = await db.scalar(
-        select(func.count(Checkin.id)).where(Checkin.user_id == user_id)
-    ) or 0
+    checkin_count = (
+        await db.scalar(
+            select(func.count(Checkin.id)).where(Checkin.user_id == user_id)
+        )
+        or 0
+    )
 
     # Total days completed (across all streaks)
-    days_completed = await db.scalar(
-        select(func.coalesce(func.sum(Streak.total_days_completed), 0))
-        .where(Streak.user_id == user_id)
-    ) or 0
+    days_completed = (
+        await db.scalar(
+            select(func.coalesce(func.sum(Streak.total_days_completed), 0)).where(
+                Streak.user_id == user_id
+            )
+        )
+        or 0
+    )
 
     # Best streak
-    best_streak = await db.scalar(
-        select(func.coalesce(func.max(Streak.longest_streak), 0))
-        .where(Streak.user_id == user_id)
-    ) or 0
+    best_streak = (
+        await db.scalar(
+            select(func.coalesce(func.max(Streak.longest_streak), 0)).where(
+                Streak.user_id == user_id
+            )
+        )
+        or 0
+    )
 
     # Journal entries count
-    journal_count = await db.scalar(
-        select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id)
-    ) or 0
+    journal_count = (
+        await db.scalar(
+            select(func.count(JournalEntry.id)).where(JournalEntry.user_id == user_id)
+        )
+        or 0
+    )
 
     # Meditation sessions (from daily completions with mood_rating)
-    meditation_count = await db.scalar(
-        select(func.count(DailyCompletion.id))
-        .join(Streak, DailyCompletion.streak_id == Streak.id)
-        .where(Streak.user_id == user_id)
-    ) or 0
+    meditation_count = (
+        await db.scalar(
+            select(func.count(DailyCompletion.id))
+            .join(Streak, DailyCompletion.streak_id == Streak.id)
+            .where(Streak.user_id == user_id)
+        )
+        or 0
+    )
 
     return {
         "total_checkins": checkin_count,
@@ -79,9 +96,7 @@ async def get_summary(db: AsyncSession, user_id: str) -> dict:
     }
 
 
-async def get_mood_trends(
-    db: AsyncSession, user_id: str, days: int = 30
-) -> list[dict]:
+async def get_mood_trends(db: AsyncSession, user_id: str, days: int = 30) -> list[dict]:
     """
     Get daily mood data for the last N days.
 
@@ -126,11 +141,13 @@ async def get_mood_trends(
     trends = []
     for d, scores in sorted(day_scores.items()):
         avg_score = round(sum(scores) / len(scores), 1)
-        trends.append({
-            "date": d.isoformat(),
-            "mood_score": avg_score,
-            "is_streak_day": d in streak_dates,
-        })
+        trends.append(
+            {
+                "date": d.isoformat(),
+                "mood_score": avg_score,
+                "is_streak_day": d in streak_dates,
+            }
+        )
 
     return trends
 
@@ -182,8 +199,7 @@ async def get_streak_correlation(db: AsyncSession, user_id: str) -> dict:
 
     # All check-ins with dates
     result = await db.execute(
-        select(Checkin.mood_tag, func.date(Checkin.created_at).label("day"))
-        .where(
+        select(Checkin.mood_tag, func.date(Checkin.created_at).label("day")).where(
             and_(
                 Checkin.user_id == user_id,
                 func.date(Checkin.created_at) >= cutoff,
@@ -221,9 +237,7 @@ async def get_streak_correlation(db: AsyncSession, user_id: str) -> dict:
         else 0
     )
     avg_off = (
-        round(sum(off_day_scores) / len(off_day_scores), 2)
-        if off_day_scores
-        else 0
+        round(sum(off_day_scores) / len(off_day_scores), 2) if off_day_scores else 0
     )
 
     improvement = round(((avg_streak - avg_off) / max(avg_off, 1)) * 100, 1)
@@ -246,26 +260,32 @@ async def generate_insights(db: AsyncSession, user_id: str) -> list[dict]:
     # Streak correlation insight
     correlation = await get_streak_correlation(db, user_id)
     if correlation["improvement_percent"] > 0:
-        insights.append({
-            "emoji": "📈",
-            "text": f"You feel {correlation['improvement_percent']:.0f}% better on days you complete your habit.",
-        })
+        insights.append(
+            {
+                "emoji": "📈",
+                "text": f"You feel {correlation['improvement_percent']:.0f}% better on days you complete your habit.",
+            }
+        )
 
     # Most common emotion
     distribution = await get_emotion_distribution(db, user_id, days=14)
     if distribution:
         top = distribution[0]
-        insights.append({
-            "emoji": "🎯",
-            "text": f"Your most frequent mood this week is \"{top['emotion']}\" ({top['percentage']:.0f}% of check-ins).",
-        })
+        insights.append(
+            {
+                "emoji": "🎯",
+                "text": f'Your most frequent mood this week is "{top["emotion"]}" ({top["percentage"]:.0f}% of check-ins).',
+            }
+        )
 
     # Checkin frequency
     summary = await get_summary(db, user_id)
     if summary["total_checkins"] > 0:
-        insights.append({
-            "emoji": "🔥",
-            "text": f"You've completed {summary['total_days_completed']} streak days across {summary['total_checkins']} check-ins. Keep going!",
-        })
+        insights.append(
+            {
+                "emoji": "🔥",
+                "text": f"You've completed {summary['total_days_completed']} streak days across {summary['total_checkins']} check-ins. Keep going!",
+            }
+        )
 
     return insights[:3]

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "vinr_super_secret_key_placeholder_change_in_production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
-    FRONTEND_URL: str = "exp://localhost:8081" # Deep link for password reset
+    FRONTEND_URL: str = "exp://localhost:8081"  # Deep link for password reset
 
     # OAuth
     GOOGLE_CLIENT_ID: str = ""

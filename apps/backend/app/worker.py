@@ -8,7 +8,7 @@ settings = get_settings()
 celery_app = Celery(
     "vinr_tasks",
     broker=settings.CELERY_BROKER_URL,
-    include=["app.services.notification_scheduler"]
+    include=["app.services.notification_scheduler"],
 )
 
 celery_app.conf.update(

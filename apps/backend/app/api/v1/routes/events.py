@@ -23,8 +23,12 @@ async def search_nearby_events(
     lat: float = Query(..., description="Latitude"),
     lon: float = Query(..., description="Longitude"),
     radius: int = Query(25, ge=1, le=100, description="Radius in miles"),
-    keyword: str | None = Query(None, description="Search keyword (e.g. yoga, meditation)"),
-    emotion: str | None = Query(None, description="User's current emotion for personalization"),
+    keyword: str | None = Query(
+        None, description="Search keyword (e.g. yoga, meditation)"
+    ),
+    emotion: str | None = Query(
+        None, description="User's current emotion for personalization"
+    ),
     current_user: dict = Depends(get_current_user),
 ):
     """Search for nearby wellness events from Google Places + Eventbrite."""
