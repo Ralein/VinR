@@ -10,14 +10,13 @@ Handles 5 notification types:
 
 from datetime import datetime, timedelta, timezone, date
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
 from app.models.streak import Streak
 from app.models.push_token import PushToken
 from app.models.notification_preferences import NotificationPreferences
-from app.services.notification_service import send_push_notification
+from app.services.notification_service import send_bulk_push_notifications
 
 from celery import shared_task
 import asyncio
@@ -60,7 +59,6 @@ RE_ENGAGEMENT_TEMPLATES = [
 ]
 
 
-import random
 
 
 def _pick_template(templates: list[str] | str, name: str, day: int = 0) -> str:
@@ -89,11 +87,12 @@ async def send_daily_reminders():
                 NotificationPreferences.user_id == User.id
             )
             .outerjoin(Streak, Streak.user_id == User.id)
-            .where(PushToken.active == True)
+            .where(PushToken.active)
         )
 
         rows = result.all()
 
+        messages = []
         for user, push_token, prefs, streak in rows:
             # Skip if daily reminders disabled
             if prefs and not prefs.daily_reminder_enabled:
@@ -121,13 +120,18 @@ async def send_daily_reminders():
             day = (streak.current_streak + 1) if streak else 1
             body = _pick_template(DAILY_REMINDER_TEMPLATES, user.name, day)
 
-            await send_push_notification(
-                token=push_token.token,
-                title="VinR Daily Reminder",
-                body=body,
-                data={"screen": "journey", "action": "mark_complete"},
-                channel_id="streaks",
-            )
+            messages.append({
+                "token": push_token.token,
+                "title": "VinR Daily Reminder",
+                "body": body,
+                "data": {"screen": "journey", "action": "mark_complete"},
+                "channel_id": "streaks",
+            })
+
+        # Process in chunks of 100
+        for i in range(0, len(messages), 100):
+            chunk = messages[i:i + 100]
+            await send_bulk_push_notifications(chunk)
 
 
 async def send_streak_at_risk_notifications():
@@ -146,12 +150,13 @@ async def send_streak_at_risk_notifications():
                 NotificationPreferences.user_id == User.id
             )
             .join(Streak, Streak.user_id == User.id)
-            .where(PushToken.active == True)
+            .where(PushToken.active)
             .where(Streak.current_streak > 0)
         )
 
         rows = result.all()
 
+        messages = []
         for user, push_token, prefs, streak in rows:
             if prefs and not prefs.streak_at_risk_enabled:
                 continue
@@ -165,13 +170,18 @@ async def send_streak_at_risk_notifications():
             day = streak.current_streak + 1
             body = _pick_template(STREAK_AT_RISK_TEMPLATES, user.name, day)
 
-            await send_push_notification(
-                token=push_token.token,
-                title="⚠️ Streak at Risk!",
-                body=body,
-                data={"screen": "journey", "action": "mark_complete"},
-                channel_id="streaks",
-            )
+            messages.append({
+                "token": push_token.token,
+                "title": "⚠️ Streak at Risk!",
+                "body": body,
+                "data": {"screen": "journey", "action": "mark_complete"},
+                "channel_id": "streaks",
+            })
+
+        # Process in chunks of 100
+        for i in range(0, len(messages), 100):
+            chunk = messages[i:i + 100]
+            await send_bulk_push_notifications(chunk)
 
 
 async def send_milestone_notifications():
@@ -190,12 +200,13 @@ async def send_milestone_notifications():
                 NotificationPreferences.user_id == User.id
             )
             .join(Streak, Streak.user_id == User.id)
-            .where(PushToken.active == True)
+            .where(PushToken.active)
             .where(Streak.current_streak > 0)
         )
 
         rows = result.all()
 
+        messages = []
         for user, push_token, prefs, streak in rows:
             if prefs and not prefs.milestone_enabled:
                 continue
@@ -209,25 +220,30 @@ async def send_milestone_notifications():
             if next_day in MILESTONES:
                 template = MILESTONE_UPCOMING_TEMPLATES[next_day]
                 body = _pick_template(template, user.name, next_day)
-                await send_push_notification(
-                    token=push_token.token,
-                    title="🎯 Milestone Ahead!",
-                    body=body,
-                    data={"screen": "journey"},
-                    channel_id="milestones",
-                )
+                messages.append({
+                    "token": push_token.token,
+                    "title": "🎯 Milestone Ahead!",
+                    "body": body,
+                    "data": {"screen": "journey"},
+                    "channel_id": "milestones",
+                })
 
             # Post-milestone (they just hit a milestone today)
             if current_day in MILESTONES and streak.last_completed_date == date.today():
                 template = POST_MILESTONE_TEMPLATES[current_day]
                 body = _pick_template(template, user.name, current_day)
-                await send_push_notification(
-                    token=push_token.token,
-                    title="🏆 Milestone Reached!",
-                    body=body,
-                    data={"screen": "journey", "action": "celebration"},
-                    channel_id="milestones",
-                )
+                messages.append({
+                    "token": push_token.token,
+                    "title": "🏆 Milestone Reached!",
+                    "body": body,
+                    "data": {"screen": "journey", "action": "celebration"},
+                    "channel_id": "milestones",
+                })
+
+        # Process in chunks of 100
+        for i in range(0, len(messages), 100):
+            chunk = messages[i:i + 100]
+            await send_bulk_push_notifications(chunk)
 
 
 async def send_re_engagement_notifications():
@@ -247,11 +263,12 @@ async def send_re_engagement_notifications():
                 NotificationPreferences.user_id == User.id
             )
             .outerjoin(Streak, Streak.user_id == User.id)
-            .where(PushToken.active == True)
+            .where(PushToken.active)
         )
 
         rows = result.all()
 
+        messages = []
         for user, push_token, prefs, streak in rows:
             if prefs and not prefs.re_engagement_enabled:
                 continue
@@ -269,13 +286,18 @@ async def send_re_engagement_notifications():
 
             body = _pick_template(RE_ENGAGEMENT_TEMPLATES, user.name)
 
-            await send_push_notification(
-                token=push_token.token,
-                title="We miss you 💙",
-                body=body,
-                data={"screen": "checkin"},
-                channel_id="streaks",
-            )
+            messages.append({
+                "token": push_token.token,
+                "title": "We miss you 💙",
+                "body": body,
+                "data": {"screen": "checkin"},
+                "channel_id": "streaks",
+            })
+
+        # Process in chunks of 100
+        for i in range(0, len(messages), 100):
+            chunk = messages[i:i + 100]
+            await send_bulk_push_notifications(chunk)
 
 # --- Celery Tasks ---
 
