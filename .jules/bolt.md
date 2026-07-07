@@ -1,0 +1,3 @@
+## 2024-07-07 - Concurrent API Requests Optimization
+**Learning:** Independent external HTTP requests in an async Python environment (like FastAPI with `httpx`) can and should be executed concurrently using `asyncio.gather()`. Unlike database operations with SQLAlchemy's `AsyncSession` (which is not thread-safe), `httpx` async calls are perfectly safe to run concurrently. Waiting for them sequentially accumulates latency unnecessarily.
+**Action:** When finding multiple independent `await` calls for external services or APIs, bundle them together with `asyncio.gather()` to execute them concurrently and reduce the overall response time to the maximum of the individual latencies, rather than their sum.
