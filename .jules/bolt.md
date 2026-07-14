@@ -1,0 +1,3 @@
+## 2024-03-24 - Async External API Execution
+**Learning:** Sequential execution of independent external HTTP requests (like Google Places and Eventbrite API calls) artificially inflates endpoint latency. When using `httpx.AsyncClient` or similar async HTTP clients, these requests are bound by network I/O, not CPU or thread constraints, and can be safely executed concurrently. Unlike SQLAlchemy's `AsyncSession`, which doesn't support concurrent execution via `asyncio.gather` on the same session, independent external API calls have no such restrictions.
+**Action:** Always use `asyncio.gather` for independent external API calls to minimize response times.
