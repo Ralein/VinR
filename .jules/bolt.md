@@ -1,0 +1,3 @@
+## 2024-10-24 - Parallelizing Independent API Calls in Python Backend
+**Learning:** Found sequential blocking API calls (`_search_google_places` and `_search_eventbrite`) inside the backend `events_service.py` that were waiting on each other when they were entirely independent. These contributed cumulatively to the latency of the single `search_events` entrypoint.
+**Action:** When working in Python code that aggregates external API data via `httpx` or similar async clients, group independent external fetches into an `asyncio.gather()` call to parallelize network wait times, drastically reducing latency in event discovery or similar federated search patterns.
