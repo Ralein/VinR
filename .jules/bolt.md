@@ -4,3 +4,6 @@
 ## 2025-02-12 - Concurrent API Calls in Events Service
 **Learning:** Sequential network requests, such as searching Google Places and Eventbrite separately using `await`, sum up the total latency of both requests (max(T_google)+max(T_eventbrite)). In situations where one API takes up to 2 seconds and another 1 second, it forces a 3-second wait unnecessarily.
 **Action:** Always utilize `asyncio.gather` for distinct, independent asynchronous operations, specifically API fetching, to execute them concurrently. This binds the total latency to max(T_google, T_eventbrite).
+## 2025-02-12 - Missing useCallback breaks React.memo in FlatList children
+**Learning:** Adding `React.memo()` to a component like `EventCard` doesn't prevent re-renders if the parent component (e.g., `EventsList`) passes down non-memoized callback functions as props. During list scrolling, the parent re-renders, recreates the callback function (e.g., `onBookmarkToggle`), and causes `React.memo`'s shallow comparison to fail, forcing the child to re-render anyway.
+**Action:** When memoizing list items with `React.memo`, always ensure the parent component wraps any passed event handlers in `useCallback` with correct dependency arrays.

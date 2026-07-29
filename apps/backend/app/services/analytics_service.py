@@ -1,11 +1,10 @@
 """Analytics Service — Mood trends, emotion distribution, and insight generation."""
 
 from datetime import date, timedelta
-from collections import Counter
-from sqlalchemy import select, func, case, and_
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.checkin import Checkin, Plan
+from app.models.checkin import Checkin
 from app.models.streak import Streak, DailyCompletion
 from app.models.journal import JournalEntry
 

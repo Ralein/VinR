@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * EventCard — Premium event card with Google Maps deep-link,
  * source badge, star rating, photo thumbnail, and schedule action.
@@ -23,7 +24,7 @@ interface EventCardProps {
     onBookmarkToggle?: () => void;
 }
 
-export default function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
+function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
     const { colors, fonts, spacing, borderRadius, isDark } = useTheme();
 
     // Map category → Lucide icon + accent color
@@ -405,3 +406,5 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
 });
+
+export default React.memo(EventCard);

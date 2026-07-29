@@ -3,7 +3,7 @@
  * Groups: "Nearby Places" (Google) + "Upcoming Events" (Eventbrite) + "Virtual"
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, SectionList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { MapPinOff } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -35,16 +35,20 @@ export default function EventsList({
     const bookmarkEvent = useBookmarkEvent();
     const removeBookmark = useRemoveBookmark();
 
-    const bookmarkedIds = new Set(bookmarks?.map((b) => b.event_id.toString()) || []);
+    // ⚡ Bolt Optimization: Memoize bookmarked IDs and sections to prevent unnecessary recalculations on every render
+    // Impact: Reduces re-renders and CPU usage during scrolling, especially with large event lists
+    const bookmarkedIds = useMemo(() => {
+        return new Set(bookmarks?.map((b) => b.event_id.toString()) || []);
+    }, [bookmarks]);
 
-    const handleToggleBookmark = (event: EventResult) => {
+    const handleToggleBookmark = useCallback((event: EventResult) => {
         const idStr = event.event_id.toString();
         if (bookmarkedIds.has(idStr)) {
             removeBookmark.mutate(event.event_id);
         } else {
             bookmarkEvent.mutate(event);
         }
-    };
+    }, [bookmarkedIds, removeBookmark, bookmarkEvent]);
 
     /**
      * Grouping logic:
@@ -52,27 +56,29 @@ export default function EventsList({
      * 2. "Upcoming Events" — Eventbrite (in-person)
      * 3. "Virtual Experiences" — all virtual events
      */
-    const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
-    const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
-    const virtualEvents = events.filter(e => e.is_virtual);
+    const sections = useMemo(() => {
+        const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
+        const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
+        const virtualEvents = events.filter(e => e.is_virtual);
 
-    const sections = [
-        {
-            title: 'Nearby Wellness',
-            description: 'Wellness spots and spaces near you',
-            data: nearbyPlaces,
-        },
-        {
-            title: 'Upcoming Events',
-            description: 'Scheduled wellness events and workshops',
-            data: upcomingEvents,
-        },
-        {
-            title: 'Digital Sanctuaries',
-            description: 'Guided sessions you can join from anywhere',
-            data: virtualEvents,
-        },
-    ].filter(s => s.data.length > 0);
+        return [
+            {
+                title: 'Nearby Wellness',
+                description: 'Wellness spots and spaces near you',
+                data: nearbyPlaces,
+            },
+            {
+                title: 'Upcoming Events',
+                description: 'Scheduled wellness events and workshops',
+                data: upcomingEvents,
+            },
+            {
+                title: 'Digital Sanctuaries',
+                description: 'Guided sessions you can join from anywhere',
+                data: virtualEvents,
+            },
+        ].filter(s => s.data.length > 0);
+    }, [events]);
 
     if (isLoading && events.length === 0) {
         return (
