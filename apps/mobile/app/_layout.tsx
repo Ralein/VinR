@@ -39,7 +39,7 @@ function RootNavigator() {
 
     useEffect(() => {
         const inAuthGroup = segments[0] === '(auth)';
-        const inOnboarding = segments[1] === 'onboarding';
+        const inOnboarding = segments.length > 1 && (segments as string[])[1] === 'onboarding';
         
         if (!isAuthenticated && !inAuthGroup) {
             // Not logged in → send to welcome

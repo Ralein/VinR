@@ -3,7 +3,7 @@
  * Groups: "Nearby Places" (Google) + "Upcoming Events" (Eventbrite) + "Virtual"
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, SectionList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { MapPinOff } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
@@ -35,16 +35,16 @@ export default function EventsList({
     const bookmarkEvent = useBookmarkEvent();
     const removeBookmark = useRemoveBookmark();
 
-    const bookmarkedIds = new Set(bookmarks?.map((b) => b.event_id.toString()) || []);
+    const bookmarkedIds = useMemo(() => new Set(bookmarks?.map((b) => b.event_id.toString()) || []), [bookmarks]);
 
-    const handleToggleBookmark = (event: EventResult) => {
+    const handleToggleBookmark = useCallback((event: EventResult) => {
         const idStr = event.event_id.toString();
         if (bookmarkedIds.has(idStr)) {
             removeBookmark.mutate(event.event_id);
         } else {
             bookmarkEvent.mutate(event);
         }
-    };
+    }, [bookmarkedIds, bookmarkEvent, removeBookmark]);
 
     /**
      * Grouping logic:
@@ -132,13 +132,13 @@ export default function EventsList({
         <SectionList
             sections={sections}
             keyExtractor={(item, index) => `${item.event_id}-${index}`}
-            renderItem={({ item }) => (
+            renderItem={useCallback(({ item }: { item: EventResult }) => (
                 <EventCard
                     event={item}
                     isBookmarked={bookmarkedIds.has(item.event_id.toString())}
-                    onBookmarkToggle={() => handleToggleBookmark(item)}
+                    onBookmarkToggle={handleToggleBookmark}
                 />
-            )}
+            ), [bookmarkedIds, handleToggleBookmark])}
             renderSectionHeader={({ section: { title, description } }) => (
                 <View style={[styles.header, { backgroundColor: colors.void, paddingVertical: spacing.md }]}>
                     <Text style={[styles.headerTitle, { color: colors.textPrimary, fontFamily: fonts.display }]}>

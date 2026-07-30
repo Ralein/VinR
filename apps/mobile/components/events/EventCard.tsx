@@ -5,6 +5,7 @@
  * Zero emoji — all Lucide vector icons.
  */
 
+import React, { memo } from 'react';
 import { View, Text, Pressable, StyleSheet, Linking, Platform, Image } from 'react-native';
 import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import {
@@ -20,10 +21,10 @@ import { haptics } from '../../services/haptics';
 interface EventCardProps {
     event: EventResult;
     isBookmarked?: boolean;
-    onBookmarkToggle?: () => void;
+    onBookmarkToggle?: (event: EventResult) => void;
 }
 
-export default function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
+const EventCard = memo(function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
     const { colors, fonts, spacing, borderRadius, isDark } = useTheme();
 
     // Map category → Lucide icon + accent color
@@ -150,7 +151,7 @@ export default function EventCard({ event, isBookmarked, onBookmarkToggle }: Eve
                         </View>
                         <View style={styles.topRowRight}>
                             {onBookmarkToggle && (
-                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(); }} style={styles.bookmarkBtn} hitSlop={8}>
+                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(event); }} style={styles.bookmarkBtn} hitSlop={8}>
                                     <Bookmark
                                         size={16}
                                         color={isBookmarked ? colors.gold : colors.textGhost}
@@ -272,7 +273,10 @@ export default function EventCard({ event, isBookmarked, onBookmarkToggle }: Eve
             </Animated.View>
         </Pressable>
     );
-}
+});
+
+export default EventCard;
+
 
 const styles = StyleSheet.create({
     container: {
