@@ -1,0 +1,11 @@
+--- apps/mobile/components/events/EventCard.tsx
++++ apps/mobile/components/events/EventCard.tsx
+@@ -95,7 +95,7 @@
+                         ]}
+                         onPress={(e) => {
+                             e.stopPropagation();
+-                            onBookmarkToggle?.();
++                            onBookmarkToggle?.(event);
+                             haptics.light();
+                         }}
+                     >

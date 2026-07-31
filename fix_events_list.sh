@@ -1,0 +1,18 @@
+cat << 'PATCH' > apps/mobile/components/events/EventsList.patch
+--- apps/mobile/components/events/EventsList.tsx
++++ apps/mobile/components/events/EventsList.tsx
+@@ -134,7 +134,7 @@
+             keyExtractor={(item, index) => `${item.event_id}-${index}`}
+-            renderItem={({ item }) => (
++            renderItem={useCallback(({ item }: { item: EventResult }) => (
+                 <EventCard
+                     event={item}
+                     isBookmarked={bookmarkedIds.has(item.event_id.toString())}
+-                    onBookmarkToggle={() => handleToggleBookmark(item)}
++                    onBookmarkToggle={handleToggleBookmark}
+                 />
+-            )}
++            ), [bookmarkedIds, handleToggleBookmark])}
+             renderSectionHeader={({ section: { title, description } }) => (
+PATCH
+patch -p0 < apps/mobile/components/events/EventsList.patch

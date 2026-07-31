@@ -1,0 +1,9 @@
+--- apps/mobile/components/events/EventCard.tsx
++++ apps/mobile/components/events/EventCard.tsx
+@@ -151,5 +151,5 @@
+                             {onBookmarkToggle && (
+-                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(); }} style={styles.bookmarkBtn} hitSlop={8}>
++                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(event); }} style={styles.bookmarkBtn} hitSlop={8}>
+                                     <Bookmark
+                                         size={20}
+                                         color={isBookmarked ? colors.gold : colors.textMuted}
