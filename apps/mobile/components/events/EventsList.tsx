@@ -52,27 +52,32 @@ export default function EventsList({
      * 2. "Upcoming Events" — Eventbrite (in-person)
      * 3. "Virtual Experiences" — all virtual events
      */
-    const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
-    const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
-    const virtualEvents = events.filter(e => e.is_virtual);
+    // ⚡ Bolt Optimization: Memoize sections computation
+    // Impact: Prevents O(N) filtering operations when unrelated state (like bookmarks) triggers a re-render
+    // Expected improvement: Reduces React render time for large event lists
+    const sections = useMemo(() => {
+        const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
+        const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
+        const virtualEvents = events.filter(e => e.is_virtual);
 
-    const sections = [
-        {
-            title: 'Nearby Wellness',
-            description: 'Wellness spots and spaces near you',
-            data: nearbyPlaces,
-        },
-        {
-            title: 'Upcoming Events',
-            description: 'Scheduled wellness events and workshops',
-            data: upcomingEvents,
-        },
-        {
-            title: 'Digital Sanctuaries',
-            description: 'Guided sessions you can join from anywhere',
-            data: virtualEvents,
-        },
-    ].filter(s => s.data.length > 0);
+        return [
+            {
+                title: 'Nearby Wellness',
+                description: 'Wellness spots and spaces near you',
+                data: nearbyPlaces,
+            },
+            {
+                title: 'Upcoming Events',
+                description: 'Scheduled wellness events and workshops',
+                data: upcomingEvents,
+            },
+            {
+                title: 'Digital Sanctuaries',
+                description: 'Guided sessions you can join from anywhere',
+                data: virtualEvents,
+            },
+        ].filter(s => s.data.length > 0);
+    }, [events]);
 
     if (isLoading && events.length === 0) {
         return (
