@@ -21,7 +21,7 @@ import { haptics } from '../../services/haptics';
 interface EventCardProps {
     event: EventResult;
     isBookmarked?: boolean;
-    onBookmarkToggle?: (event: EventResult) => void;
+    onBookmarkToggle?: (event: EventResult, isCurrentlyBookmarked: boolean) => void;
 }
 
 const EventCard = memo(function EventCard({ event, isBookmarked, onBookmarkToggle }: EventCardProps) {
@@ -151,7 +151,7 @@ const EventCard = memo(function EventCard({ event, isBookmarked, onBookmarkToggl
                         </View>
                         <View style={styles.topRowRight}>
                             {onBookmarkToggle && (
-                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(event); }} style={styles.bookmarkBtn} hitSlop={8}>
+                                <Pressable onPress={() => { haptics.light(); onBookmarkToggle(event, isBookmarked || false); }} style={styles.bookmarkBtn} hitSlop={8}>
                                     <Bookmark
                                         size={16}
                                         color={isBookmarked ? colors.gold : colors.textGhost}

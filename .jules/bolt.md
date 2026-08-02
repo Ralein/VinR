@@ -8,3 +8,6 @@
 ## 2023-10-26 - React Native Component Re-renders
 **Learning:** In React Native, large lists (`SectionList` or `FlatList`) that render complex items (like cards with multiple interactive elements) can cause massive re-renders when parent state updates.
 **Action:** When passing event handlers to children in list items, always wrap them in `useCallback` to prevent new function references from breaking `memo` optimizations in child components, and wrap expensive derived state calculation inside the list in `useMemo`.
+## 2025-02-12 - Prevent massive re-renders in EventsList
+**Learning:** In React Native lists (`SectionList` or `FlatList`), passing an event handler that depends on rapidly changing list-wide state (like a Set of `bookmarkedIds`) recreates the handler for *all* items when only *one* item changes. If this new handler is passed down as a prop, it defeats `React.memo` on the child component, forcing the entire list to re-render.
+**Action:** Always decouple event handlers from changing list state by passing the specific item's state (e.g., `isBookmarked`) back up through the callback (e.g., `onBookmarkToggle(event, isBookmarked)`), removing the state from the handler's dependency array. Manage list reactivity natively via the list's `extraData` prop.
