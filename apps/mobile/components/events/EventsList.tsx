@@ -52,27 +52,35 @@ export default function EventsList({
      * 2. "Upcoming Events" — Eventbrite (in-person)
      * 3. "Virtual Experiences" — all virtual events
      */
-    const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
-    const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
-    const virtualEvents = events.filter(e => e.is_virtual);
+    const sections = useMemo(() => {
+        const nearbyPlaces: EventResult[] = [];
+        const upcomingEvents: EventResult[] = [];
+        const virtualEvents: EventResult[] = [];
 
-    const sections = [
-        {
-            title: 'Nearby Wellness',
-            description: 'Wellness spots and spaces near you',
-            data: nearbyPlaces,
-        },
-        {
-            title: 'Upcoming Events',
-            description: 'Scheduled wellness events and workshops',
-            data: upcomingEvents,
-        },
-        {
-            title: 'Digital Sanctuaries',
-            description: 'Guided sessions you can join from anywhere',
-            data: virtualEvents,
-        },
-    ].filter(s => s.data.length > 0);
+        for (const e of events) {
+            if (e.is_virtual) virtualEvents.push(e);
+            else if (e.source === 'google_places') nearbyPlaces.push(e);
+            else if (e.source === 'eventbrite') upcomingEvents.push(e);
+        }
+
+        return [
+            {
+                title: 'Nearby Wellness',
+                description: 'Wellness spots and spaces near you',
+                data: nearbyPlaces,
+            },
+            {
+                title: 'Upcoming Events',
+                description: 'Scheduled wellness events and workshops',
+                data: upcomingEvents,
+            },
+            {
+                title: 'Digital Sanctuaries',
+                description: 'Guided sessions you can join from anywhere',
+                data: virtualEvents,
+            },
+        ].filter(s => s.data.length > 0);
+    }, [events]);
 
     if (isLoading && events.length === 0) {
         return (
