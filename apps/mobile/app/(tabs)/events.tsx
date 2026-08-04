@@ -14,7 +14,7 @@
  * Zero emoji — all Lucide vector icons.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
     View, Text, TextInput, Pressable, StyleSheet, ScrollView,
     Keyboard, ActivityIndicator,
@@ -100,10 +100,16 @@ export default function EventsScreen() {
     const removeBookmark = useRemoveBookmark();
 
     // Convert bookmarks to EventResult[]
-    const savedEvents: EventResult[] = (bookmarks || []).map(b => ({
-        ...b.event_data,
-        event_id: b.event_id,
-    } as EventResult));
+    const savedEvents: EventResult[] = useMemo(() => (
+        (bookmarks || []).map(b => ({
+            ...b.event_data,
+            event_id: b.event_id,
+        } as EventResult))
+    ), [bookmarks]);
+
+    const handleRemoveBookmark = useCallback((event: EventResult) => {
+        removeBookmark.mutate(event.event_id);
+    }, [removeBookmark]);
 
     // Pull-to-refresh
     const handleRefresh = useCallback(async () => {
@@ -401,7 +407,7 @@ export default function EventsScreen() {
                                     <EventCard
                                         event={event}
                                         isBookmarked={true}
-                                        onBookmarkToggle={() => removeBookmark.mutate(event.event_id)}
+                                        onBookmarkToggle={handleRemoveBookmark}
                                     />
                                 </Animated.View>
                             ))}
