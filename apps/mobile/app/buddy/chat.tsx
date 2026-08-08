@@ -522,7 +522,9 @@ export default function ChatScreen() {
     }));
 
     // ── Render message ───────────────────────────────────────────────────────
-    const renderMessage = ({ item }: { item: Message }) => {
+    // ⚡ Bolt Optimization: Wrapped renderItem function in useCallback
+    // to prevent unnecessary re-renders of all FlatList items when parent state changes
+    const renderMessage = useCallback(({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
         const pData = PERSONAS.find((p: Persona) => p.id === persona);
         const isSelected = selectedMessage === item.id;
@@ -677,7 +679,7 @@ export default function ChatScreen() {
                 )}
             </Animated.View>
         );
-    };
+    }, [colors, isDark, persona, selectedMessage, showMessageActions, messages]);
 
     const renderRecordingRow = () => (
         <View style={[styles.recordingRow, { paddingHorizontal: 16 }]}>
