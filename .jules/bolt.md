@@ -8,3 +8,7 @@
 ## 2023-10-26 - React Native Component Re-renders
 **Learning:** In React Native, large lists (`SectionList` or `FlatList`) that render complex items (like cards with multiple interactive elements) can cause massive re-renders when parent state updates.
 **Action:** When passing event handlers to children in list items, always wrap them in `useCallback` to prevent new function references from breaking `memo` optimizations in child components, and wrap expensive derived state calculation inside the list in `useMemo`.
+
+## 2025-02-12 - Prevent Re-renders in Complex Lists
+**Learning:** In React Native, filtering or computing heavy list section groupings inside functional components without memoization causes the sections to be re-evaluated on every render. Additionally, inline handlers in list components without standard signature overrides trigger continuous nested element re-renders.
+**Action:** When setting up sectioned lists like `SectionList` or `FlatList`, always `useMemo` for derived layout sections like `events.filter(...)`. Ensure action handlers like `onBookmarkToggle` can be provided all necessary state via callback signatures and wrap callback bindings in `useCallback` when feeding directly into render maps.

@@ -401,7 +401,7 @@ export default function EventsScreen() {
                                     <EventCard
                                         event={event}
                                         isBookmarked={true}
-                                        onBookmarkToggle={() => removeBookmark.mutate(event.event_id)}
+                                        onBookmarkToggle={(evt: import('../../hooks/useEvents').EventResult) => removeBookmark.mutate(evt.event_id)}
                                     />
                                 </Animated.View>
                             ))}

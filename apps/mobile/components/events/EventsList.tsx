@@ -37,14 +37,14 @@ export default function EventsList({
 
     const bookmarkedIds = useMemo(() => new Set(bookmarks?.map((b) => b.event_id.toString()) || []), [bookmarks]);
 
-    const handleToggleBookmark = useCallback((event: EventResult) => {
-        const idStr = event.event_id.toString();
-        if (bookmarkedIds.has(idStr)) {
+    // ⚡ Bolt: Memoize callback and pass stable reference to EventCard to prevent re-renders
+    const handleToggleBookmark = useCallback((event: EventResult, isBookmarked?: boolean) => {
+        if (isBookmarked) {
             removeBookmark.mutate(event.event_id);
         } else {
             bookmarkEvent.mutate(event);
         }
-    }, [bookmarkedIds, bookmarkEvent, removeBookmark]);
+    }, [bookmarkEvent, removeBookmark]);
 
     /**
      * Grouping logic:
@@ -52,27 +52,30 @@ export default function EventsList({
      * 2. "Upcoming Events" — Eventbrite (in-person)
      * 3. "Virtual Experiences" — all virtual events
      */
-    const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
-    const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
-    const virtualEvents = events.filter(e => e.is_virtual);
+    // ⚡ Bolt: Memoize section grouping to prevent expensive filtering on every render
+    const sections = useMemo(() => {
+        const nearbyPlaces = events.filter(e => !e.is_virtual && e.source === 'google_places');
+        const upcomingEvents = events.filter(e => !e.is_virtual && e.source === 'eventbrite');
+        const virtualEvents = events.filter(e => e.is_virtual);
 
-    const sections = [
-        {
-            title: 'Nearby Wellness',
-            description: 'Wellness spots and spaces near you',
-            data: nearbyPlaces,
-        },
-        {
-            title: 'Upcoming Events',
-            description: 'Scheduled wellness events and workshops',
-            data: upcomingEvents,
-        },
-        {
-            title: 'Digital Sanctuaries',
-            description: 'Guided sessions you can join from anywhere',
-            data: virtualEvents,
-        },
-    ].filter(s => s.data.length > 0);
+        return [
+            {
+                title: 'Nearby Wellness',
+                description: 'Wellness spots and spaces near you',
+                data: nearbyPlaces,
+            },
+            {
+                title: 'Upcoming Events',
+                description: 'Scheduled wellness events and workshops',
+                data: upcomingEvents,
+            },
+            {
+                title: 'Digital Sanctuaries',
+                description: 'Guided sessions you can join from anywhere',
+                data: virtualEvents,
+            },
+        ].filter(s => s.data.length > 0);
+    }, [events]);
 
     if (isLoading && events.length === 0) {
         return (
@@ -119,7 +122,7 @@ export default function EventsList({
                                 key={`${item.event_id}-${iIndex}`}
                                 event={item}
                                 isBookmarked={bookmarkedIds.has(item.event_id.toString())}
-                                onBookmarkToggle={() => handleToggleBookmark(item)}
+                                onBookmarkToggle={handleToggleBookmark}
                             />
                         ))}
                     </View>
