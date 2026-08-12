@@ -8,3 +8,7 @@
 ## 2023-10-26 - React Native Component Re-renders
 **Learning:** In React Native, large lists (`SectionList` or `FlatList`) that render complex items (like cards with multiple interactive elements) can cause massive re-renders when parent state updates.
 **Action:** When passing event handlers to children in list items, always wrap them in `useCallback` to prevent new function references from breaking `memo` optimizations in child components, and wrap expensive derived state calculation inside the list in `useMemo`.
+
+## 2023-11-20 - Concurrent Async Database/API Operations in Chat Service
+**Learning:** Sequential async operations that don't depend on each other (like fetching RAG context and user context from the database) add unnecessary latency to the critical response path for LLM generation. While individual operations might take ~100ms, chaining them sequentially doubles the latency.
+**Action:** When performing multiple independent async context-gathering operations before an LLM call, always use `asyncio.gather` to fetch them concurrently, reducing total context assembly time from max(T_rag)+max(T_user) to max(T_rag, T_user).

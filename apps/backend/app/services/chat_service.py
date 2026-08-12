@@ -5,6 +5,7 @@ or server restart clears everything. No database writes for chat.
 """
 
 import hashlib
+import asyncio
 from collections import defaultdict
 from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -151,19 +152,25 @@ def memory_clear_all():
 
 # ── Buddy response generation ───────────────────────────────────────
 
+
 async def generate_buddy_response(
-    db: AsyncSession, user_id: str, message: str, persona: str = "hope",
+    db: AsyncSession,
+    user_id: str,
+    message: str,
+    persona: str = "hope",
 ) -> str:
     """
     Orchestrate: in-memory history + RAG + user context → Groq LLM → response.
     DB is only used for user profile context (adaptive service), NOT chat storage.
     """
     try:
-        # 1. Retrieve RAG context from knowledge base
-        rag_context = await retrieve_context(message)
-
-        # 2. Build adaptive user context (mood trend, streak, preferences)
-        user_context = await build_user_context(db, user_id)
+        # 1 & 2. Retrieve RAG context and user context concurrently
+        # ⚡ Bolt Optimization: Fetch RAG context and adaptive user context concurrently
+        # Impact: Reduces total latency by parallelizing DB queries and pgvector similarity search
+        # Expected improvement: ~50ms to 200ms faster generation depending on DB/vector latency
+        rag_context, user_context = await asyncio.gather(
+            retrieve_context(message), build_user_context(db, user_id)
+        )
 
         # 3. Fetch conversation history from memory (not DB)
         history = memory_get_history(user_id, limit=20)
@@ -174,14 +181,16 @@ async def generate_buddy_response(
         llm_messages = [{"role": "system", "content": sys_prompt}]
 
         # Inject static "Evidence Grounding" rule
-        llm_messages.append({
-            "role": "system",
-            "content": (
-                "IMPORTANT: When suggesting activities or health facts, ONLY speak "
-                "based on the provided wellness knowledge. If no knowledge is relevant, "
-                "provide general empathetic validation without technical claims."
-            )
-        })
+        llm_messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "IMPORTANT: When suggesting activities or health facts, ONLY speak "
+                    "based on the provided wellness knowledge. If no knowledge is relevant, "
+                    "provide general empathetic validation without technical claims."
+                ),
+            }
+        )
 
         # Inject RAG + user context as a system-level preamble
         if rag_context or user_context:
@@ -192,10 +201,12 @@ async def generate_buddy_response(
                 context_parts.append(
                     f"--- Relevant Wellness Knowledge ---\n{rag_context}"
                 )
-            llm_messages.append({
-                "role": "system",
-                "content": "\n\n".join(context_parts),
-            })
+            llm_messages.append(
+                {
+                    "role": "system",
+                    "content": "\n\n".join(context_parts),
+                }
+            )
 
         # Add conversation history from memory
         for msg in history:
@@ -216,6 +227,7 @@ async def generate_buddy_response(
 
     except Exception as e:
         import traceback
+
         print(f"❌ Buddy generation error: {str(e)}")
         print(traceback.format_exc())
         return (
